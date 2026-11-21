@@ -41,37 +41,36 @@ window.CC_CONFIG = {
       andalan: true,
       deskripsi: 'Susu dingin dengan kopi yang dituang di atasnya. Diminum berlapis atau diaduk dulu, sama-sama enak.',
       harga: { S: 13000, M: 15000, L: 17000 },
-      lapisan: [['#F0E5D3', 0.58], ['#4A2916', 0.42]]
+      // warna gambar gelas, dari atas ke bawah
+      gelas: { cairan: [[0, '#2E1A10'], [0.22, '#4A2B18'], [0.36, '#8A5A38'], [0.46, '#C9A27C'], [0.56, '#E8D9C3'], [1, '#F3EADB']], permukaan: ['#5A3520', '#24140B'] }
     },
     {
       id: 'dalgona',
       nama: 'Dalgona Coffee',
       deskripsi: 'Kopi kocok yang lembut di atas susu dingin.',
       harga: { S: 10000, M: 12000, L: 14000 },
-      lapisan: [['#F2E8D8', 0.64], ['#C98A4C', 0.36]],
-      busa: true
+      gelas: { cairan: [[0, '#D39A5E'], [0.2, '#C68B52'], [0.3, '#B98049'], [0.36, '#E9DCC8'], [1, '#F4ECDF']], permukaan: ['#E2AE74', '#C08048'], busa: true }
     },
     {
       id: 'cimory-matcha',
       nama: 'Cimory Matcha Latte',
       deskripsi: 'Matcha susu Cimory yang creamy dan dingin.',
       harga: { S: 13000, M: 15000, L: 17000 },
-      lapisan: [['#93AE5E', 0.82], ['#CADBA0', 0.18]]
+      gelas: { cairan: [[0, '#C9DA9E'], [0.14, '#A7C176'], [0.5, '#8EAB5A'], [1, '#B9CF8B']], permukaan: ['#CFE0A6', '#9DB86A'] }
     },
     {
       id: 'milo',
       nama: 'Ice Coffee Milo',
       deskripsi: 'Milo cokelat ketemu kopi, manis dan dingin.',
       harga: { S: 13000, M: 15000, L: 17000 },
-      lapisan: [['#5E3520', 0.55], ['#9A6644', 0.45]]
+      gelas: { cairan: [[0, '#A06B47'], [0.3, '#8A5636'], [0.55, '#6A3D24'], [1, '#4E2B17']], permukaan: ['#A87552', '#6B3D22'] }
     },
     {
       id: 'americano',
       nama: 'Americano',
       deskripsi: 'Kopi hitam dingin yang ringan. Pilihan paling hemat.',
       harga: { S: 7000, M: 8000, L: 9000 },
-      lapisan: [['#3A2114', 1]],
-      bening: true
+      gelas: { cairan: [[0, '#2A160C'], [0.5, '#3A2012'], [1, '#4A2A17']], permukaan: ['#3B2213', '#1A0D06'], bening: true }
     }
   ]
 };

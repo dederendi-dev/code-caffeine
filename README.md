@@ -6,6 +6,7 @@ Website pemesanan Code Caffeine, usaha es kopi Kelompok Bytepreneur
 Alamat: https://codecaffeine-ump.netlify.app
 
 ## Isi
+- Tampilan ikut mode HP: gelap atau terang (prefers-color-scheme).
 - Status buka/tutup otomatis mengikuti jadwal (WIB): hari jual Senin, Rabu, Jumat;
   pre-order H-1 pukul 08.00–20.00; serah terima 09.30–13.00.
 - Menu 5 minuman x 3 ukuran (Small 12 oz, Medium 14 oz, Large 16 oz) dengan harga dari Excel keuangan.
@@ -23,7 +24,7 @@ assets/css/style.css  tampilan
 assets/js/config.js   data yang bisa diubah
 assets/js/app.js      logika jadwal, menu, keranjang, pesan WhatsApp
 assets/img/           logo
-assets/fonts/         Coustard, Plus Jakarta Sans, JetBrains Mono (lisensi OFL)
+assets/fonts/         Inter dan Inter Tight (lisensi OFL)
 ```
 
 ## Tahap berikutnya

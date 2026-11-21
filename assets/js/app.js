@@ -14,7 +14,7 @@
   const jam = hhmm => hhmm.replace(':', '.');
 
   /* ================= Waktu (selalu WIB, apa pun zona waktu HP) ================= */
-  // Tanggal "bergeser" +7 jam; baca dengan getUTC*.
+  // Tanggal digeser +7 jam lalu dibaca dengan getUTC*.
   const nowWIB = () => new Date(Date.now() + 7 * 3600000);
   const startOfDay = d => Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
   const dow = ms => new Date(ms).getUTCDay();
@@ -32,8 +32,7 @@
     for (let i = 0; i < 15; i++) {
       const d = today + i * DAY;
       if (!C.hariJual.includes(dow(d))) continue;
-      const tutup = d - DAY + PO_TUTUP * 60000;
-      if (now.getTime() < tutup) return d;
+      if (now.getTime() < d - DAY + PO_TUTUP * 60000) return d;
     }
     return null;
   }
@@ -46,28 +45,26 @@
     const mins = now.getUTCHours() * 60 + now.getUTCMinutes();
     if (C.hariJual.includes(dow(today)) && mins < ST_SELESAI) {
       return mins < ST_MULAI
-        ? { state: 'jual', text: `Hari ini hari jual. Pesanan diantar mulai pukul ${jam(C.serahTerima.mulai)}.` }
-        : { state: 'jual', text: `Hari ini hari jual. Pesanan sedang diantar sampai pukul ${jam(C.serahTerima.selesai)}.` };
+        ? { state: 'jual', text: `Hari ini hari jual. Pesanan diantar mulai ${jam(C.serahTerima.mulai)}` }
+        : { state: 'jual', text: `Hari ini hari jual. Pesanan sedang diantar sampai ${jam(C.serahTerima.selesai)}` };
     }
     const t = targetDay(now);
-    if (t === null) return { state: 'soon', text: 'Jadwal jualan berikutnya belum tersedia.' };
+    if (t === null) return { state: 'soon', text: 'Jadwal jualan berikutnya belum tersedia' };
     const buka = t - DAY + PO_BUKA * 60000, tutup = t - DAY + PO_TUTUP * 60000;
     if (now.getTime() >= buka && now.getTime() < tutup) {
-      return { state: 'open', text: `Pre-order untuk ${tanggal(t)} dibuka sampai pukul ${jam(C.preorder.tutup)}.` };
+      return { state: 'open', text: `Pre-order untuk ${tanggal(t)} dibuka sampai ${jam(C.preorder.tutup)}` };
     }
-    return { state: 'soon', text: `Pre-order untuk ${tanggal(t)} dibuka ${HARI[dow(buka)]} pukul ${jam(C.preorder.buka)}.` };
+    return { state: 'soon', text: `Pre-order untuk ${tanggal(t)} dibuka ${HARI[dow(buka)]} ${jam(C.preorder.buka)}` };
   }
 
   function renderStatus() {
     const s = status(nowWIB());
-    const el = $('.console');
-    el.dataset.state = s.state;
+    $('.status').dataset.state = s.state;
     $('[data-status-text]').textContent = s.text;
   }
 
   function renderWeek() {
-    const now = nowWIB();
-    const today = startOfDay(now);
+    const today = startOfDay(nowWIB());
     const html = [];
     for (let i = 0; i < 7; i++) {
       const d = today + i * DAY;
@@ -89,56 +86,58 @@
     $('[data-week]').innerHTML = html.join('');
   }
 
-  /* ================= Gelas SVG ================= */
-  let uidSeq = 0;
-  const SCALE = { S: [0.9, 0.8], M: [0.95, 0.9], L: [1, 1] };
+  /* ================= Gambar gelas ================= */
+  let uid = 0;
+  const SCALE = { S: [0.9, 0.82], M: [0.95, 0.91], L: [1, 1] };
 
-  function cupSVG(drink, size, { big = false, light = false } = {}) {
-    const id = 'c' + (++uidSeq);
-    const TOP = 30, BOT = 166, LEVEL = 0.84;
-    const yLiquid = BOT - (BOT - TOP) * LEVEL;
-    // gradien lapisan dari bawah ke atas
-    let acc = 0;
-    const stops = [];
-    drink.lapisan.forEach(([c, f], i) => {
-      const from = acc, to = acc + f;
-      const blend = i === 0 ? 0 : 0.035;
-      stops.push(`<stop offset="${Math.min(1, from + blend)}" stop-color="${c}"/>`);
-      stops.push(`<stop offset="${Math.max(0, Math.min(1, to - (i < drink.lapisan.length - 1 ? 0.035 : 0)))}" stop-color="${c}"/>`);
-      acc = to;
-    });
-    const stroke = light ? 'rgba(53,37,28,.42)' : 'rgba(255,255,255,.7)';
-    const glassFill = light ? 'rgba(255,255,255,.55)' : 'rgba(255,255,255,.08)';
-    const liquidOpacity = drink.bening ? 0.9 : 1;
-    const ice = [
-      [34, yLiquid + 8, -12], [62, yLiquid + 2, 9], [46, yLiquid + 26, 18], [70, yLiquid + 30, -6]
-    ].map(([x, y, r]) => `<rect x="${x}" y="${y}" width="22" height="20" rx="5" transform="rotate(${r} ${x + 11} ${y + 10})" fill="rgba(255,255,255,${drink.bening ? .26 : .2})" stroke="rgba(255,255,255,.6)" stroke-width="1.2"/>`).join('');
-    const foam = drink.busa
-      ? Array.from({ length: 9 }, (_, i) => `<circle cx="${18 + i * 10.5}" cy="${yLiquid + 1}" r="${5 + (i % 3)}" fill="${drink.lapisan[drink.lapisan.length - 1][0]}"/>`).join('')
-      : '';
-    const drops = big
-      ? [[86, 92, 2.2], [92, 118, 1.6], [81, 136, 2], [30, 120, 1.5], [88, 70, 1.4]].map(([x, y, r]) => `<circle cx="${x}" cy="${y}" r="${r}" fill="rgba(255,255,255,.55)"/>`).join('')
-      : '';
+  function cupSVG(drink, size) {
+    const id = 'g' + (++uid);
+    const g = drink.gelas;
+    const stops = g.cairan.map(([o, c]) => `<stop offset="${o}" stop-color="${c}"/>`).join('');
     const [sx, sy] = SCALE[size];
-    const cupPath = 'M14,30 L106,30 L95,160 Q94,166 88,166 L32,166 Q26,166 25,160 Z';
-    return `<svg viewBox="0 -14 120 184" role="img" aria-label="${drink.nama}, ${sizeOf(size).nama} ${sizeOf(size).oz} oz" xmlns="http://www.w3.org/2000/svg">
+    const u = sizeOf(size);
+    const iceOpacity = g.bening ? 0.8 : 0.55;
+    const foam = g.busa
+      ? `<g clip-path="url(#cc-liquid)">${Array.from({ length: 14 }, (_, i) => `<circle cx="${80 + i * 18 + (i % 2) * 6}" cy="${152 + (i % 3) * 5}" r="${10 + (i % 4) * 3}" fill="${g.permukaan[0]}" opacity=".9"/>`).join('')}</g>`
+      : '';
+    return `<svg viewBox="40 40 320 500" role="img" aria-label="${drink.nama}, ${u.nama} ${u.oz} oz" xmlns="http://www.w3.org/2000/svg">
       <defs>
-        <clipPath id="${id}k"><path d="${cupPath}"/></clipPath>
-        <linearGradient id="${id}g" gradientUnits="userSpaceOnUse" x1="0" y1="${BOT}" x2="0" y2="${yLiquid}">${stops.join('')}</linearGradient>
-        <linearGradient id="${id}h" x1="0" x2="1"><stop offset="0" stop-color="#fff" stop-opacity=".5"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+        <linearGradient id="${id}l" x1="0" y1="150" x2="0" y2="510" gradientUnits="userSpaceOnUse">${stops}</linearGradient>
+        <radialGradient id="${id}s" cx=".45" cy=".4" r=".7"><stop offset="0" stop-color="${g.permukaan[0]}"/><stop offset="1" stop-color="${g.permukaan[1]}"/></radialGradient>
       </defs>
+      <ellipse cx="200" cy="520" rx="150" ry="20" fill="url(#cc-shadow)"/>
       <g class="cupgrp" data-cupgrp style="transform:scale(${sx},${sy})">
-        <rect x="58" y="-12" width="8" height="150" rx="4" transform="rotate(9 62 60)" fill="#8A3F1F"/>
-        <path d="${cupPath}" fill="${glassFill}"/>
-        <g clip-path="url(#${id}k)">
-          <rect x="0" y="${yLiquid}" width="120" height="${BOT - yLiquid + 2}" fill="url(#${id}g)" opacity="${liquidOpacity}"/>
-          ${foam}${ice}
-          <path d="M22,36 L31,158" stroke="url(#${id}h)" stroke-width="7" stroke-linecap="round" opacity=".8"/>
-          <path d="M98,36 L89,156" stroke="rgba(0,0,0,.14)" stroke-width="6"/>
+        <g clip-path="url(#cc-liquid)">
+          <rect x="40" y="120" width="320" height="420" fill="url(#${id}l)" ${g.bening ? '' : 'filter="url(#cc-marble)"'}/>
+          <g opacity="${iceOpacity}">
+            <rect x="96" y="170" width="78" height="70" rx="14" transform="rotate(-14 135 205)" fill="url(#cc-ice)" stroke="#fff" stroke-opacity=".5"/>
+            <rect x="182" y="188" width="82" height="72" rx="15" transform="rotate(10 223 224)" fill="url(#cc-ice)" stroke="#fff" stroke-opacity=".5"/>
+            <rect x="236" y="250" width="66" height="60" rx="13" transform="rotate(-8 269 280)" fill="url(#cc-ice)" stroke="#fff" stroke-opacity=".45"/>
+            <rect x="118" y="262" width="70" height="62" rx="13" transform="rotate(18 153 293)" fill="url(#cc-ice)" stroke="#fff" stroke-opacity=".4"/>
+          </g>
         </g>
-        <path d="${cupPath}" fill="none" stroke="${stroke}" stroke-width="2.2" stroke-linejoin="round"/>
-        <rect x="10" y="22" width="100" height="11" rx="5" fill="${light ? 'rgba(255,255,255,.8)' : 'rgba(255,255,255,.28)'}" stroke="${stroke}" stroke-width="2"/>
-        ${drops}
+        <ellipse cx="200" cy="150" rx="132" ry="20" fill="url(#${id}s)"/>
+        ${foam}
+        <ellipse cx="180" cy="146" rx="60" ry="6" fill="#fff" opacity=".08"/>
+        <path d="M118,132 q4,-26 30,-24 l42,4 q22,3 18,26 l-3,14 q-60,10 -88,-6 z" fill="url(#cc-ice)" stroke="#fff" stroke-opacity=".8" stroke-width="1.2"/>
+        <path d="M206,140 q2,-24 26,-25 l40,1 q20,2 18,22 l-2,14 q-50,8 -82,-2 z" fill="url(#cc-ice)" stroke="#fff" stroke-opacity=".75" stroke-width="1.2"/>
+        <path d="M128,118 l40,-2 M216,124 l38,-3" stroke="#fff" stroke-opacity=".9" stroke-width="2" stroke-linecap="round"/>
+        <g clip-path="url(#cc-body)">
+          <rect x="40" y="60" width="320" height="480" fill="#fff" opacity=".06"/>
+          <rect x="40" y="60" width="320" height="480" fill="url(#cc-edge)"/>
+          <path d="M86,110 L118,490" stroke="url(#cc-sheen)" stroke-width="22" stroke-linecap="round" opacity=".7"/>
+          <path d="M100,110 L128,480" stroke="#fff" stroke-opacity=".35" stroke-width="3" stroke-linecap="round"/>
+          <path d="M316,120 L290,480" stroke="#fff" stroke-opacity=".18" stroke-width="8" stroke-linecap="round" filter="url(#cc-blur)"/>
+          <g filter="url(#cc-soft)" fill="url(#cc-drop)">
+            <ellipse cx="270" cy="330" rx="4" ry="5"/><ellipse cx="252" cy="372" rx="3" ry="4"/><ellipse cx="282" cy="402" rx="5" ry="6.5"/>
+            <ellipse cx="148" cy="404" rx="3.5" ry="4.5"/><ellipse cx="166" cy="438" rx="2.5" ry="3"/><ellipse cx="238" cy="452" rx="4" ry="5"/>
+            <ellipse cx="200" cy="420" rx="2.5" ry="3.2"/><ellipse cx="128" cy="360" rx="2.8" ry="3.6"/><ellipse cx="290" cy="290" rx="2.6" ry="3.2"/>
+          </g>
+        </g>
+        <path class="cup-edge" d="M62,92 L102,506 A98,15 0 0 0 298,506 L338,92" fill="none" stroke-width="1.6"/>
+        <ellipse class="cup-rim" cx="200" cy="92" rx="138" ry="22" fill="none" stroke-width="2.2"/>
+        <path d="M90,84 A138,22 0 0 1 250,72" fill="none" stroke="#fff" stroke-opacity=".9" stroke-width="2.5" stroke-linecap="round"/>
+        <ellipse class="cup-edge" cx="200" cy="506" rx="98" ry="15" fill="none" stroke-width="1.4"/>
       </g>
     </svg>`;
   }
@@ -166,63 +165,66 @@
   }
 
   /* ================= Menu ================= */
+  const priceHTML = (d, size) => `${rupiah(d.harga[size])}<small>${sizeOf(size).nama}, ${sizeOf(size).oz} oz</small>`;
+
   function renderMenu() {
     $('[data-drinks]').innerHTML = C.menu.map(d => `
-      <li class="drink" data-drink="${d.id}">
-        <div class="drink-cup" data-mini-cup>${cupSVG(d, 'M', { light: true })}</div>
-        <div class="drink-name"><h3>${d.nama}</h3>${d.andalan ? '<span class="tag">Andalan</span>' : ''}</div>
-        <p class="drink-desc">${d.deskripsi}</p>
-        <div class="drink-order">
-          <fieldset class="sizes">
-            <legend>Ukuran ${d.nama}</legend>
-            ${C.ukuran.map(u => `<label><input type="radio" name="size-${d.id}" value="${u.id}"${u.id === 'M' ? ' checked' : ''}><span class="opt"><b>${u.nama}</b><span>${rupiah(d.harga[u.id])}</span></span></label>`).join('')}
-          </fieldset>
-          <div class="add-row">
-            <button type="button" class="btn btn-primary" data-add="${d.id}">Tambah ke pesanan</button>
-            <span class="in-cart" data-in-cart="${d.id}" hidden></span>
-          </div>
+      <article class="card${d.andalan ? ' featured' : ''}" data-drink="${d.id}">
+        <div class="card-cup">${cupSVG(d, 'M')}</div>
+        <div class="card-title"><h3>${d.nama}</h3>${d.andalan ? '<span class="badge">Andalan</span>' : ''}</div>
+        <p class="card-desc">${d.deskripsi}</p>
+        <fieldset class="sizes">
+          <legend>Ukuran ${d.nama}</legend>
+          ${C.ukuran.map(u => `<label><input type="radio" name="size-${d.id}" value="${u.id}"${u.id === 'M' ? ' checked' : ''}><span>${u.nama}</span></label>`).join('')}
+        </fieldset>
+        <div class="card-foot">
+          <p class="price" data-price aria-live="polite">${priceHTML(d, 'M')}</p>
+          <button type="button" class="btn btn-solid" data-add>Tambah</button>
         </div>
-      </li>`).join('');
+        <p class="in-cart" data-in-cart></p>
+      </article>`).join('');
 
-    $$('[data-drink]').forEach(li => {
-      const id = li.dataset.drink;
-      li.addEventListener('change', e => {
+    $$('[data-drink]').forEach(card => {
+      const d = drinkOf(card.dataset.drink);
+      card.addEventListener('change', e => {
         if (!e.target.name || !e.target.name.startsWith('size-')) return;
-        const [sx, sy] = SCALE[e.target.value];
-        const g = $('[data-cupgrp]', li);
-        g.style.transform = `scale(${sx},${sy})`;
-        $('svg', li).setAttribute('aria-label', `${drinkOf(id).nama}, ${sizeOf(e.target.value).nama} ${sizeOf(e.target.value).oz} oz`);
+        const size = e.target.value;
+        const [sx, sy] = SCALE[size];
+        $('[data-cupgrp]', card).style.transform = `scale(${sx},${sy})`;
+        $('.card-cup svg', card).setAttribute('aria-label', `${d.nama}, ${sizeOf(size).nama} ${sizeOf(size).oz} oz`);
+        $('[data-price]', card).innerHTML = priceHTML(d, size);
       });
-      $('[data-add]', li).addEventListener('click', e => {
-        const size = $(`input[name="size-${id}"]:checked`, li).value;
-        addToCart(id, size);
+      $('[data-add]', card).addEventListener('click', e => {
+        const size = $(`input[name="size-${d.id}"]:checked`, card).value;
+        addToCart(d.id, size);
         const btn = e.currentTarget;
         btn.classList.add('added');
-        btn.textContent = `${sizeOf(size).nama} ditambahkan`;
+        btn.textContent = 'Ditambahkan';
         clearTimeout(btn._t);
-        btn._t = setTimeout(() => { btn.classList.remove('added'); btn.textContent = 'Tambah ke pesanan'; }, 1300);
+        btn._t = setTimeout(() => { btn.classList.remove('added'); btn.textContent = 'Tambah'; }, 1300);
       });
     });
   }
 
+  /* ================= Lembar pesanan ================= */
+  const sheet = $('[data-sheet]');
+  const form = $('[data-order-form]');
+  const sent = $('[data-sent]');
+  let lastFocus = null;
+
   function renderCart() {
     const n = cartCount();
-    $$('[data-cart-count]').forEach(el => { el.textContent = n; });
-    const bar = $('[data-cartbar]');
-    bar.hidden = n === 0 || sheet.open;
+    $$('[data-cart-count]').forEach(el => { el.textContent = n; el.hidden = n === 0; });
+    $('[data-cartbar]').hidden = n === 0 || sheet.open;
     $('[data-cartbar-count]').textContent = `${n} minuman`;
     $('[data-cartbar-total]').textContent = rupiah(cartTotal());
 
-    C.menu.forEach(d => {
-      const q = cart.filter(i => i.id === d.id).reduce((a, i) => a + i.qty, 0);
-      const el = $(`[data-in-cart="${d.id}"]`);
-      if (!el) return;
-      el.hidden = q === 0;
-      el.textContent = `${q} di pesanan`;
+    $$('[data-drink]').forEach(card => {
+      const q = cart.filter(i => i.id === card.dataset.drink).reduce((a, i) => a + i.qty, 0);
+      $('[data-in-cart]', card).textContent = q ? `${q} di pesananmu` : '';
     });
 
-    const list = $('[data-cart-list]');
-    list.innerHTML = cart.map(i => {
+    $('[data-cart-list]').innerHTML = cart.map(i => {
       const d = drinkOf(i.id), u = sizeOf(i.size);
       return `<li class="cart-item">
         <span class="ci-name">${d.nama}</span>
@@ -241,22 +243,15 @@
     $('[data-send]').disabled = n === 0;
   }
 
-  /* ================= Lembar pesanan ================= */
-  const sheet = $('[data-sheet]');
-  const form = $('[data-order-form]');
-  const sent = $('[data-sent]');
-  let lastFocus = null;
-
   function openSheet() {
     lastFocus = document.activeElement;
     form.hidden = false; sent.hidden = true;
     const t = targetDay(nowWIB());
     $('[data-target-day]').textContent = t ? `Untuk hari jual ${tanggal(t, true)}` : '';
     hideError();
-    renderCart();
     document.documentElement.classList.add('lock');
     sheet.showModal();
-    $('[data-cartbar]').hidden = true;
+    renderCart();
   }
   function closeSheet() { sheet.close(); }
   sheet.addEventListener('close', () => {
@@ -272,13 +267,10 @@
     if (b) changeQty(b.dataset.id, b.dataset.size, Number(b.dataset.qty));
   });
 
-  // Jam serah terima
   $('[data-slot-select]').innerHTML = C.slotSerahTerima.map(s => `<option>${s}</option>`).join('') + '<option>Kapan saja di jam antar</option>';
 
-  // Lokasi hanya untuk diantar
   function syncLokasi() {
-    const antar = form.elements.cara_terima.value === 'Diantar';
-    $('[data-lokasi-field]').hidden = !antar;
+    $('[data-lokasi-field]').hidden = form.elements.cara_terima.value !== 'Diantar';
   }
   form.addEventListener('change', e => { if (e.target.name === 'cara_terima') syncLokasi(); });
   form.addEventListener('input', e => { if (e.target.hasAttribute('aria-invalid')) e.target.removeAttribute('aria-invalid'); });
@@ -299,9 +291,7 @@
       const d = drinkOf(i.id), u = sizeOf(i.size);
       return `- ${i.qty}x ${d.nama} ${u.nama} (${u.oz} oz) = ${rupiah(priceOf(i) * i.qty)}`;
     });
-    const terima = v.cara_terima === 'Diantar'
-      ? `Diantar ke ${v.lokasi}`
-      : `Ambil sendiri di ${C.lokasiAmbil}`;
+    const terima = v.cara_terima === 'Diantar' ? `Diantar ke ${v.lokasi}` : `Ambil sendiri di ${C.lokasiAmbil}`;
     return [
       'Halo Code Caffeine, saya mau pre-order.',
       '',
@@ -320,7 +310,6 @@
     ].filter(l => l !== null).join('\n');
   }
 
-  let lastWa = '';
   form.addEventListener('submit', e => {
     e.preventDefault();
     hideError();
@@ -341,7 +330,7 @@
     const t = targetDay(nowWIB());
     const msg = buildMessage(v, t);
 
-    // Catatan pesanan untuk kelompok (Netlify Forms)
+    // Catatan pesanan untuk kelompok (Netlify Forms). Gagal mencatat tidak menghalangi pesanan.
     f.untuk_hari.value = t ? tanggal(t, true) : '';
     f.pesanan.value = cart.map(i => `${i.qty}x ${drinkOf(i.id).nama} ${sizeOf(i.size).nama}`).join('; ');
     f.jumlah_cup.value = String(cartCount());
@@ -350,22 +339,21 @@
       if (location.protocol.startsWith('http') && navigator.sendBeacon) {
         navigator.sendBeacon('/', new URLSearchParams(new FormData(form)));
       }
-    } catch (err) { /* pencatatan gagal tidak menghalangi pesanan */ }
+    } catch (err) { /* abaikan */ }
 
-    const sentText = $('.sent p');
+    const again = $('[data-wa-again]');
     if (C.whatsapp) {
-      lastWa = `https://wa.me/${C.whatsapp}?text=${encodeURIComponent(msg)}`;
-      window.open(lastWa, '_blank', 'noopener');
-      $('[data-wa-again]').href = lastWa;
-      $('[data-wa-again]').hidden = false;
+      const url = `https://wa.me/${C.whatsapp}?text=${encodeURIComponent(msg)}`;
+      window.open(url, '_blank', 'noopener');
+      again.href = url; again.hidden = false;
     } else {
-      $('[data-wa-again]').hidden = true;
+      again.hidden = true;
       if (navigator.clipboard) navigator.clipboard.writeText(msg).catch(() => {});
-      sentText.textContent = 'Nomor WhatsApp pesanan belum diatur, jadi teks pesananmu kami salin. Tempel di chat WhatsApp Code Caffeine.';
+      $('[data-sent-text]').textContent = 'Nomor WhatsApp pesanan belum diatur, jadi teks pesananmu kami salin. Tempel di chat WhatsApp Code Caffeine.';
     }
     form.hidden = true;
     sent.hidden = false;
-    $('h2', sent).focus?.();
+    $('h2', sent).focus();
   });
 
   $('[data-finish]').addEventListener('click', () => {
@@ -384,11 +372,11 @@
   }
 
   /* ================= Mulai ================= */
-  $('[data-hero-cup]').innerHTML = cupSVG(drinkOf('dirty-latte'), 'L', { big: true });
+  $('[data-hero-cup]').innerHTML = cupSVG(drinkOf('dirty-latte'), 'L');
   renderMenu();
   renderStatus();
   renderWeek();
   renderSocial();
   renderCart();
-  setInterval(() => { renderStatus(); }, 60000);
+  setInterval(renderStatus, 60000);
 })();

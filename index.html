@@ -5,100 +5,143 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Code Caffeine | Es kopi pre-order, antar gratis area UMP</title>
   <meta name="description" content="Es kopi racikan mahasiswa Teknik Informatika UMP. Pesan lewat WhatsApp sehari sebelumnya, diantar gratis ke kampus UMP dan kos sekitar. Mulai Rp7.000.">
-  <meta name="theme-color" content="#35251C">
+  <meta name="color-scheme" content="dark light">
+  <meta name="theme-color" content="#0E0805" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#F3ECE3" media="(prefers-color-scheme: light)">
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="icon" href="/favicon.png" type="image/png" sizes="32x32">
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Code Caffeine">
-  <meta property="og:title" content="Code Caffeine | Es kopi pre-order, antar gratis area UMP">
-  <meta property="og:description" content="Pesan lewat WhatsApp sehari sebelumnya. Diantar gratis ke kampus UMP dan kos sekitar. Mulai Rp7.000.">
+  <meta property="og:title" content="Code Caffeine | Diracik pelan. Diantar dingin.">
+  <meta property="og:description" content="Es kopi pre-order. Diantar gratis ke kampus UMP dan kos sekitar. Mulai Rp7.000.">
   <meta property="og:image" content="https://codecaffeine-ump.netlify.app/og.jpg">
   <meta property="og:url" content="https://codecaffeine-ump.netlify.app/">
   <meta name="twitter:card" content="summary_large_image">
-  <link rel="preload" href="/assets/fonts/coustard-900.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="preload" href="/assets/fonts/jakarta-500.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/assets/fonts/inter-tight.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/assets/fonts/inter.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/assets/css/style.css">
 </head>
 <body>
   <a class="skip" href="#menu">Langsung ke menu</a>
 
-  <header class="topbar" id="top">
-    <a href="#top" class="brand" aria-label="Code Caffeine, ke atas">
-      <img src="/assets/img/logo-mendatar.svg" alt="Code Caffeine" width="190" height="40">
-    </a>
-    <button class="topbar-order" type="button" data-open-order>
-      Pesanan <span class="count" data-cart-count>0</span>
-    </button>
+  <!-- Bahan gambar gelas yang dipakai bersama -->
+  <svg class="defs" aria-hidden="true" focusable="false">
+    <defs>
+      <clipPath id="cc-body"><path d="M62,92 L102,506 A98,15 0 0 0 298,506 L338,92 A138,22 0 0 0 62,92 Z"/></clipPath>
+      <clipPath id="cc-liquid"><path d="M68,150 L104,500 A96,14 0 0 0 296,500 L332,150 A132,20 0 0 0 68,150 Z"/></clipPath>
+      <filter id="cc-marble" x="-10%" y="-10%" width="120%" height="120%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.012 0.035" numOctaves="3" seed="7" result="n"/>
+        <feDisplacementMap in="SourceGraphic" in2="n" scale="46" xChannelSelector="R" yChannelSelector="G"/>
+      </filter>
+      <linearGradient id="cc-sheen" x1="0" x2="1"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".35" stop-color="#fff" stop-opacity=".55"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+      <linearGradient id="cc-edge" x1="0" x2="1"><stop offset="0" stop-color="#000" stop-opacity=".22"/><stop offset=".12" stop-color="#000" stop-opacity="0"/><stop offset=".88" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".28"/></linearGradient>
+      <linearGradient id="cc-ice" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".75"/><stop offset=".45" stop-color="#fff" stop-opacity=".18"/><stop offset="1" stop-color="#fff" stop-opacity=".45"/></linearGradient>
+      <radialGradient id="cc-drop" cx=".35" cy=".3" r=".7"><stop offset="0" stop-color="#fff" stop-opacity=".95"/><stop offset=".4" stop-color="#fff" stop-opacity=".25"/><stop offset="1" stop-color="#fff" stop-opacity=".05"/></radialGradient>
+      <radialGradient id="cc-shadow" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#000" stop-opacity=".5"/><stop offset="1" stop-color="#000" stop-opacity="0"/></radialGradient>
+      <filter id="cc-soft"><feGaussianBlur stdDeviation="1.2"/></filter>
+      <filter id="cc-blur"><feGaussianBlur stdDeviation="6"/></filter>
+    </defs>
+  </svg>
+
+  <header class="nav-wrap">
+    <nav class="nav glass" aria-label="Utama">
+      <a href="#top" class="brand"><img src="/assets/img/logo-ikon.svg" alt="" width="30" height="31">Code Caffeine</a>
+      <ul class="nav-links">
+        <li><a href="#menu">Menu</a></li>
+        <li><a href="#cara-pesan">Cara pesan</a></li>
+        <li><a href="#jadwal">Jadwal</a></li>
+        <li><a href="#tentang">Tentang</a></li>
+      </ul>
+      <button class="btn btn-solid btn-sm" type="button" data-open-order>
+        Pesan<span class="count" data-cart-count hidden>0</span>
+      </button>
+    </nav>
   </header>
 
-  <main>
+  <main id="top">
     <!-- HERO -->
     <section class="hero" aria-labelledby="hero-title">
-      <div class="hero-inner">
-        <div class="hero-copy">
-          <p class="console" role="status" aria-live="polite">
-            <span class="prompt" aria-hidden="true">&gt;</span>
-            <span class="msg" data-status-text>Memuat jadwal…</span>
-          </p>
-          <h1 id="hero-title">Es kopi enak, diantar sampai kampus.</h1>
-          <p class="lead">Pesan lewat WhatsApp sehari sebelumnya. Kami antar gratis ke kampus UMP dan kos sekitar, atau ambil sendiri di Kembaran.</p>
-          <div class="hero-actions">
-            <a class="btn btn-primary" href="#menu">Lihat menu</a>
-            <span class="from">Mulai <strong>Rp7.000</strong> per cup</span>
-          </div>
-        </div>
-
-        <figure class="hero-cup" aria-label="Ilustrasi Dirty Latte ukuran Large">
-          <div class="cup-stage" data-hero-cup></div>
-          <figcaption class="sticker">
-            <span class="sticker-name">Dirty Latte</span>
-            <span class="sticker-note">menu andalan kami</span>
-          </figcaption>
-        </figure>
+      <p class="status glass" role="status" aria-live="polite">
+        <span class="dot" aria-hidden="true"></span><span data-status-text>Memuat jadwal…</span>
+      </p>
+      <h1 id="hero-title">Diracik pelan.<br>Diantar dingin.</h1>
+      <p class="hero-sub">Es kopi pre-order dari dapur kecil di Kembaran, diantar gratis ke kampus UMP dan kos sekitar. Mulai Rp7.000.</p>
+      <div class="hero-actions">
+        <a class="btn btn-solid" href="#menu">Lihat menu</a>
+        <a class="btn btn-glass glass" href="#cara-pesan">Cara pesan</a>
       </div>
+      <figure class="hero-cup">
+        <div class="cup-art" data-hero-cup></div>
+        <figcaption class="callout glass c1"><b>Dirty Latte</b>menu andalan</figcaption>
+        <p class="callout glass c2" aria-hidden="true"><b>Rp15.000</b>Medium, 14 oz</p>
+        <p class="callout glass c3" aria-hidden="true"><b>Takaran baku</b>rasa sama tiap cup</p>
+      </figure>
     </section>
 
     <!-- MENU -->
-    <section class="menu" id="menu" aria-labelledby="menu-title">
+    <section class="section" id="menu" aria-labelledby="menu-title">
       <div class="wrap">
-        <header class="section-head">
-          <h2 id="menu-title">Pilih minumanmu</h2>
-          <p>Semua disajikan dingin. Setiap cup dibuat dengan takaran yang sama, jadi rasanya nggak untung-untungan.</p>
+        <header class="head">
+          <h2 id="menu-title">Lima minuman. Tiga ukuran.</h2>
+          <p>Semua disajikan dingin. Pilih ukuran, lihat harganya, lalu tambahkan ke pesanan.</p>
         </header>
-        <ol class="drinks" data-drinks></ol>
-        <p class="size-note">Small 12 oz, Medium 14 oz, Large 16 oz.</p>
+      </div>
+      <div class="cards" data-drinks></div>
+      <div class="wrap"><p class="note">Small 12 oz, Medium 14 oz, Large 16 oz.</p></div>
+    </section>
+
+    <!-- ALASAN -->
+    <section class="section" aria-labelledby="why-title">
+      <div class="wrap">
+        <header class="head">
+          <h2 id="why-title">Yang kami jaga di setiap cup.</h2>
+        </header>
+        <ul class="bento">
+          <li class="tile glass">
+            <h3>Takaran baku</h3>
+            <p>Setiap minuman dibuat dengan resep dan takaran yang sama, jadi rasanya nggak untung-untungan.</p>
+          </li>
+          <li class="tile glass">
+            <h3>Rp0 ongkir</h3>
+            <p>Diantar ke kampus UMP dan kos sekitar. Mau ambil sendiri di Kembaran juga bisa.</p>
+          </li>
+          <li class="tile glass">
+            <h3>Mulai Rp7.000</h3>
+            <p>Harga mahasiswa. Bayar lewat transfer atau tunai.</p>
+          </li>
+        </ul>
       </div>
     </section>
 
     <!-- CARA PESAN -->
-    <section class="how" aria-labelledby="how-title">
+    <section class="section" id="cara-pesan" aria-labelledby="how-title">
       <div class="wrap">
-        <header class="section-head">
-          <h2 id="how-title">Cara pesan</h2>
+        <header class="head">
+          <h2 id="how-title">Pesan dalam tiga langkah.</h2>
         </header>
         <ol class="steps">
-          <li>
+          <li class="glass">
             <h3>Pilih minuman</h3>
-            <p>Tentukan menu, ukuran, dan jumlahnya di daftar menu.</p>
+            <p>Tentukan menu, ukuran, dan jumlahnya.</p>
           </li>
-          <li>
+          <li class="glass">
             <h3>Kirim lewat WhatsApp</h3>
             <p>Isi nama dan cara terima, lalu pesananmu terkirim rapi ke WhatsApp kami. Pre-order ditutup pukul 20.00 sehari sebelum hari jual.</p>
           </li>
-          <li>
+          <li class="glass">
             <h3>Terima dan bayar</h3>
-            <p>Diantar ke kampus UMP atau kos sekitar tanpa ongkir, atau ambil sendiri di Kembaran. Bayar lewat transfer atau tunai.</p>
+            <p>Diantar ke kampus atau kos tanpa ongkir, atau ambil sendiri di Kembaran. Bayar transfer atau tunai.</p>
           </li>
         </ol>
       </div>
     </section>
 
     <!-- JADWAL -->
-    <section class="schedule" aria-labelledby="schedule-title">
+    <section class="section" id="jadwal" aria-labelledby="schedule-title">
       <div class="wrap">
-        <header class="section-head">
-          <h2 id="schedule-title">Jadwal minggu ini</h2>
+        <header class="head">
+          <h2 id="schedule-title">Jadwal minggu ini.</h2>
           <p>Kami jualan Senin, Rabu, dan Jumat. Pesanan diantar pukul 09.30–13.00. Yang datang langsung tetap dilayani selama stok ada.</p>
         </header>
         <ul class="week" data-week></ul>
@@ -106,30 +149,31 @@
     </section>
 
     <!-- KARTU STAMP -->
-    <section class="stamp" aria-labelledby="stamp-title">
-      <div class="wrap stamp-inner">
-        <div class="stamp-copy">
-          <h2 id="stamp-title">Beli 5 kali, gratis 1 cup</h2>
-          <p>Setiap pembelian dapat satu cap di kartu stamp. Kumpulkan lima cap, lalu tukar dengan satu cup ukuran Small gratis. Minta kartunya saat pesananmu diantar.</p>
+    <section class="section" aria-labelledby="stamp-title">
+      <div class="wrap split">
+        <div class="head">
+          <h2 id="stamp-title">Beli lima kali, gratis satu cup.</h2>
+          <p>Setiap pembelian dapat satu cap di kartu stamp. Kumpulkan lima cap, lalu tukar dengan satu cup ukuran Small. Minta kartunya saat pesananmu diantar.</p>
         </div>
-        <div class="stamp-card" aria-hidden="true">
-          <img src="/assets/img/logo-mendatar.svg" alt="" class="stamp-logo">
+        <div class="stamp glass" aria-hidden="true">
+          <div class="stamp-top"><img src="/assets/img/logo-ikon.svg" alt="" width="26" height="27"><span>Kartu stamp</span></div>
           <div class="stamp-slots">
-            <span class="slot filled"></span><span class="slot filled"></span><span class="slot filled"></span><span class="slot"></span><span class="slot"></span>
-            <span class="slot free">Gratis</span>
+            <span class="slot on"></span><span class="slot on"></span><span class="slot on"></span><span class="slot"></span><span class="slot"></span><span class="slot free">Gratis</span>
           </div>
         </div>
       </div>
     </section>
 
     <!-- TENTANG -->
-    <section class="about" aria-labelledby="about-title">
-      <div class="wrap about-inner">
-        <img src="/assets/img/logo-utama.svg" alt="" class="about-logo" width="220" height="255">
-        <div>
-          <h2 id="about-title">Dari dapur kos, untuk teman sekampus</h2>
+    <section class="section" id="tentang" aria-labelledby="about-title">
+      <div class="wrap split">
+        <div class="head">
+          <h2 id="about-title">Dari dapur kos, untuk teman sekampus.</h2>
           <p>Code Caffeine dijalankan oleh Bytepreneur, enam mahasiswa Teknik Informatika Universitas Muhammadiyah Purwokerto. Kami meracik sendiri setiap minuman di dapur kos di Kembaran, lalu mengantarnya ke kampus.</p>
-          <p class="soon"><strong>Sedang disiapkan:</strong> Caffeine Challenge, mini game yang bisa memberi bonus atau upgrade ukuran sesuai skormu, dan poin lewat QR Code di setiap cup.</p>
+        </div>
+        <div class="soon glass">
+          <h3>Sedang disiapkan</h3>
+          <p><strong>Caffeine Challenge</strong>, mini game yang bisa memberi bonus atau upgrade ukuran sesuai skormu, dan poin lewat QR Code di setiap cup.</p>
         </div>
       </div>
     </section>
@@ -137,19 +181,19 @@
 
   <footer class="footer">
     <div class="wrap footer-inner">
-      <img src="/assets/img/logo-mendatar.svg" alt="Code Caffeine" width="170" height="36" class="footer-logo">
-      <ul class="social" data-social></ul>
+      <a href="#top" class="brand"><img src="/assets/img/logo-ikon.svg" alt="" width="26" height="27">Code Caffeine</a>
+      <ul class="social" data-social hidden></ul>
       <p>Produksi dan titik ambil di Kembaran, Banyumas.<br>Kelompok Bytepreneur, Teknik Informatika UMP, 2026.</p>
     </div>
   </footer>
 
-  <!-- Bar keranjang -->
-  <div class="cartbar" data-cartbar hidden>
+  <!-- Bar pesanan -->
+  <div class="cartbar glass" data-cartbar hidden>
     <div class="cartbar-info">
       <span data-cartbar-count></span>
       <strong data-cartbar-total></strong>
     </div>
-    <button class="btn btn-primary" type="button" data-open-order>Lanjut pesan</button>
+    <button class="btn btn-solid" type="button" data-open-order>Lanjut pesan</button>
   </div>
 
   <!-- Lembar pesanan -->
@@ -159,7 +203,7 @@
       <div class="sheet-head">
         <h2 id="sheet-title">Pesananmu</h2>
         <button type="button" class="icon-btn" data-close-sheet aria-label="Tutup">
-          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
         </button>
       </div>
 
@@ -238,17 +282,17 @@
       </div>
 
       <div class="sheet-foot">
-        <button type="submit" class="btn btn-primary btn-wide" data-send>Kirim lewat WhatsApp</button>
-        <p class="foot-note" data-foot-note>Pesananmu akan terbuka di WhatsApp. Tekan kirim di sana supaya masuk ke kami.</p>
+        <button type="submit" class="btn btn-solid btn-wide" data-send>Kirim lewat WhatsApp</button>
+        <p class="foot-note">Pesananmu akan terbuka di WhatsApp. Tekan kirim di sana supaya masuk ke kami.</p>
       </div>
     </form>
 
     <div class="sent" data-sent hidden>
-      <h2 tabindex="-1">Tinggal satu langkah</h2>
-      <p>Pesananmu sudah terbuka di WhatsApp. Tekan <strong>kirim</strong> di sana supaya masuk ke kami. Kami balas untuk konfirmasi dan info pembayaran.</p>
+      <h2 tabindex="-1">Tinggal satu langkah.</h2>
+      <p data-sent-text>Pesananmu sudah terbuka di WhatsApp. Tekan <strong>kirim</strong> di sana supaya masuk ke kami. Kami balas untuk konfirmasi dan info pembayaran.</p>
       <div class="sent-actions">
-        <a class="btn btn-primary" data-wa-again href="#" target="_blank" rel="noopener">Buka WhatsApp lagi</a>
-        <button class="btn btn-ghost" type="button" data-finish>Selesai, kosongkan pesanan</button>
+        <a class="btn btn-solid" data-wa-again href="#" target="_blank" rel="noopener">Buka WhatsApp lagi</a>
+        <button class="btn btn-glass glass" type="button" data-finish>Selesai, kosongkan pesanan</button>
       </div>
     </div>
   </dialog>
