@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Code Caffeine | Es kopi pre-order, antar gratis area UMP</title>
+  <meta name="description" content="Es kopi racikan mahasiswa Teknik Informatika UMP. Pesan lewat WhatsApp sehari sebelumnya, diantar gratis ke kampus UMP dan kos sekitar. Mulai Rp7.000.">
+  <meta name="theme-color" content="#35251C">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="/favicon.png" type="image/png" sizes="32x32">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Code Caffeine">
+  <meta property="og:title" content="Code Caffeine | Es kopi pre-order, antar gratis area UMP">
+  <meta property="og:description" content="Pesan lewat WhatsApp sehari sebelumnya. Diantar gratis ke kampus UMP dan kos sekitar. Mulai Rp7.000.">
+  <meta property="og:image" content="https://codecaffeine-ump.netlify.app/og.jpg">
+  <meta property="og:url" content="https://codecaffeine-ump.netlify.app/">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="preload" href="/assets/fonts/coustard-900.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/assets/fonts/jakarta-500.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/assets/css/style.css">
+</head>
+<body>
+  <a class="skip" href="#menu">Langsung ke menu</a>
+
+  <header class="topbar" id="top">
+    <a href="#top" class="brand" aria-label="Code Caffeine, ke atas">
+      <img src="/assets/img/logo-mendatar.svg" alt="Code Caffeine" width="190" height="40">
+    </a>
+    <button class="topbar-order" type="button" data-open-order>
+      Pesanan <span class="count" data-cart-count>0</span>
+    </button>
+  </header>
+
+  <main>
+    <!-- HERO -->
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="hero-inner">
+        <div class="hero-copy">
+          <p class="console" role="status" aria-live="polite">
+            <span class="prompt" aria-hidden="true">&gt;</span>
+            <span class="msg" data-status-text>Memuat jadwal…</span>
+          </p>
+          <h1 id="hero-title">Es kopi enak, diantar sampai kampus.</h1>
+          <p class="lead">Pesan lewat WhatsApp sehari sebelumnya. Kami antar gratis ke kampus UMP dan kos sekitar, atau ambil sendiri di Kembaran.</p>
+          <div class="hero-actions">
+            <a class="btn btn-primary" href="#menu">Lihat menu</a>
+            <span class="from">Mulai <strong>Rp7.000</strong> per cup</span>
+          </div>
+        </div>
+
+        <figure class="hero-cup" aria-label="Ilustrasi Dirty Latte ukuran Large">
+          <div class="cup-stage" data-hero-cup></div>
+          <figcaption class="sticker">
+            <span class="sticker-name">Dirty Latte</span>
+            <span class="sticker-note">menu andalan kami</span>
+          </figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <!-- MENU -->
+    <section class="menu" id="menu" aria-labelledby="menu-title">
+      <div class="wrap">
+        <header class="section-head">
+          <h2 id="menu-title">Pilih minumanmu</h2>
+          <p>Semua disajikan dingin. Setiap cup dibuat dengan takaran yang sama, jadi rasanya nggak untung-untungan.</p>
+        </header>
+        <ol class="drinks" data-drinks></ol>
+        <p class="size-note">Small 12 oz, Medium 14 oz, Large 16 oz.</p>
+      </div>
+    </section>
+
+    <!-- CARA PESAN -->
+    <section class="how" aria-labelledby="how-title">
+      <div class="wrap">
+        <header class="section-head">
+          <h2 id="how-title">Cara pesan</h2>
+        </header>
+        <ol class="steps">
+          <li>
+            <h3>Pilih minuman</h3>
+            <p>Tentukan menu, ukuran, dan jumlahnya di daftar menu.</p>
+          </li>
+          <li>
+            <h3>Kirim lewat WhatsApp</h3>
+            <p>Isi nama dan cara terima, lalu pesananmu terkirim rapi ke WhatsApp kami. Pre-order ditutup pukul 20.00 sehari sebelum hari jual.</p>
+          </li>
+          <li>
+            <h3>Terima dan bayar</h3>
+            <p>Diantar ke kampus UMP atau kos sekitar tanpa ongkir, atau ambil sendiri di Kembaran. Bayar lewat transfer atau tunai.</p>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- JADWAL -->
+    <section class="schedule" aria-labelledby="schedule-title">
+      <div class="wrap">
+        <header class="section-head">
+          <h2 id="schedule-title">Jadwal minggu ini</h2>
+          <p>Kami jualan Senin, Rabu, dan Jumat. Pesanan diantar pukul 09.30–13.00. Yang datang langsung tetap dilayani selama stok ada.</p>
+        </header>
+        <ul class="week" data-week></ul>
+      </div>
+    </section>
+
+    <!-- KARTU STAMP -->
+    <section class="stamp" aria-labelledby="stamp-title">
+      <div class="wrap stamp-inner">
+        <div class="stamp-copy">
+          <h2 id="stamp-title">Beli 5 kali, gratis 1 cup</h2>
+          <p>Setiap pembelian dapat satu cap di kartu stamp. Kumpulkan lima cap, lalu tukar dengan satu cup ukuran Small gratis. Minta kartunya saat pesananmu diantar.</p>
+        </div>
+        <div class="stamp-card" aria-hidden="true">
+          <img src="/assets/img/logo-mendatar.svg" alt="" class="stamp-logo">
+          <div class="stamp-slots">
+            <span class="slot filled"></span><span class="slot filled"></span><span class="slot filled"></span><span class="slot"></span><span class="slot"></span>
+            <span class="slot free">Gratis</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TENTANG -->
+    <section class="about" aria-labelledby="about-title">
+      <div class="wrap about-inner">
+        <img src="/assets/img/logo-utama.svg" alt="" class="about-logo" width="220" height="255">
+        <div>
+          <h2 id="about-title">Dari dapur kos, untuk teman sekampus</h2>
+          <p>Code Caffeine dijalankan oleh Bytepreneur, enam mahasiswa Teknik Informatika Universitas Muhammadiyah Purwokerto. Kami meracik sendiri setiap minuman di dapur kos di Kembaran, lalu mengantarnya ke kampus.</p>
+          <p class="soon"><strong>Sedang disiapkan:</strong> Caffeine Challenge, mini game yang bisa memberi bonus atau upgrade ukuran sesuai skormu, dan poin lewat QR Code di setiap cup.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="wrap footer-inner">
+      <img src="/assets/img/logo-mendatar.svg" alt="Code Caffeine" width="170" height="36" class="footer-logo">
+      <ul class="social" data-social></ul>
+      <p>Produksi dan titik ambil di Kembaran, Banyumas.<br>Kelompok Bytepreneur, Teknik Informatika UMP, 2026.</p>
+    </div>
+  </footer>
+
+  <!-- Bar keranjang -->
+  <div class="cartbar" data-cartbar hidden>
+    <div class="cartbar-info">
+      <span data-cartbar-count></span>
+      <strong data-cartbar-total></strong>
+    </div>
+    <button class="btn btn-primary" type="button" data-open-order>Lanjut pesan</button>
+  </div>
+
+  <!-- Lembar pesanan -->
+  <dialog class="sheet" data-sheet aria-labelledby="sheet-title">
+    <form name="pesanan" method="POST" data-netlify="true" netlify-honeypot="bot-field" class="sheet-form" data-order-form novalidate>
+      <input type="hidden" name="form-name" value="pesanan">
+      <div class="sheet-head">
+        <h2 id="sheet-title">Pesananmu</h2>
+        <button type="button" class="icon-btn" data-close-sheet aria-label="Tutup">
+          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+
+      <div class="sheet-body">
+        <p class="target" data-target-day></p>
+        <ul class="cart-list" data-cart-list></ul>
+        <p class="cart-empty" data-cart-empty>Belum ada minuman. Pilih dulu dari menu.</p>
+        <p class="cart-total" data-cart-total-row><span>Total</span><strong data-cart-total></strong></p>
+
+        <fieldset class="fields" data-fields>
+          <label class="field">
+            <span>Nama</span>
+            <input name="nama" autocomplete="name" required maxlength="60" placeholder="Nama untuk pesanan">
+          </label>
+
+          <div class="field">
+            <span id="terima-label">Cara terima</span>
+            <div class="seg" role="radiogroup" aria-labelledby="terima-label">
+              <label><input type="radio" name="cara_terima" value="Diantar" checked><span>Diantar, gratis</span></label>
+              <label><input type="radio" name="cara_terima" value="Ambil sendiri"><span>Ambil di Kembaran</span></label>
+            </div>
+          </div>
+
+          <label class="field" data-lokasi-field>
+            <span>Antar ke mana?</span>
+            <input name="lokasi" maxlength="120" placeholder="Contoh: Gedung C kampus 1 UMP">
+          </label>
+
+          <label class="field">
+            <span>Jam serah terima</span>
+            <select name="jam" data-slot-select></select>
+          </label>
+
+          <div class="field">
+            <span id="bayar-label">Bayar</span>
+            <div class="seg" role="radiogroup" aria-labelledby="bayar-label">
+              <label><input type="radio" name="bayar" value="Transfer" checked><span>Transfer</span></label>
+              <label><input type="radio" name="bayar" value="Tunai"><span>Tunai</span></label>
+            </div>
+          </div>
+
+          <div class="field">
+            <span id="pernah-label">Sudah pernah beli di Code Caffeine?</span>
+            <div class="seg" role="radiogroup" aria-labelledby="pernah-label">
+              <label><input type="radio" name="pernah_beli" value="Belum" checked><span>Belum</span></label>
+              <label><input type="radio" name="pernah_beli" value="Sudah"><span>Sudah</span></label>
+            </div>
+          </div>
+
+          <label class="field">
+            <span>Tahu Code Caffeine dari mana? <em>(opsional)</em></span>
+            <select name="sumber">
+              <option value="">Pilih salah satu</option>
+              <option>Instagram</option>
+              <option>TikTok</option>
+              <option>Story atau grup WhatsApp</option>
+              <option>Teman</option>
+              <option>Poster</option>
+              <option>Lainnya</option>
+            </select>
+          </label>
+
+          <label class="field">
+            <span>Catatan <em>(opsional)</em></span>
+            <textarea name="catatan" rows="2" maxlength="200" placeholder="Contoh: es sedikit"></textarea>
+          </label>
+
+          <p class="hp"><label>Jangan diisi <input name="bot-field" tabindex="-1" autocomplete="off"></label></p>
+          <input type="hidden" name="untuk_hari">
+          <input type="hidden" name="pesanan">
+          <input type="hidden" name="jumlah_cup">
+          <input type="hidden" name="total">
+        </fieldset>
+
+        <p class="form-error" data-form-error role="alert" hidden></p>
+      </div>
+
+      <div class="sheet-foot">
+        <button type="submit" class="btn btn-primary btn-wide" data-send>Kirim lewat WhatsApp</button>
+        <p class="foot-note" data-foot-note>Pesananmu akan terbuka di WhatsApp. Tekan kirim di sana supaya masuk ke kami.</p>
+      </div>
+    </form>
+
+    <div class="sent" data-sent hidden>
+      <h2 tabindex="-1">Tinggal satu langkah</h2>
+      <p>Pesananmu sudah terbuka di WhatsApp. Tekan <strong>kirim</strong> di sana supaya masuk ke kami. Kami balas untuk konfirmasi dan info pembayaran.</p>
+      <div class="sent-actions">
+        <a class="btn btn-primary" data-wa-again href="#" target="_blank" rel="noopener">Buka WhatsApp lagi</a>
+        <button class="btn btn-ghost" type="button" data-finish>Selesai, kosongkan pesanan</button>
+      </div>
+    </div>
+  </dialog>
+
+  <script src="/assets/js/config.js"></script>
+  <script src="/assets/js/app.js"></script>
+</body>
+</html>
