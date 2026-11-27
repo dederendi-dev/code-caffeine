@@ -29,8 +29,7 @@
   --glow-a: rgba(201, 138, 76, .30);
   --glow-b: rgba(138, 63, 31, .30);
   --glow-c: rgba(110, 60, 30, .24);
-  --cup-edge: rgba(255, 255, 255, .5);
-  --cup-rim: rgba(255, 255, 255, .8);
+  --cup-shadow: rgba(0, 0, 0, .6);
   --grain: .05;
   --ok: #7DDC8E;
   --warn: #F2B46C;
@@ -66,8 +65,7 @@
     --glow-a: rgba(183, 119, 63, .34);
     --glow-b: rgba(170, 100, 55, .20);
     --glow-c: rgba(183, 119, 63, .16);
-    --cup-edge: rgba(70, 40, 20, .30);
-    --cup-rim: rgba(255, 255, 255, .95);
+    --cup-shadow: rgba(70, 38, 16, .32);
     --grain: .035;
     --ok: #2F8F4C;
     --warn: #B86A1E;
@@ -114,7 +112,6 @@ a { color: inherit; text-decoration: none; }
 button, input, select, textarea { font: inherit; color: inherit; }
 button { cursor: pointer; }
 :focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; border-radius: 10px; }
-.defs { position: absolute; width: 0; height: 0; overflow: hidden; }
 .skip { position: absolute; left: -999px; top: 10px; z-index: 100; padding: 10px 16px; border-radius: 12px; background: var(--btn-bg); color: var(--btn-ink); }
 .skip:focus { left: 12px; }
 .wrap { max-width: var(--wrap); margin: 0 auto; padding: 0 24px; }
@@ -188,7 +185,7 @@ h1 {
 .hero-sub { margin: 22px auto 0; max-width: 34em; font-size: clamp(16px, 1.6vw, 19px); color: var(--ink2); text-wrap: pretty; }
 .hero-actions { margin-top: 30px; display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; }
 .hero-cup { position: relative; width: min(360px, 70vw); margin: 34px auto 0; }
-.cup-art svg { width: 100%; height: auto; overflow: visible; }
+.cup-art { height: calc(min(360px, 70vw) * 1.5); }
 .callout {
   position: absolute; padding: 11px 15px; border-radius: 18px;
   font-size: 12.5px; line-height: 1.35; color: var(--ink2); text-align: left; white-space: nowrap;
@@ -236,7 +233,18 @@ h3 { font-family: var(--f-display); font-weight: 600; letter-spacing: -.02em; }
   box-shadow: inset 0 1px 0 var(--glass-hi);
 }
 .card-cup { height: 230px; display: flex; align-items: flex-end; justify-content: center; margin-bottom: 14px; }
-.card-cup svg { height: 100%; width: auto; overflow: visible; }
+/* Foto minuman: tinggi tetap, ukuran S/M/L = skala dari dasar gelas */
+.cup-photo {
+  position: relative; height: 100%;
+  display: flex; align-items: flex-end; justify-content: center;
+  transform: scale(var(--s, 1)); transform-origin: 50% 100%;
+  transition: transform .45s cubic-bezier(.3, 1.3, .5, 1);
+}
+.cup-photo img { position: relative; height: 100%; width: auto; max-width: none; user-select: none; -webkit-user-drag: none; }
+.cup-shadow {
+  position: absolute; left: 50%; bottom: -3%; width: 74%; height: 8%; transform: translateX(-50%);
+  border-radius: 50%; background: radial-gradient(closest-side, var(--cup-shadow), transparent);
+}
 .card-title { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .card h3 { font-size: 24px; line-height: 1.15; }
 .badge { padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; color: var(--accent); border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent); }
@@ -254,9 +262,6 @@ h3 { font-family: var(--f-display); font-weight: 600; letter-spacing: -.02em; }
 .card .btn { height: 44px; }
 .card .btn.added { background: var(--ok); color: #0D1A10; }
 .in-cart { margin-top: 10px; font-size: 13px; color: var(--accent); font-weight: 600; min-height: 1.2em; }
-.cupgrp { transform-box: view-box; transform-origin: 200px 506px; transition: transform .45s cubic-bezier(.3, 1.3, .5, 1); }
-.cup-edge { stroke: var(--cup-edge); }
-.cup-rim { stroke: var(--cup-rim); }
 
 /* ---------- Bento & langkah ---------- */
 .bento, .steps { display: grid; gap: 14px; }

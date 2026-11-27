@@ -139,60 +139,17 @@
     $('[data-schedule-note]').textContent = rutin + note;
   }
 
-  /* ================= Gambar gelas ================= */
-  let uid = 0;
-  const SCALE = { S: [0.9, 0.82], M: [0.95, 0.91], L: [1, 1] };
-
-  function cupSVG(drink, size) {
-    const id = 'g' + (++uid);
-    const g = drink.gelas;
-    const stops = g.cairan.map(([o, c]) => `<stop offset="${o}" stop-color="${c}"/>`).join('');
-    const [sx, sy] = SCALE[size];
+  /* ================= Foto minuman ================= */
+  // Foto asli tiap menu (assets/img/menu/<id>.webp). Ukuran dipilih = foto diperbesar/diperkecil.
+  const SCALE = { S: 0.8, M: 0.9, L: 1 };
+  function cupPhoto(drink, size, hero) {
     const u = sizeOf(size);
-    const iceOpacity = g.bening ? 0.8 : 0.55;
-    const foam = g.busa
-      ? `<g clip-path="url(#cc-liquid)">${Array.from({ length: 14 }, (_, i) => `<circle cx="${80 + i * 18 + (i % 2) * 6}" cy="${152 + (i % 3) * 5}" r="${10 + (i % 4) * 3}" fill="${g.permukaan[0]}" opacity=".9"/>`).join('')}</g>`
-      : '';
-    return `<svg viewBox="40 40 320 500" role="img" aria-label="${drink.nama}, ${u.nama} ${u.oz} oz" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <linearGradient id="${id}l" x1="0" y1="150" x2="0" y2="510" gradientUnits="userSpaceOnUse">${stops}</linearGradient>
-        <radialGradient id="${id}s" cx=".45" cy=".4" r=".7"><stop offset="0" stop-color="${g.permukaan[0]}"/><stop offset="1" stop-color="${g.permukaan[1]}"/></radialGradient>
-      </defs>
-      <ellipse cx="200" cy="520" rx="150" ry="20" fill="url(#cc-shadow)"/>
-      <g class="cupgrp" data-cupgrp style="transform:scale(${sx},${sy})">
-        <g clip-path="url(#cc-liquid)">
-          <rect x="40" y="120" width="320" height="420" fill="url(#${id}l)" ${g.bening ? '' : 'filter="url(#cc-marble)"'}/>
-          <g opacity="${iceOpacity}">
-            <rect x="96" y="170" width="78" height="70" rx="14" transform="rotate(-14 135 205)" fill="url(#cc-ice)" stroke="#fff" stroke-opacity=".5"/>
-            <rect x="182" y="188" width="82" height="72" rx="15" transform="rotate(10 223 224)" fill="url(#cc-ice)" stroke="#fff" stroke-opacity=".5"/>
-            <rect x="236" y="250" width="66" height="60" rx="13" transform="rotate(-8 269 280)" fill="url(#cc-ice)" stroke="#fff" stroke-opacity=".45"/>
-            <rect x="118" y="262" width="70" height="62" rx="13" transform="rotate(18 153 293)" fill="url(#cc-ice)" stroke="#fff" stroke-opacity=".4"/>
-          </g>
-        </g>
-        <ellipse cx="200" cy="150" rx="132" ry="20" fill="url(#${id}s)"/>
-        ${foam}
-        <ellipse cx="180" cy="146" rx="60" ry="6" fill="#fff" opacity=".08"/>
-        <path d="M118,132 q4,-26 30,-24 l42,4 q22,3 18,26 l-3,14 q-60,10 -88,-6 z" fill="url(#cc-ice)" stroke="#fff" stroke-opacity=".8" stroke-width="1.2"/>
-        <path d="M206,140 q2,-24 26,-25 l40,1 q20,2 18,22 l-2,14 q-50,8 -82,-2 z" fill="url(#cc-ice)" stroke="#fff" stroke-opacity=".75" stroke-width="1.2"/>
-        <path d="M128,118 l40,-2 M216,124 l38,-3" stroke="#fff" stroke-opacity=".9" stroke-width="2" stroke-linecap="round"/>
-        <g clip-path="url(#cc-body)">
-          <rect x="40" y="60" width="320" height="480" fill="#fff" opacity=".06"/>
-          <rect x="40" y="60" width="320" height="480" fill="url(#cc-edge)"/>
-          <path d="M86,110 L118,490" stroke="url(#cc-sheen)" stroke-width="22" stroke-linecap="round" opacity=".7"/>
-          <path d="M100,110 L128,480" stroke="#fff" stroke-opacity=".35" stroke-width="3" stroke-linecap="round"/>
-          <path d="M316,120 L290,480" stroke="#fff" stroke-opacity=".18" stroke-width="8" stroke-linecap="round" filter="url(#cc-blur)"/>
-          <g filter="url(#cc-soft)" fill="url(#cc-drop)">
-            <ellipse cx="270" cy="330" rx="4" ry="5"/><ellipse cx="252" cy="372" rx="3" ry="4"/><ellipse cx="282" cy="402" rx="5" ry="6.5"/>
-            <ellipse cx="148" cy="404" rx="3.5" ry="4.5"/><ellipse cx="166" cy="438" rx="2.5" ry="3"/><ellipse cx="238" cy="452" rx="4" ry="5"/>
-            <ellipse cx="200" cy="420" rx="2.5" ry="3.2"/><ellipse cx="128" cy="360" rx="2.8" ry="3.6"/><ellipse cx="290" cy="290" rx="2.6" ry="3.2"/>
-          </g>
-        </g>
-        <path class="cup-edge" d="M62,92 L102,506 A98,15 0 0 0 298,506 L338,92" fill="none" stroke-width="1.6"/>
-        <ellipse class="cup-rim" cx="200" cy="92" rx="138" ry="22" fill="none" stroke-width="2.2"/>
-        <path d="M90,84 A138,22 0 0 1 250,72" fill="none" stroke="#fff" stroke-opacity=".9" stroke-width="2.5" stroke-linecap="round"/>
-        <ellipse class="cup-edge" cx="200" cy="506" rx="98" ry="15" fill="none" stroke-width="1.4"/>
-      </g>
-    </svg>`;
+    const src = `/assets/img/menu/${drink.id}${hero ? '-besar' : ''}.webp`;
+    const load = hero ? 'fetchpriority="high"' : 'loading="lazy"';
+    return `<div class="cup-photo" data-cupgrp style="--s:${SCALE[size]}">
+        <span class="cup-shadow" aria-hidden="true"></span>
+        <img src="${src}" alt="${drink.nama}, ${u.nama} ${u.oz} oz" ${load} decoding="async" draggable="false">
+      </div>`;
   }
 
   /* ================= Keranjang ================= */
@@ -231,7 +188,7 @@
   function renderMenu() {
     $('[data-drinks]').innerHTML = C.menu.map(d => `
       <article class="card${d.andalan ? ' featured' : ''}" data-drink="${d.id}">
-        <div class="card-cup">${cupSVG(d, 'M')}</div>
+        <div class="card-cup">${cupPhoto(d, 'M')}</div>
         <div class="card-title"><h3>${d.nama}</h3>${d.andalan ? '<span class="badge">Andalan</span>' : ''}</div>
         <p class="card-desc">${d.deskripsi}</p>
         <fieldset class="sizes">
@@ -250,9 +207,8 @@
       card.addEventListener('change', e => {
         if (!e.target.name || !e.target.name.startsWith('size-')) return;
         const size = e.target.value;
-        const [sx, sy] = SCALE[size];
-        $('[data-cupgrp]', card).style.transform = `scale(${sx},${sy})`;
-        $('.card-cup svg', card).setAttribute('aria-label', `${d.nama}, ${sizeOf(size).nama} ${sizeOf(size).oz} oz`);
+        $('[data-cupgrp]', card).style.setProperty('--s', SCALE[size]);
+        $('.card-cup img', card).alt = `${d.nama}, ${sizeOf(size).nama} ${sizeOf(size).oz} oz`;
         $('[data-price]', card).innerHTML = priceHTML(d, size);
       });
       $('[data-add]', card).addEventListener('click', e => {
@@ -509,7 +465,7 @@
   }
 
   /* ================= Mulai ================= */
-  $('[data-hero-cup]').innerHTML = cupSVG(drinkOf('dirty-latte'), 'L');
+  $('[data-hero-cup]').innerHTML = cupPhoto(drinkOf('dirty-latte'), 'L', true);
   renderMenu();
   renderStatus();
   renderWeek();
