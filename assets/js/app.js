@@ -23,38 +23,69 @@
     return `${HARI[d.getUTCDay()]}, ${d.getUTCDate()} ${BULAN[d.getUTCMonth()]}${withYear ? ' ' + d.getUTCFullYear() : ''}`;
   };
 
-  const PO_BUKA = toMin(C.preorder.buka), PO_TUTUP = toMin(C.preorder.tutup);
-  const ST_MULAI = toMin(C.serahTerima.mulai), ST_SELESAI = toMin(C.serahTerima.selesai);
+  const parseWIB = str => {
+    const [d, t = '00:00'] = str.split(' ');
+    const [y, m, dd] = d.split('-').map(Number);
+    const [h, mi] = t.split(':').map(Number);
+    return Date.UTC(y, m - 1, dd, h, mi);
+  };
+  const jamMs = ms => { const d = new Date(ms); return `${String(d.getUTCHours()).padStart(2, '0')}.${String(d.getUTCMinutes()).padStart(2, '0')}`; };
 
-  // Hari jual terdekat yang pre-ordernya belum ditutup
-  function targetDay(now) {
+  // Semua hari jual di sekitar sekarang: jadwal rutin (hariJual) + jadwal khusus
+  function events(now) {
     const today = startOfDay(now);
-    for (let i = 0; i < 15; i++) {
+    const list = [];
+    for (let i = -1; i < 15; i++) {
       const d = today + i * DAY;
       if (!C.hariJual.includes(dow(d))) continue;
-      if (now.getTime() < d - DAY + PO_TUTUP * 60000) return d;
+      list.push({
+        day: d,
+        buka: d - DAY + toMin(C.preorder.buka) * 60000,
+        tutup: d - DAY + toMin(C.preorder.tutup) * 60000,
+        mulai: d + toMin(C.serahTerima.mulai) * 60000,
+        selesai: d + toMin(C.serahTerima.selesai) * 60000,
+        slot: C.slotSerahTerima
+      });
     }
-    return null;
+    (C.jadwalKhusus || []).forEach(k => {
+      const d = parseWIB(k.tanggal);
+      list.push({
+        day: d,
+        buka: parseWIB(k.poBuka),
+        tutup: parseWIB(k.poTutup),
+        mulai: d + toMin(k.serahTerima.mulai) * 60000,
+        selesai: d + toMin(k.serahTerima.selesai) * 60000,
+        slot: k.slot || C.slotSerahTerima
+      });
+    });
+    return list.filter(e => e.selesai > now.getTime() - DAY).sort((a, b) => a.day - b.day);
   }
+
+  // Hari jual terdekat yang pre-ordernya sedang dibuka atau belum ditutup
+  const targetEvent = now => events(now).find(e => now.getTime() < e.tutup) || null;
+  // "pukul 12.00" kalau hari ini, "Minggu 12.00" kalau hari lain
+  const kapan = (ms, now) => (startOfDay(new Date(ms)) === startOfDay(now) ? `pukul ${jamMs(ms)}` : `${HARI[dow(ms)]} ${jamMs(ms)}`);
 
   function status(now) {
     if (C.statusManual) {
       return { state: 'manual', text: [C.statusManual.judul, C.statusManual.pesan].filter(Boolean).join('. ') };
     }
-    const today = startOfDay(now);
-    const mins = now.getUTCHours() * 60 + now.getUTCMinutes();
-    if (C.hariJual.includes(dow(today)) && mins < ST_SELESAI) {
-      return mins < ST_MULAI
-        ? { state: 'jual', text: `Hari ini hari jual. Pesanan diantar mulai ${jam(C.serahTerima.mulai)}` }
-        : { state: 'jual', text: `Hari ini hari jual. Pesanan sedang diantar sampai ${jam(C.serahTerima.selesai)}` };
+    const t = now.getTime();
+    const ev = events(now);
+    const open = ev.find(e => t >= e.buka && t < e.tutup);
+    if (open) {
+      const untuk = open.day === startOfDay(now) ? 'hari ini' : tanggal(open.day);
+      return { state: 'open', text: `Pre-order untuk ${untuk} dibuka sampai ${kapan(open.tutup, now)}` };
     }
-    const t = targetDay(now);
-    if (t === null) return { state: 'soon', text: 'Jadwal jualan berikutnya belum tersedia' };
-    const buka = t - DAY + PO_BUKA * 60000, tutup = t - DAY + PO_TUTUP * 60000;
-    if (now.getTime() >= buka && now.getTime() < tutup) {
-      return { state: 'open', text: `Pre-order untuk ${tanggal(t)} dibuka sampai ${jam(C.preorder.tutup)}` };
+    const selling = ev.find(e => e.day === startOfDay(now) && t >= e.tutup && t < e.selesai);
+    if (selling) {
+      return t < selling.mulai
+        ? { state: 'jual', text: `Hari ini hari jual. Pesanan diantar mulai ${jamMs(selling.mulai)}` }
+        : { state: 'jual', text: `Hari ini hari jual. Pesanan sedang diantar sampai ${jamMs(selling.selesai)}` };
     }
-    return { state: 'soon', text: `Pre-order untuk ${tanggal(t)} dibuka ${HARI[dow(buka)]} ${jam(C.preorder.buka)}` };
+    const next = ev.find(e => t < e.buka);
+    if (next) return { state: 'soon', text: `Pre-order untuk ${tanggal(next.day)} dibuka ${kapan(next.buka, now)}` };
+    return { state: 'soon', text: 'Jadwal jualan berikutnya segera diumumkan' };
   }
 
   function renderStatus() {
@@ -64,26 +95,46 @@
   }
 
   function renderWeek() {
-    const today = startOfDay(nowWIB());
+    const now = nowWIB();
+    const today = startOfDay(now);
+    const ev = events(now);
     const html = [];
     for (let i = 0; i < 7; i++) {
       const d = today + i * DAY;
-      const w = dow(d);
-      const besok = dow(d + DAY);
+      const jual = ev.find(e => e.day === d);
+      const po = ev.find(e => e.day !== d && e.buka < d + DAY && e.tutup > d);
       let cls = 'libur', info = 'Libur';
-      if (C.hariJual.includes(w)) {
+      if (jual) {
         cls = 'jual';
-        info = `Hari jual. Antar <span class="nw">${jam(C.serahTerima.mulai)}–${jam(C.serahTerima.selesai)}</span>`;
-      } else if (C.hariJual.includes(besok)) {
+        info = `Hari jual. Antar <span class="nw">${jamMs(jual.mulai)}–${jamMs(jual.selesai)}</span>`;
+        if (jual.tutup > d) info += `. Pre-order sampai <span class="nw">${jamMs(jual.tutup)}</span>`;
+      } else if (po) {
         cls = 'po';
-        info = `Pre-order <span class="nw">${jam(C.preorder.buka)}–${jam(C.preorder.tutup)}</span> untuk ${HARI[besok]}`;
+        const dari = Math.max(po.buka, d), sampai = Math.min(po.tutup, d + DAY);
+        info = (dari === d && sampai === d + DAY)
+          ? `Pre-order dibuka untuk ${HARI[dow(po.day)]}`
+          : `Pre-order <span class="nw">${jamMs(dari)}–${jamMs(sampai)}</span> untuk ${HARI[dow(po.day)]}`;
       }
       const dt = new Date(d);
       html.push(`<li class="day ${cls}${i === 0 ? ' today' : ''}">
-        <span class="day-name">${HARI[w]}${i === 0 ? '<span class="today-badge">Hari ini</span>' : ''}<small>${dt.getUTCDate()} ${BULAN[dt.getUTCMonth()].slice(0, 3)}</small></span>
+        <span class="day-name">${HARI[dow(d)]}${i === 0 ? '<span class="today-badge">Hari ini</span>' : ''}<small>${dt.getUTCDate()} ${BULAN[dt.getUTCMonth()].slice(0, 3)}</small></span>
         <span class="day-info">${info}</span></li>`);
     }
     $('[data-week]').innerHTML = html.join('');
+
+    // Keterangan di atas jadwal
+    const rutin = C.hariJual.length ? `Jadwal rutin kami: ${C.hariJual.map(w => HARI[w]).join(', ')}. ` : '';
+    const hariIni = ev.find(e => e.day === today && now.getTime() >= e.tutup && now.getTime() < e.selesai);
+    const next = targetEvent(now);
+    let note;
+    if (hariIni) {
+      note = `Hari ini jualan, pesanan diantar ${jamMs(hariIni.mulai)}–${jamMs(hariIni.selesai)}. Pre-order hari ini sudah ditutup, tapi yang datang langsung tetap dilayani selama stok ada.`;
+    } else if (next) {
+      note = `Jualan berikutnya ${tanggal(next.day)}: pre-order sampai ${HARI[dow(next.tutup)]} ${jamMs(next.tutup)}, diantar ${jamMs(next.mulai)}–${jamMs(next.selesai)}. Yang datang langsung tetap dilayani selama stok ada.`;
+    } else {
+      note = 'Jadwal jualan berikutnya segera diumumkan lewat WhatsApp.';
+    }
+    $('[data-schedule-note]').textContent = rutin + note;
   }
 
   /* ================= Gambar gelas ================= */
@@ -246,8 +297,11 @@
   function openSheet() {
     lastFocus = document.activeElement;
     form.hidden = false; sent.hidden = true;
-    const t = targetDay(nowWIB());
-    $('[data-target-day]').textContent = t ? `Untuk hari jual ${tanggal(t, true)}` : '';
+    const ev = targetEvent(nowWIB());
+    $('[data-target-day]').textContent = ev
+      ? `Untuk hari jual ${tanggal(ev.day, true)}, diantar ${jamMs(ev.mulai)}–${jamMs(ev.selesai)}`
+      : 'Pre-order sedang ditutup. Info jualan berikutnya kami umumkan lewat WhatsApp.';
+    $('[data-slot-select]').innerHTML = (ev ? ev.slot : C.slotSerahTerima).map(x => `<option>${x}</option>`).join('') + '<option>Kapan saja di jam antar</option>';
     hideError();
     document.documentElement.classList.add('lock');
     sheet.showModal();
@@ -267,7 +321,6 @@
     if (b) changeQty(b.dataset.id, b.dataset.size, Number(b.dataset.qty));
   });
 
-  $('[data-slot-select]').innerHTML = C.slotSerahTerima.map(s => `<option>${s}</option>`).join('') + '<option>Kapan saja di jam antar</option>';
 
   function syncLokasi() {
     $('[data-lokasi-field]').hidden = form.elements.cara_terima.value !== 'Diantar';
@@ -327,7 +380,9 @@
     if (!v.nama) return showError('Tulis nama untuk pesanan ini.', f.nama);
     if (v.cara_terima === 'Diantar' && !v.lokasi) return showError('Tulis lokasi antar, misalnya gedung di kampus UMP atau nama kos.', f.lokasi);
 
-    const t = targetDay(nowWIB());
+    const ev = targetEvent(nowWIB());
+    if (!ev) return showError('Pre-order sedang ditutup. Info jualan berikutnya kami umumkan lewat WhatsApp.');
+    const t = ev.day;
     const msg = buildMessage(v, t);
 
     // Catatan pesanan untuk kelompok (Netlify Forms). Gagal mencatat tidak menghalangi pesanan.

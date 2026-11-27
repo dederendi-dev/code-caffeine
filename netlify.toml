@@ -19,3 +19,12 @@
   for = "/assets/img/*"
   [headers.values]
     Cache-Control = "public, max-age=604800"
+
+# QR "Caffeine Challenge" di poster mengarah ke /main.
+# Selama game belum jadi, arahkan sementara ke bagian "Sedang disiapkan".
+# Hapus aturan ini setelah halaman /main (game) dibuat.
+[[redirects]]
+  from = "/main"
+  to = "/#tentang"
+  status = 302
+  force = false

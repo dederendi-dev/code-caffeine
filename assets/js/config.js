@@ -7,7 +7,7 @@
 window.CC_CONFIG = {
   // Nomor WhatsApp tujuan pesanan. Format 62xxxxxxxxxx (tanpa +, spasi, atau 0 di depan).
   // Selama kosong, tombol pesan hanya menyalin teks pesanan.
-  whatsapp: '',
+  whatsapp: '6285604504216',
 
   // Username tanpa @. Biarkan kosong kalau akunnya belum dibuat (ikon tidak ditampilkan).
   instagram: '',
@@ -18,11 +18,24 @@ window.CC_CONFIG = {
   // Biarkan null kalau jadwal normal.
   statusManual: null,
 
-  // Jadwal (sesuai Rencana Praktik Usaha di laporan UTS)
-  hariJual: [1, 3, 5],                 // 0 Minggu, 1 Senin, ... 6 Sabtu
+  // JADWAL RUTIN (sesuai Rencana Praktik Usaha di laporan UTS)
+  // Sementara dimatikan karena jualan mengikuti jadwal khusus di bawah.
+  // Untuk menyalakan lagi: hariJual: [1, 3, 5]   (0 Minggu, 1 Senin, ... 6 Sabtu)
+  hariJual: [],
   preorder: { buka: '08:00', tutup: '20:00' },   // dibuka H-1
   serahTerima: { mulai: '09:30', selesai: '13:00' },
   slotSerahTerima: ['09.30–10.30', '10.30–11.30', '11.30–13.00'],
+
+  // JADWAL KHUSUS: hari jual di luar jadwal rutin. Waktu dalam WIB, format 'YYYY-MM-DD HH:MM'.
+  jadwalKhusus: [
+    {
+      tanggal: '2026-11-29',                 // Minggu
+      poBuka: '2026-11-27 00:00',
+      poTutup: '2026-11-29 12:00',
+      serahTerima: { mulai: '15:00', selesai: '18:00' },
+      slot: ['15.00–16.00', '16.00–17.00', '17.00–18.00']
+    }
+  ],
 
   areaAntar: 'kampus UMP dan kos sekitar',
   lokasiAmbil: 'Kembaran',
