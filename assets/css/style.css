@@ -300,6 +300,11 @@ h3 { font-family: var(--f-display); font-weight: 600; letter-spacing: -.02em; }
 .slot { aspect-ratio: 1; border-radius: 50%; border: 1.5px dashed var(--line-strong); }
 .slot.on { border: 0; background: url("/assets/img/logo-ikon.svg") center 46% / 66% no-repeat, color-mix(in srgb, var(--accent) 16%, transparent); }
 .slot.free { border: 1.5px solid var(--accent); display: grid; place-items: center; font-size: 10.5px; font-weight: 700; color: var(--accent); }
+.rules { margin-top: 18px; display: grid; gap: 10px; padding: 0; list-style: none; }
+.rules li { position: relative; padding-left: 22px; color: var(--ink2); font-size: 15.5px; text-wrap: pretty; }
+.rules li::before { content: ""; position: absolute; left: 2px; top: .62em; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+.rules b, .later b { color: var(--ink); font-weight: 600; }
+.head p.later { margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--line); font-size: 15px; }
 .soon { padding: 26px; border-radius: 26px; }
 .soon h3 { font-size: 20px; }
 .soon p { margin-top: 10px; color: var(--ink2); }
@@ -349,6 +354,7 @@ h3 { font-family: var(--f-display); font-weight: 600; letter-spacing: -.02em; }
 .stepper button:hover { background: var(--line); }
 .stepper output { min-width: 24px; text-align: center; font-weight: 700; font-variant-numeric: tabular-nums; }
 .cart-empty { padding: 18px 0; color: var(--ink2); }
+.cart-disc { display: flex; justify-content: space-between; gap: 12px; padding: 12px 0 0; font-size: 14px; font-weight: 600; color: var(--accent); font-variant-numeric: tabular-nums; }
 .cart-total { display: flex; justify-content: space-between; align-items: baseline; padding: 14px 0 4px; }
 .cart-total strong { font-family: var(--f-display); font-size: 24px; letter-spacing: -.02em; }
 .fields { border: 0; padding: 0; margin: 16px 0 0; display: grid; gap: 16px; min-width: 0; }
@@ -365,6 +371,13 @@ h3 { font-family: var(--f-display); font-weight: 600; letter-spacing: -.02em; }
 .field input:focus, .field select:focus, .field textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 30%, transparent); }
 .field input::placeholder, .field textarea::placeholder { color: var(--ink3); }
 .field [aria-invalid="true"] { border-color: #E5484D; }
+.hint { font-size: 13px; color: var(--ink3); }
+.hint:empty { display: none; }
+.check { display: flex; gap: 12px; align-items: flex-start; padding: 13px 14px; border-radius: 16px; background: var(--seg-bg); cursor: pointer; }
+.check input { flex: none; width: 22px; height: 22px; margin: 1px 0 0; accent-color: var(--accent); }
+.check span { display: grid; gap: 2px; font-size: 13.5px; color: var(--ink2); }
+.check b { font-size: 14.5px; font-weight: 600; color: var(--ink); }
+.seg.seg-3 { grid-template-columns: repeat(3, 1fr); }
 .seg { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; border-radius: 16px; background: var(--seg-bg); }
 .seg label { position: relative; }
 .seg input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
@@ -378,6 +391,8 @@ h3 { font-family: var(--f-display); font-weight: 600; letter-spacing: -.02em; }
 .foot-note { margin-top: 10px; font-size: 13px; color: var(--ink3); text-align: center; }
 .sent { padding: 30px 24px calc(30px + env(safe-area-inset-bottom)); display: grid; gap: 14px; }
 .sent p { color: var(--ink2); }
+.sent .sent-help { font-size: 14px; color: var(--ink3); }
+.foot-note a { color: var(--accent); font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }
 .sent-actions { display: grid; gap: 10px; margin-top: 8px; }
 
 /* ---------- Layar lebar ---------- */

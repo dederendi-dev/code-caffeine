@@ -61,8 +61,10 @@
     return list.filter(e => e.selesai > now.getTime() - DAY).sort((a, b) => a.day - b.day);
   }
 
-  // Hari jual terdekat yang pre-ordernya sedang dibuka atau belum ditutup
+  // Hari jual terdekat yang pre-ordernya belum ditutup (untuk keterangan jadwal)
   const targetEvent = now => events(now).find(e => now.getTime() < e.tutup) || null;
+  // Hari jual yang pre-ordernya SEDANG dibuka. Form hanya menerima pesanan di jendela ini.
+  const openEvent = now => events(now).find(e => now.getTime() >= e.buka && now.getTime() < e.tutup) || null;
   // "pukul 12.00" kalau hari ini, "Minggu 12.00" kalau hari lain
   const kapan = (ms, now) => (startOfDay(new Date(ms)) === startOfDay(now) ? `pukul ${jamMs(ms)}` : `${HARI[dow(ms)]} ${jamMs(ms)}`);
 
@@ -202,6 +204,14 @@
   const cartCount = () => cart.reduce((a, i) => a + i.qty, 0);
   const cartTotal = () => cart.reduce((a, i) => a + i.qty * priceOf(i), 0);
 
+  /* Kartu stamp: 5 cap = 1 cup Small gratis (menu bebas). Diverifikasi dengan kartu fisik saat serah terima. */
+  const form = $('[data-order-form]');
+  const wantsStamp = () => form.elements.pernah_beli.value === 'Sudah' && form.elements.tukar_stamp.checked;
+  // Minuman Small termahal di pesanan yang digratiskan
+  const stampItem = () => cart.filter(i => i.size === 'S').sort((a, b) => priceOf(b) - priceOf(a))[0] || null;
+  const discount = () => (wantsStamp() && stampItem() ? priceOf(stampItem()) : 0);
+  const netTotal = () => cartTotal() - discount();
+
   function addToCart(id, size) {
     const found = cart.find(i => i.id === id && i.size === size);
     if (found) found.qty += 1; else cart.push({ id, size, qty: 1 });
@@ -259,7 +269,6 @@
 
   /* ================= Lembar pesanan ================= */
   const sheet = $('[data-sheet]');
-  const form = $('[data-order-form]');
   const sent = $('[data-sent]');
   let lastFocus = null;
 
@@ -289,19 +298,56 @@
     }).join('');
     $('[data-cart-empty]').hidden = n > 0;
     $('[data-cart-total-row]').hidden = n === 0;
-    $('[data-cart-total]').textContent = rupiah(cartTotal());
+    $('[data-cart-total]').textContent = rupiah(netTotal());
     $('[data-fields]').disabled = n === 0;
-    $('[data-send]').disabled = n === 0;
+
+    // Kartu stamp
+    const stampOn = form.elements.pernah_beli.value === 'Sudah';
+    $('[data-stamp-field]').hidden = !stampOn;
+    const si = stampItem();
+    const disc = $('[data-cart-disc]');
+    disc.hidden = !(n > 0 && wantsStamp() && si);
+    if (si) {
+      $('[data-cart-disc-label]').textContent = `Kartu stamp: ${drinkOf(si.id).nama} Small gratis`;
+      $('[data-cart-disc-value]').textContent = '−' + rupiah(priceOf(si));
+    }
+    $('[data-stamp-hint]').textContent = wantsStamp()
+      ? (si ? 'Jangan lupa tunjukkan kartunya saat serah terima. Kalau kartu belum penuh, bayar harga normal.' : 'Tambahkan satu minuman ukuran Small dari menu untuk ditukar.')
+      : '';
+
+    // Tombol kirim hanya aktif saat pre-order dibuka
+    const open = openEvent(nowWIB());
+    const send = $('[data-send]');
+    send.disabled = n === 0 || !open;
+    send.textContent = open ? 'Kirim lewat WhatsApp' : 'Pre-order sedang ditutup';
+    $('[data-foot-note]').innerHTML = open
+      ? 'Pesananmu akan terbuka di WhatsApp. Tekan kirim di sana supaya masuk ke kami.'
+      : (C.whatsapp ? `Mau tanya stok atau jadwal? <a href="https://wa.me/${C.whatsapp}" target="_blank" rel="noopener">Chat kami di WhatsApp</a>.` : 'Info jualan berikutnya kami umumkan lewat WhatsApp.');
+  }
+
+  // Keterangan kenapa pre-order tidak bisa dikirim sekarang
+  function closedText(now) {
+    const t = now.getTime();
+    const ev = events(now);
+    const today = ev.find(e => e.day === startOfDay(now) && t >= e.tutup && t < e.selesai);
+    if (today) return `Pre-order untuk hari ini sudah ditutup ${kapan(today.tutup, now)}. Mau beli langsung? Chat kami untuk cek stok.`;
+    const next = ev.find(e => t < e.buka);
+    if (next) return `Pre-order untuk ${tanggal(next.day)} dibuka ${kapan(next.buka, now)}. Menu yang kamu pilih tetap tersimpan.`;
+    return 'Pre-order sedang ditutup. Info jualan berikutnya kami umumkan lewat WhatsApp.';
   }
 
   function openSheet() {
     lastFocus = document.activeElement;
     form.hidden = false; sent.hidden = true;
-    const ev = targetEvent(nowWIB());
+    const now = nowWIB();
+    const ev = openEvent(now);
     $('[data-target-day]').textContent = ev
-      ? `Untuk hari jual ${tanggal(ev.day, true)}, diantar ${jamMs(ev.mulai)}–${jamMs(ev.selesai)}`
-      : 'Pre-order sedang ditutup. Info jualan berikutnya kami umumkan lewat WhatsApp.';
-    $('[data-slot-select]').innerHTML = (ev ? ev.slot : C.slotSerahTerima).map(x => `<option>${x}</option>`).join('') + '<option>Kapan saja di jam antar</option>';
+      ? `Untuk hari jual ${tanggal(ev.day, true)}, diantar ${jamMs(ev.mulai)}–${jamMs(ev.selesai)}. Pre-order ditutup ${kapan(ev.tutup, now)}.`
+      : closedText(now);
+    const slotEv = ev || targetEvent(now);
+    const slots = slotEv ? slotEv.slot : C.slotSerahTerima;
+    const rentang = slotEv ? `${jamMs(slotEv.mulai)}–${jamMs(slotEv.selesai)}` : '';
+    $('[data-slot-select]').innerHTML = slots.map(x => `<option>${x}</option>`).join('') + `<option>Kapan saja${rentang ? ', ' + rentang : ''}</option>`;
     hideError();
     document.documentElement.classList.add('lock');
     sheet.showModal();
@@ -325,7 +371,11 @@
   function syncLokasi() {
     $('[data-lokasi-field]').hidden = form.elements.cara_terima.value !== 'Diantar';
   }
-  form.addEventListener('change', e => { if (e.target.name === 'cara_terima') syncLokasi(); });
+  form.addEventListener('change', e => {
+    if (e.target.name === 'cara_terima') syncLokasi();
+    if (e.target.name === 'pernah_beli' && e.target.value !== 'Sudah') form.elements.tukar_stamp.checked = false;
+    if (e.target.name === 'pernah_beli' || e.target.name === 'tukar_stamp') renderCart();
+  });
   form.addEventListener('input', e => { if (e.target.hasAttribute('aria-invalid')) e.target.removeAttribute('aria-invalid'); });
   syncLokasi();
 
@@ -339,7 +389,15 @@
     $$('[aria-invalid]', form).forEach(f => f.removeAttribute('aria-invalid'));
   }
 
-  function buildMessage(v, t) {
+  // 0812-3456-7890, +62 812..., 62812... -> 081234567890. Kosong kalau tidak valid.
+  function normalWA(str) {
+    let d = String(str).replace(/\D/g, '');
+    if (d.startsWith('62')) d = '0' + d.slice(2);
+    else if (d.startsWith('8')) d = '0' + d;
+    return /^08\d{8,12}$/.test(d) ? d : '';
+  }
+
+  function buildMessage(v, t, free) {
     const lines = cart.map(i => {
       const d = drinkOf(i.id), u = sizeOf(i.size);
       return `- ${i.qty}x ${d.nama} ${u.nama} (${u.oz} oz) = ${rupiah(priceOf(i) * i.qty)}`;
@@ -349,11 +407,14 @@
       'Halo Code Caffeine, saya mau pre-order.',
       '',
       `Nama: ${v.nama}`,
-      `Untuk: ${t ? tanggal(t, true) : '-'}`,
+      `No. WA: ${v.wa}`,
+      `Untuk: ${tanggal(t, true)}`,
       '',
       'Pesanan:',
       ...lines,
-      `Total: ${rupiah(cartTotal())}`,
+      free ? `Tukar kartu stamp: 1 ${drinkOf(free.id).nama} Small gratis (−${rupiah(priceOf(free))})` : null,
+      `Total: ${rupiah(netTotal())}`,
+      free ? 'Kartu stamp saya tunjukkan saat serah terima.' : null,
       '',
       `Cara terima: ${terima}`,
       `Jam: ${v.jam}`,
@@ -363,6 +424,15 @@
     ].filter(l => l !== null).join('\n');
   }
 
+  let lastUrl = '';
+  function openWhatsApp(url) {
+    // Tanpa 'noopener' supaya ketahuan kalau diblokir (sering terjadi di browser bawaan Instagram/TikTok)
+    let w = null;
+    try { w = window.open(url, '_blank'); } catch (err) { w = null; }
+    if (w) { try { w.opener = null; } catch (err) { /* abaikan */ } }
+    else { location.href = url; }
+  }
+
   form.addEventListener('submit', e => {
     e.preventDefault();
     hideError();
@@ -370,6 +440,7 @@
     const f = form.elements;
     const v = {
       nama: f.nama.value.trim(),
+      wa: normalWA(f.wa.value),
       cara_terima: f.cara_terima.value,
       lokasi: f.lokasi.value.trim(),
       jam: f.jam.value,
@@ -378,41 +449,52 @@
       catatan: f.catatan.value.trim()
     };
     if (!v.nama) return showError('Tulis nama untuk pesanan ini.', f.nama);
+    if (!v.wa) return showError('Tulis nomor WhatsApp yang aktif, contoh 081234567890.', f.wa);
     if (v.cara_terima === 'Diantar' && !v.lokasi) return showError('Tulis lokasi antar, misalnya gedung di kampus UMP atau nama kos.', f.lokasi);
+    if (wantsStamp() && !stampItem()) return showError('Untuk tukar kartu stamp, tambahkan satu minuman ukuran Small dari menu dulu.', f.tukar_stamp);
 
-    const ev = targetEvent(nowWIB());
-    if (!ev) return showError('Pre-order sedang ditutup. Info jualan berikutnya kami umumkan lewat WhatsApp.');
-    const t = ev.day;
-    const msg = buildMessage(v, t);
+    const ev = openEvent(nowWIB());
+    if (!ev) { renderCart(); return showError(closedText(nowWIB())); }
+    const free = wantsStamp() ? stampItem() : null;
+    const msg = buildMessage(v, ev.day, free);
 
     // Catatan pesanan untuk kelompok (Netlify Forms). Gagal mencatat tidak menghalangi pesanan.
-    f.untuk_hari.value = t ? tanggal(t, true) : '';
+    f.wa.value = v.wa;
+    f.untuk_hari.value = tanggal(ev.day, true);
     f.pesanan.value = cart.map(i => `${i.qty}x ${drinkOf(i.id).nama} ${sizeOf(i.size).nama}`).join('; ');
     f.jumlah_cup.value = String(cartCount());
-    f.total.value = String(cartTotal());
+    f.total.value = String(netTotal());
+    f.stamp_gratis.value = free ? `${drinkOf(free.id).nama} Small (${priceOf(free)})` : '';
     try {
       if (location.protocol.startsWith('http') && navigator.sendBeacon) {
         navigator.sendBeacon('/', new URLSearchParams(new FormData(form)));
       }
     } catch (err) { /* abaikan */ }
 
+    // Keranjang dikosongkan supaya pesanan yang sama tidak terkirim dua kali
+    cart = []; save();
+    f.tukar_stamp.checked = false;
+    f.catatan.value = '';
+    renderCart();
+
     const again = $('[data-wa-again]');
+    form.hidden = true;
+    sent.hidden = false;
     if (C.whatsapp) {
-      const url = `https://wa.me/${C.whatsapp}?text=${encodeURIComponent(msg)}`;
-      window.open(url, '_blank', 'noopener');
-      again.href = url; again.hidden = false;
+      lastUrl = `https://wa.me/${C.whatsapp}?text=${encodeURIComponent(msg)}`;
+      again.href = lastUrl; again.hidden = false;
+      $('h2', sent).focus();
+      openWhatsApp(lastUrl);
     } else {
       again.hidden = true;
       if (navigator.clipboard) navigator.clipboard.writeText(msg).catch(() => {});
       $('[data-sent-text]').textContent = 'Nomor WhatsApp pesanan belum diatur, jadi teks pesananmu kami salin. Tempel di chat WhatsApp Code Caffeine.';
+      $('h2', sent).focus();
     }
-    form.hidden = true;
-    sent.hidden = false;
-    $('h2', sent).focus();
   });
 
   $('[data-finish]').addEventListener('click', () => {
-    cart = []; save(); form.reset(); syncLokasi(); renderCart(); closeSheet();
+    form.reset(); syncLokasi(); renderCart(); closeSheet();
   });
 
   /* ================= Sosial ================= */
@@ -433,5 +515,8 @@
   renderWeek();
   renderSocial();
   renderCart();
-  setInterval(renderStatus, 60000);
+  setInterval(() => {
+    renderStatus();
+    if (sheet.open && !form.hidden) renderCart();   // tombol kirim ikut mati tepat saat pre-order ditutup
+  }, 30000);
 })();

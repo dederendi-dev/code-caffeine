@@ -51,6 +51,7 @@
         <li><a href="#menu">Menu</a></li>
         <li><a href="#cara-pesan">Cara pesan</a></li>
         <li><a href="#jadwal">Jadwal</a></li>
+        <li><a href="#member">Member</a></li>
         <li><a href="#tentang">Tentang</a></li>
       </ul>
       <button class="btn btn-solid btn-sm" type="button" data-open-order>
@@ -127,7 +128,7 @@
           </li>
           <li class="glass">
             <h3>Kirim lewat WhatsApp</h3>
-            <p>Isi nama dan cara terima, lalu pesananmu terkirim rapi ke WhatsApp kami. Batas pre-order ada di jadwal di bawah.</p>
+            <p>Isi nama, nomor WhatsApp, dan cara terima. Pesananmu terbuka rapi di WhatsApp, tinggal tekan kirim. Batas pre-order ada di jadwal di bawah.</p>
           </li>
           <li class="glass">
             <h3>Terima dan bayar</h3>
@@ -148,12 +149,17 @@
       </div>
     </section>
 
-    <!-- KARTU STAMP -->
-    <section class="section" aria-labelledby="stamp-title">
+    <!-- MEMBER: KARTU STAMP SEKARANG, POIN QR MENYUSUL -->
+    <section class="section" id="member" aria-labelledby="stamp-title">
       <div class="wrap split">
         <div class="head">
           <h2 id="stamp-title">Beli lima kali, gratis satu cup.</h2>
-          <p>Setiap pembelian dapat satu cap di kartu stamp. Kumpulkan lima cap, lalu tukar dengan satu cup ukuran Small. Minta kartunya saat pesananmu diantar.</p>
+          <p>Setiap kali beli, kartu stamp-mu dapat satu cap, berapa pun jumlah cup-nya. Kartunya kami berikan bersama pesanan pertamamu.</p>
+          <ul class="rules">
+            <li>Sudah lima cap? Saat pesan di web, pilih <b>Sudah pernah beli</b> lalu centang <b>Tukar kartu stamp</b>. Tunjukkan kartunya saat serah terima.</li>
+            <li>Hadiahnya satu cup ukuran Small, menu bebas.</li>
+          </ul>
+          <p class="later"><b>Segera: poin digital.</b> Scan QR Code di cup, akunnya cukup nomor WhatsApp-mu. 10 poin bisa ditukar topping gratis, 80 poin satu minuman gratis. Sampai poin digital siap, kartu stamp yang berlaku.</p>
         </div>
         <div class="stamp glass" aria-hidden="true">
           <div class="stamp-top"><img src="/assets/img/logo-ikon.svg" alt="" width="26" height="27"><span>Kartu stamp</span></div>
@@ -173,7 +179,7 @@
         </div>
         <div class="soon glass">
           <h3>Sedang disiapkan</h3>
-          <p><strong>Caffeine Challenge</strong>, mini game yang bisa memberi bonus atau upgrade ukuran sesuai skormu, dan poin lewat QR Code di setiap cup.</p>
+          <p><strong>Caffeine Challenge</strong>, mini game di web ini. Skormu menentukan bonusnya: voucher, topping atau poin, sampai upgrade ke ukuran Large.</p>
         </div>
       </div>
     </section>
@@ -211,12 +217,19 @@
         <p class="target" data-target-day></p>
         <ul class="cart-list" data-cart-list></ul>
         <p class="cart-empty" data-cart-empty>Belum ada minuman. Pilih dulu dari menu.</p>
+        <p class="cart-disc" data-cart-disc hidden><span data-cart-disc-label></span><span data-cart-disc-value></span></p>
         <p class="cart-total" data-cart-total-row><span>Total</span><strong data-cart-total></strong></p>
 
         <fieldset class="fields" data-fields>
           <label class="field">
             <span>Nama</span>
             <input name="nama" autocomplete="name" required maxlength="60" placeholder="Nama untuk pesanan">
+          </label>
+
+          <label class="field">
+            <span>Nomor WhatsApp</span>
+            <input name="wa" type="tel" inputmode="tel" autocomplete="tel" required maxlength="20" placeholder="08xxxxxxxxxx" aria-describedby="wa-hint">
+            <small class="hint" id="wa-hint">Untuk konfirmasi pesanan dan catatan kartu stamp.</small>
           </label>
 
           <div class="field">
@@ -253,6 +266,23 @@
             </div>
           </div>
 
+          <div class="field" data-stamp-field hidden>
+            <label class="check">
+              <input type="checkbox" name="tukar_stamp" value="Ya">
+              <span><b>Tukar kartu stamp</b>Kartuku sudah lima cap. Satu minuman Small di pesanan ini jadi gratis.</span>
+            </label>
+            <small class="hint" data-stamp-hint></small>
+          </div>
+
+          <div class="field">
+            <span id="minat-label">Nanti ada mini game berhadiah upgrade ukuran dan poin. Tertarik? <em>(opsional)</em></span>
+            <div class="seg seg-3" role="radiogroup" aria-labelledby="minat-label">
+              <label><input type="radio" name="minat_game" value="Tertarik"><span>Tertarik</span></label>
+              <label><input type="radio" name="minat_game" value="Mungkin"><span>Mungkin</span></label>
+              <label><input type="radio" name="minat_game" value="Tidak"><span>Tidak</span></label>
+            </div>
+          </div>
+
           <label class="field">
             <span>Tahu Code Caffeine dari mana? <em>(opsional)</em></span>
             <select name="sumber">
@@ -276,6 +306,7 @@
           <input type="hidden" name="pesanan">
           <input type="hidden" name="jumlah_cup">
           <input type="hidden" name="total">
+          <input type="hidden" name="stamp_gratis">
         </fieldset>
 
         <p class="form-error" data-form-error role="alert" hidden></p>
@@ -283,16 +314,17 @@
 
       <div class="sheet-foot">
         <button type="submit" class="btn btn-solid btn-wide" data-send>Kirim lewat WhatsApp</button>
-        <p class="foot-note">Pesananmu akan terbuka di WhatsApp. Tekan kirim di sana supaya masuk ke kami.</p>
+        <p class="foot-note" data-foot-note>Pesananmu akan terbuka di WhatsApp. Tekan kirim di sana supaya masuk ke kami.</p>
       </div>
     </form>
 
     <div class="sent" data-sent hidden>
       <h2 tabindex="-1">Tinggal satu langkah.</h2>
-      <p data-sent-text>Pesananmu sudah terbuka di WhatsApp. Tekan <strong>kirim</strong> di sana supaya masuk ke kami. Kami balas untuk konfirmasi dan info pembayaran.</p>
+      <p data-sent-text>Pesananmu sudah kami tulis di WhatsApp. Tekan <strong>kirim</strong> di sana supaya masuk ke kami, lalu kami balas untuk konfirmasi dan info pembayaran.</p>
+      <p class="sent-help">WhatsApp belum terbuka, atau tadi belum sempat kirim? Tekan tombol di bawah.</p>
       <div class="sent-actions">
-        <a class="btn btn-solid" data-wa-again href="#" target="_blank" rel="noopener">Buka WhatsApp lagi</a>
-        <button class="btn btn-glass glass" type="button" data-finish>Selesai, kosongkan pesanan</button>
+        <a class="btn btn-solid" data-wa-again href="#" target="_blank" rel="noopener">Buka WhatsApp</a>
+        <button class="btn btn-glass glass" type="button" data-finish>Selesai</button>
       </div>
     </div>
   </dialog>
