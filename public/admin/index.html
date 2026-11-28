@@ -20,8 +20,9 @@
   --bg: #16100c; --bg2: #1f1611; --ink: #f5ecdf; --ink2: rgba(245, 236, 223, .7); --ink3: rgba(245, 236, 223, .48);
   --line: rgba(255, 255, 255, .09); --line2: rgba(255, 255, 255, .16);
   --btn: #f3e9da; --btn-ink: #1a100a; --soft: rgba(255, 255, 255, .07);
-  --cek: #f2b46c; --wait: #8fa3b8; --paid: #7ddc8e; --play: #c79bf0; --done: #dda56c; --sent: rgba(245, 236, 223, .35); --off: #e27d6a;
-  --focus: #f2b46c;
+  /* tiga warna status: belum, diproses, selesai */
+  --c-baru: #f2b46c; --c-proses: #82b4ee; --c-selesai: #7ddc8e; --c-batal: #a99a8c;
+  --off: #e27d6a; --focus: #f2b46c;
   --f-head: "Inter Tight", "Inter", system-ui, sans-serif; --f-body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 @media (prefers-color-scheme: light) {
@@ -30,115 +31,116 @@
     --bg: #f4ede4; --bg2: #fbf7f1; --ink: #20140d; --ink2: #6b5849; --ink3: #978373;
     --line: rgba(40, 24, 14, .1); --line2: rgba(40, 24, 14, .18);
     --btn: #24160e; --btn-ink: #f7efe4; --soft: rgba(40, 24, 14, .06);
-    --cek: #b86a1e; --wait: #5a6f86; --paid: #2f8f4c; --play: #7b4bb0; --done: #9c5b2a; --sent: rgba(32, 20, 13, .3); --off: #b2442f;
-    --focus: #b86a1e;
+    --c-baru: #b8661a; --c-proses: #2c69b0; --c-selesai: #2b8546; --c-batal: #8e7d6f;
+    --off: #b2442f; --focus: #b86a1e;
   }
 }
 *, *::before, *::after { box-sizing: border-box; }
 [hidden] { display: none !important; }
 html { -webkit-text-size-adjust: 100%; }
-body {
-  margin: 0; background: var(--bg); color: var(--ink);
-  font: 15px/1.5 var(--f-body); -webkit-font-smoothing: antialiased;
-  padding: env(safe-area-inset-top, 0) env(safe-area-inset-right, 0) env(safe-area-inset-bottom, 0) env(safe-area-inset-left, 0);
-}
+body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.45 var(--f-body); -webkit-font-smoothing: antialiased;
+  padding: env(safe-area-inset-top, 0) env(safe-area-inset-right, 0) env(safe-area-inset-bottom, 0) env(safe-area-inset-left, 0); }
 h1, h2, h3, p { margin: 0; }
 a { color: inherit; }
-button, input, select, textarea { font: inherit; color: inherit; }
+button, input, select { font: inherit; color: inherit; }
 button { cursor: pointer; }
 :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 8px; }
 .num { font-variant-numeric: tabular-nums; }
-main { max-width: 720px; margin: 0 auto; padding: 20px 16px 96px; }
+main { max-width: 680px; margin: 0 auto; padding: 18px 14px 60px; }
 
 /* kepala */
-.top { display: flex; align-items: baseline; justify-content: space-between; gap: 4px 12px; flex-wrap: wrap; }
-.top h1 { white-space: nowrap; }
-.top h1 { font: 700 22px/1.2 var(--f-head); letter-spacing: -.01em; }
-.who { color: var(--ink2); font-size: 14px; }
-.who button { background: none; border: 0; padding: 0; color: var(--ink3); text-decoration: underline; text-underline-offset: 3px; font-size: 13px; margin-left: 8px; }
+.top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.top h1 { font: 700 24px/1.2 var(--f-head); }
+.top .btn { min-height: 34px; font-size: 13px; padding: 0 14px; }
+.upd { color: var(--ink3); font-size: 12.5px; margin-top: 2px; }
 
-/* angka ringkas */
-.sum { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; margin-top: 18px; background: var(--line); border-radius: 14px; overflow: hidden; }
-.sum div { background: var(--bg2); padding: 12px 14px; }
-.sum b { display: block; font: 700 22px/1.15 var(--f-head); }
-.sum span { color: var(--ink2); font-size: 13px; }
-.sum .cek b { color: var(--cek); }
+/* tiga angka */
+.counts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 14px; }
+.cnt { --c: var(--c-baru); display: block; text-decoration: none; padding: 10px 12px; border-radius: 14px;
+  background: color-mix(in srgb, var(--c) 14%, var(--bg)); border: 1px solid color-mix(in srgb, var(--c) 38%, transparent); }
+.cnt b { display: block; font: 700 24px/1.1 var(--f-head); color: var(--c); }
+.cnt span { font-size: 13px; color: var(--ink2); font-weight: 600; }
+.cnt.proses { --c: var(--c-proses); } .cnt.selesai { --c: var(--c-selesai); }
+.omzet { margin-top: 8px; color: var(--ink2); font-size: 13.5px; }
+.omzet b { color: var(--ink); }
 
-/* notifikasi */
-.notif { margin-top: 14px; padding: 12px 14px; border: 1px solid var(--line2); border-radius: 14px; display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
-.notif p { color: var(--ink2); font-size: 14px; flex: 1 1 220px; }
-.notif p b { color: var(--ink); font-weight: 600; }
-.notif ol { margin: 6px 0 0; padding-left: 20px; }
-.notif .acts { display: flex; gap: 8px; }
+/* panel penting (notifikasi belum aktif, pasang aplikasi) */
+.panel { margin-top: 12px; padding: 12px 14px; border: 1px solid var(--line2); border-radius: 14px; display: flex; gap: 10px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+.panel p { color: var(--ink2); font-size: 14px; flex: 1 1 220px; }
+.panel p b { color: var(--ink); }
+.panel ol { margin: 6px 0 0; padding-left: 20px; }
 
-/* tombol */
 .btn { display: inline-flex; align-items: center; justify-content: center; min-height: 40px; padding: 0 16px; border-radius: 999px; border: 1px solid transparent; background: var(--btn); color: var(--btn-ink); font-weight: 600; font-size: 14px; text-decoration: none; white-space: nowrap; }
 .btn.ghost { background: transparent; color: var(--ink); border-color: var(--line2); }
 .btn.warn { background: transparent; color: var(--off); border-color: color-mix(in srgb, var(--off) 45%, transparent); }
+.btn.sm { min-height: 32px; padding: 0 12px; font-size: 13px; }
 .btn:disabled { opacity: .5; cursor: default; }
 
-/* alat */
-.tools { position: sticky; top: 0; z-index: 5; margin: 16px -16px 0; padding: 10px 16px; background: color-mix(in srgb, var(--bg) 92%, transparent); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); display: flex; gap: 8px; }
-.tools input { flex: 1; min-width: 0; height: 42px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--line2); background: var(--soft); }
-.tools select { height: 42px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--line2); background: var(--soft); max-width: 46%; }
-.upd { margin-top: 6px; color: var(--ink3); font-size: 12.5px; }
+.tools { display: flex; gap: 8px; margin-top: 14px; }
+.tools input { flex: 1; min-width: 0; height: 40px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--line2); background: var(--soft); }
+.tools select { height: 40px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--line2); background: var(--soft); max-width: 46%; }
 
-/* kelompok */
-.grp { margin-top: 26px; }
-.grp-h { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding-bottom: 8px; border-bottom: 1px solid var(--line2); }
-.grp-h h2 { font: 650 16px/1.3 var(--f-head); display: flex; align-items: center; gap: 8px; }
-.grp-h h2 i { width: 9px; height: 9px; border-radius: 50%; background: var(--c); flex: none; }
-.grp-h h2 small { color: var(--ink3); font: 500 14px var(--f-body); }
-.grp-h p { color: var(--ink3); font-size: 13px; }
-.grp-h .btn { min-height: 32px; padding: 0 12px; font-size: 13px; }
-.empty { color: var(--ink3); font-size: 14px; padding: 14px 0 0; }
+/* kelompok berwarna */
+.grp { --c: var(--c-baru); margin-top: 18px; border-radius: 18px; overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--c) 40%, transparent); background: color-mix(in srgb, var(--c) 5%, var(--bg)); scroll-margin-top: 12px; }
+.grp.proses { --c: var(--c-proses); } .grp.selesai { --c: var(--c-selesai); } .grp.batal { --c: var(--c-batal); }
+.grp-h { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 11px 14px;
+  background: color-mix(in srgb, var(--c) 18%, var(--bg)); border-bottom: 1px solid color-mix(in srgb, var(--c) 30%, transparent); }
+.grp-h h2 { font: 700 16px/1.2 var(--f-head); display: flex; align-items: center; gap: 8px; color: var(--ink); }
+.grp-h h2 .n { min-width: 24px; height: 24px; padding: 0 7px; border-radius: 999px; background: var(--c); color: var(--bg); font: 700 13px/24px var(--f-body); text-align: center; }
+.grp-h .btn { min-height: 30px; padding: 0 12px; font-size: 12.5px; }
+.rekap { padding: 10px 14px; font-size: 13.5px; font-weight: 600; border-bottom: 1px solid var(--line); }
+.kosong { padding: 14px; color: var(--ink3); font-size: 14px; }
+.lihat-batal { display: block; width: 100%; margin-top: 14px; padding: 10px; border: 1px dashed var(--line2); border-radius: 14px; background: none; color: var(--ink2); font-size: 14px; }
 
-/* pesanan */
-.ord { position: relative; padding: 14px 0 14px 16px; border-bottom: 1px solid var(--line); }
-.ord::before { content: ""; position: absolute; left: 0; top: 16px; bottom: 16px; width: 3px; border-radius: 3px; background: var(--c); }
-.ord.baru { animation: baru 2.4s ease-out; }
-@keyframes baru { 0% { background: color-mix(in srgb, var(--cek) 22%, transparent); } 100% { background: transparent; } }
-.r1 { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
-.r1 h3 { font: 650 16px/1.3 var(--f-head); }
-.r1 .harga { font-weight: 650; white-space: nowrap; }
-.kode { color: var(--ink2); font-size: 13px; letter-spacing: .02em; }
-.meta { color: var(--ink2); font-size: 14px; margin-top: 2px; }
-.meta b { color: var(--ink); font-weight: 600; }
-.hadiah { margin-top: 6px; font-size: 14px; }
-.hadiah b { font-weight: 650; }
-.flag { display: inline-block; margin-top: 6px; padding: 2px 10px; border-radius: 999px; font-size: 12.5px; font-weight: 600; background: color-mix(in srgb, var(--off) 16%, transparent); color: var(--off); }
-.flag.ok { background: color-mix(in srgb, var(--paid) 15%, transparent); color: var(--paid); }
-.flag.wait { background: color-mix(in srgb, var(--cek) 16%, transparent); color: var(--cek); }
-.rekap { color: var(--ink); font-weight: 600; }
-.when { color: var(--ink3); font-size: 13px; margin-top: 4px; }
-.acts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
-.conf { margin-top: 10px; padding: 12px; border-radius: 12px; background: var(--soft); }
+/* baris pesanan: ketuk untuk melihat detail */
+.ord + .ord { border-top: 1px solid var(--line); }
+.ord.baru { animation: kilat 2.4s ease-out; }
+@keyframes kilat { 0% { background: color-mix(in srgb, var(--c) 30%, transparent); } 100% { background: transparent; } }
+.ring { width: 100%; display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; padding: 12px 14px; border: 0; background: none; text-align: left; }
+.ring .nm { font: 650 16px/1.3 var(--f-head); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ring .tot { font-weight: 650; text-align: right; }
+.ring .isi { color: var(--ink2); font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ring .chev { color: var(--ink3); font-size: 13px; text-align: right; transition: transform .15s; }
+.ord.buka .chev { transform: rotate(180deg); }
+.ring .chips { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+.chip { padding: 1px 9px; border-radius: 999px; font-size: 12px; font-weight: 650; background: color-mix(in srgb, var(--c) 18%, transparent); color: var(--c); }
+.chip.tag { background: var(--soft); color: var(--ink2); }
+.chip.utang { --c: var(--c-baru); }
+.chip.ok { --c: var(--c-selesai); }
+.chip.bahaya { --c: var(--off); }
+
+.det { padding: 0 14px 14px; }
+.det dl { display: grid; grid-template-columns: max-content 1fr; gap: 4px 12px; margin: 0; font-size: 14px; }
+.det dt { color: var(--ink3); }
+.det dd { margin: 0; overflow-wrap: anywhere; }
+.det .hint { margin-top: 10px; font-size: 13.5px; color: var(--ink2); }
+.acts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.conf { margin-top: 12px; padding: 12px; border-radius: 12px; background: var(--soft); }
 .conf p { font-size: 14px; }
 .conf input { width: 100%; margin-top: 8px; height: 40px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--line2); background: var(--bg2); }
-.conf .acts { margin-top: 10px; }
-details { margin-top: 8px; color: var(--ink3); font-size: 13px; }
-summary { cursor: pointer; width: max-content; }
-details ul { margin: 6px 0 0; padding-left: 18px; }
-details a { color: var(--ink2); }
+.riw { margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--line2); font-size: 12.5px; color: var(--ink3); }
+.riw p + p { margin-top: 2px; }
+.riw a { color: var(--ink2); }
 
-/* masuk */
+.foot { margin-top: 28px; padding-top: 14px; border-top: 1px solid var(--line); color: var(--ink3); font-size: 13px; display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; }
+.foot button { background: none; border: 0; padding: 0; color: var(--ink2); text-decoration: underline; text-underline-offset: 3px; font-size: 13px; }
+
 .gate { max-width: 440px; margin: 12vh auto 0; padding: 0 20px; }
 .gate h1 { font: 700 24px/1.2 var(--f-head); }
 .gate p { color: var(--ink2); margin-top: 10px; }
 .gate form { margin-top: 18px; display: flex; flex-direction: column; gap: 10px; }
 .gate input { height: 46px; padding: 0 14px; border-radius: 12px; border: 1px solid var(--line2); background: var(--soft); }
 .gate .err { color: var(--off); font-size: 14px; }
-
-/* kabar */
 .toast { position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 20; max-width: calc(100% - 32px); padding: 12px 18px; border-radius: 14px; background: var(--btn); color: var(--btn-ink); font-weight: 600; font-size: 14px; box-shadow: 0 12px 30px rgba(0, 0, 0, .3); }
-@media (prefers-reduced-motion: reduce) { .ord.baru { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .ord.baru { animation: none; } .ring .chev { transition: none; } }
 </style>
 </head>
 <body>
 
 <div class="gate" data-gate hidden>
-  <h1>Admin Code Caffeine</h1>
-  <p data-gate-text>Halaman ini hanya bisa dibuka dengan link admin pribadimu. Buka link yang dibagikan di grup, atau tempel di sini.</p>
+  <h1>CC Admin</h1>
+  <p data-gate-text>Halaman ini hanya bisa dibuka dengan link admin pribadimu. Buka link yang dibagikan, atau tempel di sini.</p>
   <form data-gate-form>
     <input name="link" type="url" inputmode="url" autocomplete="off" placeholder="https://…/admin/#k=…" aria-label="Link admin" required>
     <p class="err" data-gate-err hidden></p>
@@ -148,36 +150,38 @@ details a { color: var(--ink2); }
 
 <main data-app hidden>
   <header class="top">
-    <h1>Pesanan</h1>
-    <p class="who">Masuk sebagai <b data-who></b><button type="button" data-logout>Keluar</button></p>
+    <div><h1>Pesanan</h1><p class="upd" data-upd></p></div>
+    <button class="btn ghost" type="button" data-refresh>Perbarui</button>
   </header>
 
-  <div class="sum">
-    <div class="cek"><b class="num" data-n-cek>0</b><span>Perlu ditindak</span></div>
-    <div><b class="num" data-n-antar>0</b><span>Belum diantar</span></div>
-    <div><b class="num" data-omzet>Rp0</b><span>Sudah lunas</span></div>
-  </div>
+  <nav class="counts" aria-label="Ringkasan">
+    <a class="cnt baru" href="#g-baru"><b class="num" data-n="baru">0</b><span>Belum diproses</span></a>
+    <a class="cnt proses" href="#g-proses"><b class="num" data-n="proses">0</b><span>Diproses</span></a>
+    <a class="cnt selesai" href="#g-selesai"><b class="num" data-n="selesai">0</b><span>Selesai</span></a>
+  </nav>
+  <p class="omzet">Sudah dibayar: <b class="num" data-omzet>Rp0</b></p>
 
-  <section class="notif" data-install hidden>
-    <p><b>Pasang sebagai aplikasi</b> supaya CC Admin ada di layar utama dan terbuka tanpa link.</p>
-    <div class="acts"><button class="btn" type="button" data-install-btn>Pasang aplikasi</button></div>
+  <section class="panel" data-install hidden>
+    <p><b>Pasang sebagai aplikasi</b> supaya CC Admin ada di layar utama.</p>
+    <button class="btn" type="button" data-install-btn>Pasang aplikasi</button>
   </section>
-
-  <section class="notif" data-notif>
-    <p data-notif-text>Memeriksa notifikasi…</p>
-    <div class="acts">
-      <button class="btn" type="button" data-notif-on hidden>Aktifkan notifikasi</button>
-      <button class="btn ghost" type="button" data-notif-test hidden>Tes notifikasi</button>
-    </div>
+  <section class="panel" data-notif hidden>
+    <p data-notif-text></p>
+    <button class="btn" type="button" data-notif-on hidden>Aktifkan notifikasi</button>
   </section>
 
   <div class="tools">
     <input type="search" placeholder="Cari nama, nomor WA, atau kode" aria-label="Cari pesanan" data-q>
     <select aria-label="Hari jual" data-hari></select>
   </div>
-  <p class="upd" data-upd></p>
 
   <div data-list></div>
+
+  <footer class="foot">
+    <span>Masuk sebagai <b data-who></b></span>
+    <span data-notif-foot hidden>Notifikasi aktif · <button type="button" data-notif-test>Tes notifikasi</button></span>
+    <button type="button" data-logout>Keluar</button>
+  </footer>
 </main>
 
 <div class="toast" role="status" aria-live="polite" data-toast hidden></div>
@@ -186,6 +190,7 @@ details a { color: var(--ink2); }
 (function () {
   'use strict';
   const $ = (s, el = document) => el.querySelector(s);
+  const $$ = (s, el = document) => Array.from(el.querySelectorAll(s));
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const rupiah = n => 'Rp' + Number(n || 0).toLocaleString('id-ID');
   const waIntl = wa => '62' + String(wa || '').replace(/^0/, '');
@@ -193,37 +198,33 @@ details a { color: var(--ink2); }
 
   /* ---------- kunci dari link ---------- */
   function keyFrom(str) {
-    try {
-      const u = new URL(str, location.origin);
-      const h = new URLSearchParams(u.hash.slice(1)).get('k');
-      return h || u.searchParams.get('k') || '';
-    } catch (e) { return ''; }
+    try { const u = new URL(str, location.origin); return new URLSearchParams(u.hash.slice(1)).get('k') || u.searchParams.get('k') || ''; }
+    catch (e) { return ''; }
   }
   let key = keyFrom(location.href);
-  if (key) {
-    try { localStorage.setItem(K_KEY, key); } catch (e) { /* mode privat */ }
-    history.replaceState(null, '', '/admin/');
-  } else {
-    try { key = localStorage.getItem(K_KEY) || ''; } catch (e) { key = ''; }
-  }
+  if (key) { try { localStorage.setItem(K_KEY, key); } catch (e) { /* mode privat */ } history.replaceState(null, '', '/admin/'); }
+  else { try { key = localStorage.getItem(K_KEY) || ''; } catch (e) { key = ''; } }
 
   const gate = $('[data-gate]'), app = $('[data-app]');
   function showGate(msg) {
     app.hidden = true; gate.hidden = false;
     if (msg) { $('[data-gate-err]').textContent = msg; $('[data-gate-err]').hidden = false; }
   }
+  function masuk(k) {
+    key = k;
+    try { localStorage.setItem(K_KEY, key); } catch (e) { /* abaikan */ }
+    load(true); startTimer();
+  }
   $('[data-gate-form]').addEventListener('submit', e => {
     e.preventDefault();
     const k = keyFrom(e.target.link.value.trim());
     if (!k) { $('[data-gate-err]').textContent = 'Link ini tidak berisi kunci admin. Salin ulang link lengkapnya.'; $('[data-gate-err]').hidden = false; return; }
-    key = k;
-    try { localStorage.setItem(K_KEY, key); } catch (err) { /* abaikan */ }
-    load(true);
+    masuk(k);
   });
+  addEventListener('hashchange', () => { const k = keyFrom(location.href); if (!k) return; history.replaceState(null, '', '/admin/'); masuk(k); });
   $('[data-logout]').addEventListener('click', () => {
     try { localStorage.removeItem(K_KEY); } catch (e) { /* abaikan */ }
-    key = ''; clearInterval(timer);
-    showGate();
+    key = ''; clearInterval(timer); showGate();
     $('[data-gate-text]').textContent = 'Kamu sudah keluar dari HP ini. Buka lagi link admin pribadimu untuk masuk.';
   });
 
@@ -231,52 +232,72 @@ details a { color: var(--ink2); }
     const opt = { headers: { 'x-admin-key': key }, cache: 'no-store' };
     if (data) { opt.method = 'POST'; opt.headers['content-type'] = 'application/json'; opt.body = JSON.stringify(data); }
     let res;
-    try { res = await fetch('/api/admin/' + path, opt); } catch (e) { const err = new Error('Koneksi bermasalah. Coba lagi.'); err.net = true; throw err; }
-    let j = {};
-    try { j = await res.json(); } catch (e) { /* bukan JSON */ }
+    try { res = await fetch('/api/admin/' + path + (data ? '' : (path.includes('?') ? '&' : '?') + 't=' + Date.now()), opt); }
+    catch (e) { throw new Error('Koneksi bermasalah. Coba lagi.'); }
+    let j = {}; try { j = await res.json(); } catch (e) { /* bukan JSON */ }
     if (!res.ok) { const err = new Error(j.error || 'Terjadi kesalahan.'); err.status = res.status; throw err; }
     return j;
   }
 
-  /* ---------- data & tampilan ---------- */
-  // Dua jenis pesanan: 'web' (pesanan biasa lewat form, tunai/transfer) dan 'challenge' (paket game, bayar DANA).
-  let all = [], admin = '', vapid = '', pembayaran = [], timer = 0, firstLoad = true, lastOk = 0;
+  /* ---------- status pesanan ---------- */
+  // Tiga kelompok: belum diproses (oranye), diproses (biru), selesai (hijau). Batal disembunyikan di bawah.
+  let all = [], admin = '', vapid = '', pembayaran = [], timer = 0, firstLoad = true, lastOk = 0, sig = '';
   let seenTindak = new Set();
+  const expanded = new Set();             // baris yang sedang dibuka (tetap terbuka walau data diperbarui)
   const open = { key: '', aksi: '' };     // konfirmasi yang sedang terbuka
   const busy = new Set();
+  let showBatal = false;
   const keyOf = p => p.jenis + ':' + p.id;
   const isWeb = p => p.jenis === 'web';
   const st = p => p.status || 'baru';
-  const perluTindak = p => (isWeb(p) && st(p) === 'baru') || (!isWeb(p) && p.status === 'cek_admin');
-  const belumAntar = p => !p.diantar && (isWeb(p) ? st(p) === 'diproses' : ['lunas', 'main', 'selesai'].includes(p.status));
-  const sudahBayar = p => isWeb(p) ? p.lunas && st(p) !== 'batal' : ['lunas', 'main', 'selesai'].includes(p.status);
-  const nominal = p => isWeb(p) ? p.total : p.harga;
   const hari = p => (isWeb(p) ? p.untuk_hari : p.untuk) || 'Tanpa tanggal';
-
-  const GROUPS = [
-    { id: 'baru', title: 'Pesanan baru', c: 'var(--cek)', hint: 'Balas pembeli di WhatsApp (tombol WA pembeli), lalu tekan Terima pesanan.', match: p => isWeb(p) && st(p) === 'baru', sort: 'lama', wajib: true },
-    { id: 'cek', title: 'Cek transfer Challenge', c: 'var(--cek)', hint: 'Pembeli bilang sudah transfer. Cek DANA, lalu tandai lunas.', match: p => !isWeb(p) && p.status === 'cek_admin', sort: 'lama' },
-    { id: 'antar', title: 'Siap dibuat & diantar', c: 'var(--done)', match: p => !p.diantar && ((isWeb(p) && st(p) === 'diproses') || (!isWeb(p) && p.status === 'selesai')), copy: true, rekap: true },
-    { id: 'lunas', title: 'Challenge lunas, belum main', c: 'var(--paid)', hint: 'Minumannya tetap dibuat Medium; ukuran akhirnya menunggu hasil game.', match: p => !isWeb(p) && p.status === 'lunas' && !p.diantar },
-    { id: 'main', title: 'Challenge sedang main', c: 'var(--play)', match: p => !isWeb(p) && p.status === 'main' && !p.diantar },
-    { id: 'tunggu', title: 'Challenge menunggu transfer', c: 'var(--wait)', hint: 'Batal otomatis kalau 1 jam tidak ada konfirmasi.', match: p => !isWeb(p) && p.status === 'menunggu_bayar' },
-    { id: 'diantar', title: 'Sudah diantar', c: 'var(--sent)', match: p => p.diantar && st(p) !== 'batal' },
-    { id: 'batal', title: 'Batal', c: 'var(--off)', match: p => st(p) === 'batal' }
+  const nominal = p => isWeb(p) ? p.total : p.harga;
+  const kelompok = p => {
+    if (st(p) === 'batal') return 'batal';
+    if (p.diantar) return 'selesai';
+    if (isWeb(p)) return st(p) === 'baru' ? 'baru' : 'proses';
+    return ['menunggu_bayar', 'cek_admin'].includes(p.status) ? 'baru' : 'proses';
+  };
+  const perluTindak = p => (isWeb(p) && st(p) === 'baru') || (!isWeb(p) && p.status === 'cek_admin');
+  const sudahBayar = p => isWeb(p) ? p.lunas && st(p) !== 'batal' : ['lunas', 'main', 'selesai'].includes(p.status);
+  const GRUP = [
+    { id: 'baru', title: 'Belum diproses', urut: 'lama' },
+    { id: 'proses', title: 'Diproses', urut: 'lama', salin: true },
+    { id: 'selesai', title: 'Selesai', urut: 'baru' },
+    { id: 'batal', title: 'Batal', urut: 'baru' }
   ];
 
+  function chips(p) {
+    const c = [];
+    if (!isWeb(p)) c.push('<span class="chip tag">Challenge</span>');
+    const g = kelompok(p);
+    if (isWeb(p)) {
+      if (g === 'baru') c.push('<span class="chip">Baru</span>');
+      if (g === 'proses' || g === 'selesai') c.push(p.lunas ? '<span class="chip ok">Lunas</span>' : `<span class="chip utang">Belum bayar · ${esc(p.bayar || '')}</span>`);
+    } else {
+      const t = { menunggu_bayar: 'Menunggu transfer', cek_admin: 'Cek transfer', lunas: 'Lunas · belum main', main: 'Sedang main', selesai: p.tier === 'large' ? 'Hasil: Large' : 'Hasil: Medium' }[p.status];
+      if (t && g !== 'selesai') c.push(`<span class="chip${p.status === 'cek_admin' ? '' : ''}">${t}</span>`);
+      if (p.curiga) c.push('<span class="chip bahaya">Skor perlu dicek</span>');
+    }
+    if (g === 'selesai') c.push('<span class="chip">Diantar</span>');
+    if (g === 'batal') c.push('<span class="chip">Batal</span>');
+    return c.join('');
+  }
+
+  /* ---------- tombol aksi ---------- */
   const A_CH = {
     lunas: { label: 'Tandai lunas', cls: '', tanya: p => `Sudah cek DANA dan ada uang masuk ${rupiah(p.harga)} dari ${p.nama}? Tantangan langsung terbuka di HP pembeli.`, ya: 'Ya, sudah masuk', ok: 'ditandai lunas' },
     batal: { label: 'Batalkan', cls: 'warn', tanya: p => `Batalkan pesanan ${p.kode}? Pembeli akan melihat alasannya.`, ya: 'Ya, batalkan', alasan: true, ok: 'dibatalkan' },
     belum_lunas: { label: 'Kembalikan ke belum lunas', cls: 'ghost', tanya: () => 'Kembalikan ke "cek transfer"? Tantangan di HP pembeli terkunci lagi.', ya: 'Ya, kembalikan', ok: 'dikembalikan ke cek transfer' },
     diantar: { label: 'Tandai diantar', cls: '', tanya: p => `${p.nama} sudah menerima minumannya?`, ya: 'Ya, sudah diantar', ok: 'ditandai diantar' },
-    belum_diantar: { label: 'Belum diantar', cls: 'ghost', ok: 'dikembalikan ke belum diantar' }
+    belum_diantar: { label: 'Belum diantar', cls: 'ghost', ok: 'dikembalikan ke diproses' }
   };
   const A_WEB = {
     terima: { label: 'Terima pesanan', cls: '', ok: 'diterima' },
     lunas: { label: 'Tandai lunas', cls: '', tanya: p => p.bayar === 'Tunai' ? `Uang tunai ${rupiah(p.total)} dari ${p.nama} sudah diterima?` : `Sudah cek dan ada transfer masuk ${rupiah(p.total)} dari ${p.nama}?`, ya: 'Ya, lunas', ok: 'ditandai lunas' },
     belum_lunas: { label: 'Belum lunas', cls: 'ghost', tanya: () => 'Tandai pesanan ini belum lunas lagi?', ya: 'Ya, belum lunas', ok: 'ditandai belum lunas' },
     diantar: { label: 'Tandai diantar', cls: '', tanya: p => `${p.nama} sudah menerima pesanannya?${p.lunas ? '' : ' Pembayarannya masih tercatat belum lunas.'}`, ya: 'Ya, sudah diantar', ok: 'ditandai diantar' },
-    belum_diantar: { label: 'Belum diantar', cls: 'ghost', ok: 'dikembalikan ke belum diantar' },
+    belum_diantar: { label: 'Belum diantar', cls: 'ghost', ok: 'dikembalikan ke diproses' },
     batal: { label: 'Batalkan', cls: 'warn', tanya: p => `Batalkan pesanan ${p.kode} atas nama ${p.nama}?`, ya: 'Ya, batalkan', alasan: true, ok: 'dibatalkan' },
     aktifkan: { label: 'Aktifkan lagi', cls: 'ghost', ok: 'diaktifkan lagi' }
   };
@@ -294,193 +315,210 @@ details a { color: var(--ink2); }
     if (p.status === 'main' || p.status === 'selesai') return p.diantar ? ['belum_diantar'] : ['diantar'];
     return [];
   }
+  function petunjuk(p) {
+    if (isWeb(p) && st(p) === 'baru') return 'Balas pembeli lewat tombol WA pembeli, lalu tekan Terima pesanan.';
+    if (!isWeb(p) && p.status === 'cek_admin') return 'Pembeli bilang sudah transfer. Cek DANA dulu, baru tandai lunas.';
+    if (!isWeb(p) && p.status === 'menunggu_bayar') return 'Pembeli belum menekan "sudah transfer". Batal otomatis setelah 1 jam.';
+    if (!isWeb(p) && p.status === 'lunas' && !p.diantar) return 'Buat Medium dulu; ukuran akhirnya menunggu hasil game.';
+    return '';
+  }
 
   const fmtJam = new Intl.DateTimeFormat('id-ID', { timeZone: 'Asia/Jakarta', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
-  function lalu(iso) {
-    if (!iso) return '';
-    const s = (Date.now() - Date.parse(iso)) / 1000;
-    if (s < 60) return 'baru saja';
-    if (s < 3600) return Math.floor(s / 60) + ' menit lalu';
-    if (s < 6 * 3600) return Math.floor(s / 3600) + ' jam lalu';
-    return fmtJam.format(new Date(iso)).replace('.', ':');
-  }
-  const riwayatJam = iso => fmtJam.format(new Date(iso));
-
-  function infoBayar() {
-    const b = pembayaran[0];
-    return b ? `${b.jenis} ${b.nomor}${b.atasNama ? ' a.n. ' + b.atasNama : ''}` : '';
-  }
+  const jamSaja = new Intl.DateTimeFormat('id-ID', { timeZone: 'Asia/Jakarta', hour: '2-digit', minute: '2-digit' });
+  const waktu = iso => iso ? fmtJam.format(new Date(iso)) : '';
+  function infoBayar() { const b = pembayaran[0]; return b ? `${b.jenis} ${b.nomor}${b.atasNama ? ' a.n. ' + b.atasNama : ''}` : ''; }
   function waBuyer(p) {
     let t;
     if (isWeb(p)) {
-      const terima = p.cara_terima === 'Diantar' ? `diantar ke ${p.lokasi}` : p.lokasi.replace(/^Ambil/, 'ambil');
-      const bayar = st(p) === 'batal' ? '' : p.lunas ? ' Pembayaran sudah kami terima.'
+      const terima = p.cara_terima === 'Diantar' ? `diantar ke ${p.lokasi}` : String(p.lokasi).replace(/^Ambil/, 'ambil');
+      const bayar = p.lunas ? ' Pembayaran sudah kami terima.'
         : p.bayar === 'Transfer' ? ` Silakan transfer ${rupiah(p.total)}${infoBayar() ? ' ke ' + infoBayar() : ''}, lalu kirim buktinya di chat ini ya.`
         : ' Bayarnya tunai saat serah terima ya.';
       t = st(p) === 'batal' ? `Halo ${p.nama}, ini admin Code Caffeine soal pesanan ${p.kode}.`
         : `Halo ${p.nama}, pesanan Code Caffeine ${p.kode} sudah kami terima: ${p.pesanan}. Total ${rupiah(p.total)}, ${terima}, ${p.untuk_hari}${p.jam ? ' jam ' + p.jam : ''}.${bayar} Terima kasih!`;
     } else if (p.status === 'lunas') t = `Halo ${p.nama}, pembayaran paket Caffeine Challenge ${p.kode} sudah kami terima. Tantanganmu sudah terbuka di web Code Caffeine, buka lagi halamannya lalu tekan TANTANGAN. Selamat main!`;
-    else if (p.status === 'cek_admin' || p.status === 'menunggu_bayar') t = `Halo ${p.nama}, ini admin Code Caffeine soal pesanan Caffeine Challenge ${p.kode} (${rupiah(p.harga)}).`;
     else if (p.status === 'selesai') t = `Halo ${p.nama}, ini admin Code Caffeine. Pesanan ${p.kode}: ${p.hadiah}. Diantar ${p.untuk}, ${p.jam}.`;
-    else t = `Halo ${p.nama}, ini admin Code Caffeine soal pesanan ${p.kode}.`;
+    else t = `Halo ${p.nama}, ini admin Code Caffeine soal pesanan ${p.kode} (${rupiah(nominal(p))}).`;
     return `https://wa.me/${waIntl(p.wa)}?text=${encodeURIComponent(t)}`;
   }
 
-  function card(p, g) {
+  /* ---------- tampilan ---------- */
+  function detailHTML(p) {
     const k = keyOf(p), A = actsOf(p);
-    let when;
-    if (isWeb(p)) when = st(p) === 'baru' ? `masuk ${lalu(p.dibuat)}` : p.diterima_oleh ? `diterima ${p.diterima_oleh} ${lalu(p.diterima_at)}` : `masuk ${lalu(p.dibuat)}`;
-    else when = p.status === 'cek_admin' ? `bilang sudah transfer ${lalu(p.sudah_bayar_at)}`
-      : p.status === 'menunggu_bayar' ? `dipesan ${lalu(p.dibuat)}, belum transfer`
-      : p.lunas_at ? `lunas ${lalu(p.lunas_at)}${p.lunas_oleh ? ' oleh ' + p.lunas_oleh : ''}` : `dipesan ${lalu(p.dibuat)}`;
-    const flags = [];
-    if (isWeb(p) && st(p) !== 'batal') flags.push(p.lunas ? `<span class="flag ok">${esc(p.bayar || 'Bayar')} · lunas${p.lunas_oleh ? ' (' + esc(p.lunas_oleh) + ')' : ''}</span>` : `<span class="flag wait">${esc(p.bayar || 'Bayar')} · belum lunas</span>`);
-    if (isWeb(p) && p.stamp_gratis) flags.push(`<span class="flag wait">Tukar stamp: ${esc(p.stamp_gratis)} gratis, cek kartunya</span>`);
-    if (isWeb(p) && p.pakai_voucher) flags.push('<span class="flag wait">Pakai voucher Rp1.000, cek nomornya</span>');
-    if (p.curiga) flags.push(`<span class="flag" title="${esc(p.curiga)}">Perlu dicek: hasil terkirim terlalu cepat</span>`);
-    if (p.tidak_selesai) flags.push('<span class="flag">Tidak menyelesaikan permainan (skor 0)</span>');
-    if (st(p) === 'batal' && p.alasan_batal) flags.push(`<span class="flag">${esc(p.alasan_batal)}</span>`);
-    if (p.diantar) flags.push(`<span class="flag ok">Diantar${p.diantar_oleh ? ' oleh ' + esc(p.diantar_oleh) : ''}</span>`);
-    const isi = isWeb(p)
-      ? `<p class="meta"><b>${esc(p.pesanan)}</b></p>`
-      : `<p class="meta"><b>${esc(p.menuNama)} Medium</b> · paket Challenge</p>${p.hadiah ? `<p class="hadiah">Hadiah: <b>${esc(p.hadiah)}</b>${p.skor != null ? ` <span class="kode num">· skor ${Number(p.skor).toLocaleString('id-ID')}</span>` : ''}</p>` : ''}`;
-    const terima = p.cara_terima === 'Diantar' ? 'Diantar ke ' + p.lokasi : p.lokasi;
-    const acts = actionsFor(p);
+    const rows = [
+      ['Kode', p.kode],
+      ['WhatsApp', p.wa],
+      isWeb(p) ? ['Pesanan', p.pesanan] : ['Paket', `${p.menuNama} Medium`],
+      !isWeb(p) && p.hadiah ? ['Hadiah', `${p.hadiah}${p.skor != null ? ` (skor ${Number(p.skor).toLocaleString('id-ID')})` : ''}`] : null,
+      ['Terima', p.cara_terima === 'Diantar' ? 'Diantar ke ' + p.lokasi : p.lokasi],
+      ['Jam', `${p.jam || '-'} · ${hari(p)}`],
+      ['Bayar', isWeb(p) ? `${rupiah(p.total)} ${p.bayar || ''} · ${p.lunas ? 'lunas' + (p.lunas_oleh ? ' (' + p.lunas_oleh + ')' : '') : 'belum lunas'}`
+        : `${rupiah(p.harga)} ke ${p.bayar_ke ? p.bayar_ke.jenis : 'DANA'}${['lunas', 'main', 'selesai'].includes(p.status) ? ' · lunas' + (p.lunas_oleh ? ' (' + p.lunas_oleh + ')' : '') : ''}`],
+      isWeb(p) && p.stamp_gratis ? ['Stamp', `Tukar kartu: ${p.stamp_gratis} gratis. Cek kartunya.`] : null,
+      isWeb(p) && p.pakai_voucher ? ['Voucher', 'Pakai voucher Rp1.000. Cek nomornya.'] : null,
+      p.catatan ? ['Catatan', p.catatan] : null,
+      p.curiga ? ['Perlu dicek', p.curiga] : null,
+      p.tidak_selesai ? ['Game', 'Tidak diselesaikan, skor 0'] : null,
+      st(p) === 'batal' && p.alasan_batal ? ['Alasan batal', p.alasan_batal] : null,
+      p.diantar ? ['Diantar', `${p.diantar_oleh || ''} ${waktu(p.diantar_at)}`.trim()] : null
+    ].filter(Boolean);
     const conf = open.key === k && A[open.aksi] && A[open.aksi].tanya ? A[open.aksi] : null;
-    const isBusy = busy.has(k);
-    const tombol = conf ? '' : `<div class="acts">${acts.map(a => `<button class="btn ${A[a].cls}" type="button" data-act="${a}" data-key="${esc(k)}"${isBusy ? ' disabled' : ''}>${A[a].label}</button>`).join('')}<a class="btn ghost" href="${waBuyer(p)}" target="_blank" rel="noopener">WA pembeli</a></div>`;
-    const konfirmasi = conf ? `<div class="conf"><p>${esc(conf.tanya(p))}</p>${conf.alasan ? '<input type="text" maxlength="120" placeholder="Alasan (opsional), misalnya pembeli membatalkan" aria-label="Alasan pembatalan" data-alasan>' : ''}<div class="acts"><button class="btn ${open.aksi === 'batal' ? 'warn' : ''}" type="button" data-yes="${open.aksi}" data-key="${esc(k)}"${isBusy ? ' disabled' : ''}>${isBusy ? 'Menyimpan…' : conf.ya}</button><button class="btn ghost" type="button" data-no>Tidak jadi</button></div></div>` : '';
-    const riwayat = (p.riwayat || []).map(r => `<li>${esc(riwayatJam(r.t))}: ${esc(r.ev)}${r.oleh ? ' (' + esc(r.oleh) + ')' : ''}</li>`).join('');
+    const isBusy = busy.has(k), hint = petunjuk(p);
+    const tombol = conf ? '' : `<div class="acts">${actionsFor(p).map(a => `<button class="btn ${A[a].cls}" type="button" data-act="${a}" data-key="${esc(k)}"${isBusy ? ' disabled' : ''}>${A[a].label}</button>`).join('')}<a class="btn ghost" href="${waBuyer(p)}" target="_blank" rel="noopener">WA pembeli</a></div>`;
+    const konfirmasi = conf ? `<div class="conf"><p>${esc(conf.tanya(p))}</p>${conf.alasan ? '<input type="text" maxlength="120" placeholder="Alasan (opsional)" aria-label="Alasan pembatalan" data-alasan>' : ''}<div class="acts"><button class="btn ${open.aksi === 'batal' ? 'warn' : ''}" type="button" data-yes="${open.aksi}" data-key="${esc(k)}"${isBusy ? ' disabled' : ''}>${isBusy ? 'Menyimpan…' : conf.ya}</button><button class="btn ghost" type="button" data-no>Tidak jadi</button></div></div>` : '';
+    const riw = (p.riwayat || []).map(r => `<p>${esc(waktu(r.t))} · ${esc(r.ev)}${r.oleh ? ' · ' + esc(r.oleh) : ''}</p>`).join('');
     const cek = !isWeb(p) && p.rekaman != null && p.status === 'selesai' && !p.tidak_selesai ? `<p><a href="/main/#cek=${esc(p.rekaman)}" target="_blank" rel="noopener">Putar ulang hitungan skor</a></p>` : '';
-    return `<article class="ord${p._baru ? ' baru' : ''}" style="--c:${g.c}" data-ord="${esc(k)}">
-      <div class="r1"><h3>${esc(p.nama)}</h3><span class="harga num">${esc(rupiah(nominal(p)))}</span></div>
-      <p class="kode num">${esc(p.kode)} · ${isWeb(p) ? 'Pesanan web' : 'Paket Challenge'} · ${esc(p.wa)}</p>
-      ${isi}
-      <p class="meta">${esc(terima)} · ${esc(p.jam)} · ${esc(hari(p))}</p>
-      ${p.catatan ? `<p class="meta">Catatan: ${esc(p.catatan)}</p>` : ''}
-      ${flags.join(' ')}
-      <p class="when">${esc(when)}${!isWeb(p) ? ` · ke ${esc(p.bayar_ke && p.bayar_ke.jenis)} ${esc(p.bayar_ke && p.bayar_ke.nomor)}` : ''}</p>
-      ${tombol}${konfirmasi}
-      <details><summary>Riwayat</summary><ul>${riwayat}</ul>${cek}</details>
+    return `<dl>${rows.map(([a, b]) => `<dt>${esc(a)}</dt><dd>${esc(b)}</dd>`).join('')}</dl>
+      ${hint ? `<p class="hint">${esc(hint)}</p>` : ''}${tombol}${konfirmasi}
+      <div class="riw">${riw}${cek}</div>`;
+  }
+  function rowHTML(p) {
+    const k = keyOf(p), buka = expanded.has(k);
+    const isi = isWeb(p) ? p.pesanan : `${p.menuNama} Medium${p.hadiah && p.tier === 'large' ? ' → Large' : ''}`;
+    return `<article class="ord${buka ? ' buka' : ''}${p._baru ? ' baru' : ''}" data-ord="${esc(k)}">
+      <button class="ring" type="button" data-toggle="${esc(k)}" aria-expanded="${buka}">
+        <span class="nm">${esc(p.nama)}</span><span class="tot num">${esc(rupiah(nominal(p)))}</span>
+        <span class="isi">${esc(isi)}</span><span class="chev" aria-hidden="true">▾</span>
+        <span class="chips">${chips(p)}</span>
+      </button>
+      <div class="det"${buka ? '' : ' hidden'}>${buka ? detailHTML(p) : ''}</div>
     </article>`;
   }
-
-  function filtered() {
-    const q = $('[data-q]').value.trim().toLowerCase();
-    const h = $('[data-hari]').value;
-    const digits = q.replace(/\D/g, '');
-    return all.filter(p => {
-      if (h && hari(p) !== h) return false;
-      if (!q) return true;
-      return String(p.nama).toLowerCase().includes(q) || String(p.kode).toLowerCase().includes(q) || (digits.length >= 3 && String(p.wa).includes(digits));
-    });
-  }
-
-  function renderHari() {
-    const sel = $('[data-hari]'), cur = sel.value;
-    const days = [...new Set(all.map(hari))];
-    sel.innerHTML = '<option value="">Semua hari</option>' + days.map(d => `<option value="${esc(d)}">${esc(d)}</option>`).join('');
-    if (days.includes(cur)) sel.value = cur;
-    sel.hidden = days.length < 2;
-  }
-
-  // Rekap cup yang perlu dibuat dari kelompok "Siap dibuat & diantar"
   function rekap(items) {
-    const n = new Map();
-    const add = (k, q) => n.set(k, (n.get(k) || 0) + q);
+    const n = new Map(), add = (k, q) => n.set(k, (n.get(k) || 0) + q);
     for (const p of items) {
       if (!isWeb(p)) { add(`${p.menuNama} ${p.tier === 'large' ? 'Large' : 'Medium'}`, 1); continue; }
       if (p.items && p.items.length) p.items.forEach(i => add(`${i.nama} ${{ S: 'Small', M: 'Medium', L: 'Large' }[i.ukuran]}`, i.qty));
       else String(p.pesanan || '').split(';').forEach(x => { const m = x.trim().match(/^(\d+)x (.+)$/); if (m) add(m[2], Number(m[1])); });
     }
     const tot = [...n.values()].reduce((a, b) => a + b, 0);
-    return tot ? `Total ${tot} cup: ` + [...n.entries()].sort((a, b) => b[1] - a[1]).map(([k, q]) => `${q}x ${k}`).join(', ') : '';
+    return tot ? `Perlu dibuat ${tot} cup: ` + [...n.entries()].sort((a, b) => b[1] - a[1]).map(([k, q]) => `${q}x ${k}`).join(', ') : '';
+  }
+
+  function filtered() {
+    const q = $('[data-q]').value.trim().toLowerCase(), h = $('[data-hari]').value, digits = q.replace(/\D/g, '');
+    return all.filter(p => (!h || hari(p) === h) && (!q || String(p.nama).toLowerCase().includes(q) || String(p.kode).toLowerCase().includes(q) || (digits.length >= 3 && String(p.wa).includes(digits))));
+  }
+  function renderHari() {
+    const sel = $('[data-hari]'), cur = sel.value, days = [...new Set(all.map(hari))];
+    sel.innerHTML = '<option value="">Semua hari</option>' + days.map(d => `<option value="${esc(d)}">${esc(d)}</option>`).join('');
+    if (days.includes(cur)) sel.value = cur;
+    sel.hidden = days.length < 2;
   }
 
   function render() {
     const typing = document.activeElement && document.activeElement.matches('[data-alasan]');
     const alasan = typing ? document.activeElement.value : '';
     const list = filtered();
-    $('[data-n-cek]').textContent = list.filter(perluTindak).length;
-    $('[data-n-antar]').textContent = list.filter(belumAntar).length;
+    const by = id => list.filter(p => kelompok(p) === id);
+    ['baru', 'proses', 'selesai'].forEach(id => { $(`[data-n="${id}"]`).textContent = by(id).length; });
     $('[data-omzet]').textContent = rupiah(list.filter(sudahBayar).reduce((s, p) => s + nominal(p), 0));
-    const html = GROUPS.map(g => {
-      let items = list.filter(g.match);
-      if (!items.length && !g.wajib) return '';
-      items = items.slice().sort((a, b) => g.sort === 'lama'
+    $('[data-list]').innerHTML = GRUP.map(g => {
+      let items = by(g.id);
+      if (g.id === 'batal') {
+        if (!items.length) return '';
+        if (!showBatal) return `<button class="lihat-batal" type="button" data-lihat-batal>Lihat pesanan batal (${items.length})</button>`;
+      }
+      items = items.slice().sort((a, b) => g.urut === 'lama'
         ? Date.parse(a.sudah_bayar_at || a.dibuat) - Date.parse(b.sudah_bayar_at || b.dibuat)
-        : Date.parse(b.dibuat) - Date.parse(a.dibuat));
-      const r = g.rekap && items.length ? rekap(items) : '';
-      return `<section class="grp" style="--c:${g.c}">
-        <div class="grp-h"><h2><i></i>${g.title} <small class="num">${items.length}</small></h2>${g.copy && items.length ? '<button class="btn ghost" type="button" data-copy>Salin daftar antar</button>' : ''}</div>
-        ${r ? `<p class="empty rekap">${esc(r)}</p>` : ''}
-        ${g.hint && items.length ? `<p class="empty">${g.hint}</p>` : ''}
-        ${items.length ? items.map(p => card(p, g)).join('') : '<p class="empty">Tidak ada pesanan baru. Pesanan dari web akan muncul di sini.</p>'}
+        : Date.parse(b.diantar_at || b.dibuat) - Date.parse(a.diantar_at || a.dibuat));
+      const r = g.id === 'proses' && items.length ? rekap(items) : '';
+      return `<section class="grp ${g.id}" id="g-${g.id}">
+        <div class="grp-h"><h2>${g.title} <span class="n num">${items.length}</span></h2>${g.salin && items.length ? '<button class="btn ghost" type="button" data-copy>Salin daftar antar</button>' : ''}${g.id === 'batal' ? '<button class="btn ghost" type="button" data-lihat-batal>Sembunyikan</button>' : ''}</div>
+        ${r ? `<p class="rekap">${esc(r)}</p>` : ''}
+        ${items.length ? items.map(rowHTML).join('') : `<p class="kosong">${{ baru: 'Tidak ada pesanan yang menunggu.', proses: 'Belum ada pesanan yang diproses.', selesai: 'Belum ada pesanan yang selesai.' }[g.id]}</p>`}
       </section>`;
     }).join('');
-    $('[data-list]').innerHTML = html;
     const n = all.filter(perluTindak).length;
     document.title = (n ? `(${n}) ` : '') + 'CC Admin · Code Caffeine';
     if (typing) { const inp = $('[data-alasan]'); if (inp) { inp.value = alasan; inp.focus(); } }
   }
-
   function renderUpd() {
-    $('[data-upd]').textContent = lastOk ? `Diperbarui ${new Intl.DateTimeFormat('id-ID', { timeZone: 'Asia/Jakarta', hour: '2-digit', minute: '2-digit', second: '2-digit' }).format(new Date(lastOk))} WIB, otomatis tiap 8 detik` : '';
+    $('[data-upd]').textContent = lastOk ? `Diperbarui ${jamSaja.format(new Date(lastOk))} WIB` : '';
   }
 
   let toastT = 0;
-  function toast(msg) {
-    const t = $('[data-toast]'); t.textContent = msg; t.hidden = false;
-    clearTimeout(toastT); toastT = setTimeout(() => { t.hidden = true; }, 2600);
-  }
+  function toast(msg) { const t = $('[data-toast]'); t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => { t.hidden = true; }, 2600); }
 
-  async function load(manual) {
-    if (!key) { showGate(); return; }
-    try {
-      const d = await api('pesanan');
-      admin = d.admin; vapid = d.vapid || ''; pembayaran = d.pembayaran || [];
-      const list = [
-        ...(d.web || []).map(p => ({ ...p, jenis: 'web' })),
-        ...d.pesanan.map(p => ({ ...p, jenis: 'challenge', id: p.kode }))
-      ];
-      const tindak = list.filter(perluTindak).map(keyOf);
-      const baru = firstLoad ? [] : tindak.filter(k => !seenTindak.has(k));
-      seenTindak = new Set(tindak);
-      all = list.map(p => ({ ...p, _baru: baru.includes(keyOf(p)) }));
-      lastOk = Date.now();
-      if (gate.hidden === false || app.hidden) {
-        gate.hidden = true; app.hidden = false;
-        $('[data-who]').textContent = admin;
-        addManifest(); setupNotif();
-      }
-      renderHari(); render(); renderUpd();
-      if (baru.length) { toast(baru.length > 1 ? `${baru.length} pesanan baru perlu ditindak` : 'Ada pesanan baru perlu ditindak'); if (navigator.vibrate) navigator.vibrate(180); }
-      firstLoad = false;
-      all.forEach(p => { p._baru = false; });
-    } catch (err) {
-      if (err.status === 401) {
-        try { localStorage.removeItem(K_KEY); } catch (e) { /* abaikan */ }
-        key = ''; showGate(manual ? 'Link admin ini tidak valid atau sudah diganti. Minta link baru ke Dede.' : '');
-        if (!manual) $('[data-gate-text]').textContent = 'Link admin ini tidak valid atau sudah diganti. Buka link admin pribadimu yang terbaru.';
-      } else {
-        $('[data-upd]').textContent = `${err.message} Data terakhir ${lastOk ? 'dari ' + lalu(new Date(lastOk).toISOString()) : 'belum ada'}.`;
-        if (manual) toast(err.message);
-      }
-    }
+  /* ---------- muat data ---------- */
+  let loading = null;
+  function load(manual) {
+    if (!key) { showGate(); return Promise.resolve(); }
+    if (loading) return loading;
+    loading = (async () => {
+      try {
+        const d = await api('pesanan');
+        admin = d.admin; vapid = d.vapid || ''; pembayaran = d.pembayaran || [];
+        const list = [...(d.web || []).map(p => ({ ...p, jenis: 'web' })), ...d.pesanan.map(p => ({ ...p, jenis: 'challenge', id: p.kode }))];
+        const tindak = list.filter(perluTindak).map(keyOf);
+        const baru = firstLoad ? [] : tindak.filter(k => !seenTindak.has(k));
+        seenTindak = new Set(tindak);
+        lastOk = Date.now(); renderUpd();
+        if (app.hidden) {
+          gate.hidden = true; app.hidden = false;
+          $('[data-who]').textContent = admin;
+          addManifest(); setupNotif();
+        }
+        // Gambar ulang hanya kalau datanya berubah, supaya baris yang dibuka tidak menutup sendiri
+        const s = JSON.stringify(list);
+        if (s !== sig || baru.length) {
+          sig = s;
+          all = list.map(p => ({ ...p, _baru: baru.includes(keyOf(p)) }));
+          renderHari(); render();
+          all.forEach(p => { p._baru = false; });
+        }
+        if (baru.length) { toast(baru.length > 1 ? `${baru.length} pesanan baru masuk` : 'Ada pesanan baru masuk'); if (navigator.vibrate) navigator.vibrate(180); }
+        firstLoad = false;
+      } catch (err) {
+        if (err.status === 401) {
+          try { localStorage.removeItem(K_KEY); } catch (e) { /* abaikan */ }
+          key = ''; showGate(manual ? 'Link admin ini tidak valid atau sudah diganti. Minta link baru ke Dede.' : '');
+          if (!manual) $('[data-gate-text]').textContent = 'Link admin ini tidak valid atau sudah diganti. Buka link admin pribadimu yang terbaru.';
+        } else {
+          $('[data-upd]').textContent = `${err.message} Data terakhir ${lastOk ? jamSaja.format(new Date(lastOk)) + ' WIB' : 'belum ada'}.`;
+          if (manual) toast(err.message);
+        }
+      } finally { loading = null; }
+    })();
+    return loading;
   }
+  $('[data-refresh]').addEventListener('click', async e => {
+    const b = e.currentTarget; b.disabled = true; b.textContent = 'Memuat…';
+    await load(true);
+    b.disabled = false; b.textContent = 'Perbarui';
+  });
 
-  /* ---------- tombol di daftar ---------- */
+  /* ---------- ketukan di daftar ---------- */
   const byKey = k => all.find(p => keyOf(p) === k);
-  $('[data-list]').addEventListener('click', async e => {
+  function toggle(k) {
+    const art = document.querySelector(`[data-ord="${CSS.escape(k)}"]`), p = byKey(k);
+    if (!art || !p) return;
+    const buka = !expanded.has(k);
+    buka ? expanded.add(k) : expanded.delete(k);
+    if (!buka && open.key === k) { open.key = ''; open.aksi = ''; }
+    art.classList.toggle('buka', buka);
+    $('.ring', art).setAttribute('aria-expanded', String(buka));
+    const det = $('.det', art);
+    det.innerHTML = buka ? detailHTML(p) : '';
+    det.hidden = !buka;
+  }
+  function redrawRow(k) {
+    const art = document.querySelector(`[data-ord="${CSS.escape(k)}"]`), p = byKey(k);
+    if (!art || !p) return render();
+    if (expanded.has(k)) { $('.det', art).innerHTML = detailHTML(p); }
+  }
+  $('[data-list]').addEventListener('click', e => {
     const b = e.target.closest('button');
     if (!b) return;
-    if (b.matches('[data-copy]')) return copyAntar(b);
-    if (b.matches('[data-no]')) { open.key = ''; open.aksi = ''; render(); return; }
+    if (b.dataset.toggle) return toggle(b.dataset.toggle);
+    if (b.matches('[data-copy]')) return copyAntar();
+    if (b.matches('[data-lihat-batal]')) { showBatal = !showBatal; return render(); }
+    if (b.matches('[data-no]')) { const k = open.key; open.key = ''; open.aksi = ''; return redrawRow(k); }
     const k = b.dataset.key, p = byKey(k);
     if (!p) return;
     if (b.dataset.act) {
       const a = actsOf(p)[b.dataset.act];
-      if (a.tanya) { open.key = k; open.aksi = b.dataset.act; render(); const y = document.querySelector(`[data-yes][data-key="${CSS.escape(k)}"]`); if (y) y.focus(); return; }
+      if (a.tanya) { open.key = k; open.aksi = b.dataset.act; redrawRow(k); const y = document.querySelector(`[data-yes][data-key="${CSS.escape(k)}"]`); if (y) y.focus(); return; }
       return run(p, b.dataset.act);
     }
     if (b.dataset.yes) {
@@ -492,32 +530,30 @@ details a { color: var(--ink2); }
   async function run(p, aksi, alasan) {
     const k = keyOf(p);
     if (busy.has(k)) return;
-    busy.add(k); render();
+    busy.add(k); redrawRow(k);
     try {
       const r = await api('aksi', isWeb(p) ? { jenis: 'web', id: p.id, aksi, alasan } : { kode: p.kode, aksi, alasan });
       const next = isWeb(p) ? { ...r, jenis: 'web' } : { ...r, jenis: 'challenge', id: r.kode };
       all = all.map(o => keyOf(o) === k ? next : o);
       seenTindak = new Set(all.filter(perluTindak).map(keyOf));
       open.key = ''; open.aksi = '';
-      toast(`${p.kode} ${actsOf(p)[aksi].ok}`);
-    } catch (err) {
-      toast(err.message);
-      open.key = ''; open.aksi = '';
+      busy.delete(k);
+      render();
+      toast(`${p.nama}: ${actsOf(p)[aksi].ok}`);
       load();
-    } finally {
-      busy.delete(k); render();
+    } catch (err) {
+      busy.delete(k); open.key = ''; open.aksi = '';
+      toast(err.message); redrawRow(k); load(true);
     }
   }
 
   async function copyAntar() {
-    const items = filtered().filter(GROUPS.find(g => g.id === 'antar').match);
-    const hariList = [...new Set(items.map(hari))].join(', ');
-    const text = [`Daftar antar Code Caffeine · ${hariList}`, rekap(items), '', ...items.map((p, i) =>
-      `${i + 1}. ${p.nama} (${p.wa}) · ${isWeb(p) ? p.pesanan : p.hadiah} · ${p.cara_terima === 'Diantar' ? 'Antar ke ' + p.lokasi : p.lokasi} · ${p.jam} · ${isWeb(p) ? (p.lunas ? 'lunas' : p.bayar + ' belum lunas, tagih ' + rupiah(p.total)) : 'lunas'} · ${p.kode}`)].join('\n');
+    const items = filtered().filter(p => kelompok(p) === 'proses');
+    const text = [`Daftar antar Code Caffeine · ${[...new Set(items.map(hari))].join(', ')}`, rekap(items), '', ...items.map((p, i) =>
+      `${i + 1}. ${p.nama} (${p.wa}) · ${isWeb(p) ? p.pesanan : p.menuNama + ' ' + (p.tier === 'large' ? 'Large' : 'Medium') + ' (Challenge)'} · ${p.cara_terima === 'Diantar' ? 'Antar ke ' + p.lokasi : p.lokasi} · ${p.jam} · ${sudahBayar(p) ? 'lunas' : 'tagih ' + rupiah(nominal(p)) + ' ' + (p.bayar || '')} · ${p.kode}`)].join('\n');
     try { await navigator.clipboard.writeText(text); toast('Daftar antar tersalin'); }
     catch (err) { toast('Tidak bisa menyalin otomatis di browser ini'); }
   }
-
   $('[data-q]').addEventListener('input', render);
   $('[data-hari]').addEventListener('change', render);
 
@@ -528,45 +564,39 @@ details a { color: var(--ink2); }
     l.rel = 'manifest'; l.href = '/api/admin/manifest?k=' + encodeURIComponent(key);
     document.head.appendChild(l);
   }
-
   const isIOS = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   const standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
   const pushOK = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
   let reg = null;
-
-  function notifUI(text, on, test) {
-    $('[data-notif-text]').innerHTML = text;
-    $('[data-notif-on]').hidden = !on;
-    $('[data-notif-test]').hidden = !test;
+  // Notifikasi belum aktif = panel di atas. Sudah aktif = satu baris kecil di bawah.
+  function notifUI(text, tombol, aktif) {
+    $('[data-notif]').hidden = aktif || !text;
+    $('[data-notif-text]').innerHTML = text || '';
+    $('[data-notif-on]').hidden = !tombol;
+    $('[data-notif-foot]').hidden = !aktif;
   }
   function b64(s) {
     const pad = '='.repeat((4 - s.length % 4) % 4), raw = atob((s + pad).replace(/-/g, '+').replace(/_/g, '/'));
     return Uint8Array.from(raw, c => c.charCodeAt(0));
   }
-
   async function setupNotif() {
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.addEventListener('message', e => { if (e.data && e.data.type === 'refresh') load(); });
-      // dipasang walau notifikasi belum diatur: dibutuhkan untuk mode aplikasi dan halaman offline
+      navigator.serviceWorker.addEventListener('message', e => { if (e.data && e.data.type === 'refresh') load(true); });
       try { reg = await navigator.serviceWorker.register('/admin/sw.js', { scope: '/admin/' }); } catch (e) { reg = null; }
     }
     if (!pushOK) {
-      if (isIOS && !standalone) {
-        notifUI('<b>Notifikasi di iPhone</b> hanya jalan dari ikon di Layar Utama.<ol><li>Tekan tombol Bagikan di Safari</li><li>Pilih "Tambah ke Layar Utama"</li><li>Buka Admin CC dari ikon itu, lalu tekan Aktifkan notifikasi</li></ol>', false, false);
-      } else notifUI('Browser ini belum mendukung notifikasi. Pakai Chrome terbaru di Android atau laptop.', false, false);
+      if (isIOS && !standalone) notifUI('<b>Notifikasi di iPhone</b> hanya jalan dari ikon di Layar Utama.<ol><li>Tekan tombol Bagikan di Safari</li><li>Pilih "Tambah ke Layar Utama"</li><li>Buka CC Admin dari ikon itu, lalu aktifkan notifikasi</li></ol>', false, false);
+      else notifUI('Browser ini belum mendukung notifikasi. Pakai Chrome terbaru di Android atau laptop.', false, false);
       return;
     }
-    if (!vapid) { notifUI('Notifikasi belum diatur di server. Halaman ini tetap memuat pesanan baru tiap 8 detik.', false, false); return; }
-    if (!reg) { notifUI('Notifikasi tidak bisa disiapkan di browser ini.', false, false); return; }
-    if (Notification.permission === 'denied') { notifUI('Notifikasi diblokir untuk situs ini. Izinkan lewat pengaturan situs di browser, lalu muat ulang halaman.', false, false); return; }
+    if (!vapid || !reg) { notifUI('', false, false); return; }
+    if (Notification.permission === 'denied') { notifUI('Notifikasi diblokir untuk situs ini. Izinkan lewat pengaturan situs di browser, lalu buka lagi.', false, false); return; }
     const sub = await reg.pushManager.getSubscription();
     if (sub && Notification.permission === 'granted') {
-      // kirim ulang supaya server pasti punya langganan HP ini
       api('langganan', { subscription: sub.toJSON() }).catch(() => {});
-      notifUI('<b>Notifikasi aktif di HP ini.</b> Kamu dikabari setiap ada pesanan baru, transfer yang perlu dicek, dan hasil tantangan.', false, true);
+      notifUI('', false, true);
     } else notifUI('<b>Nyalakan notifikasi</b> supaya kamu dikabari setiap ada pesanan baru.', true, false);
   }
-
   $('[data-notif-on]').addEventListener('click', async e => {
     const b = e.currentTarget; b.disabled = true;
     try {
@@ -575,7 +605,7 @@ details a { color: var(--ink2); }
       reg = reg || await navigator.serviceWorker.ready;
       const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64(vapid) });
       await api('langganan', { subscription: sub.toJSON() });
-      notifUI('<b>Notifikasi aktif di HP ini.</b> Tekan Tes notifikasi untuk memastikan.', false, true);
+      notifUI('', false, true); toast('Notifikasi aktif. Coba tekan Tes notifikasi di bawah.');
     } catch (err) {
       notifUI('Gagal mengaktifkan notifikasi: ' + esc(err.message || 'coba lagi') + '.', true, false);
     } finally { b.disabled = false; }
@@ -587,12 +617,8 @@ details a { color: var(--ink2); }
     finally { b.disabled = false; }
   });
 
-  /* ---------- pasang sebagai aplikasi (Chrome, Edge) ---------- */
   let installEv = null;
-  addEventListener('beforeinstallprompt', e => {
-    e.preventDefault(); installEv = e;
-    $('[data-install]').hidden = standalone;
-  });
+  addEventListener('beforeinstallprompt', e => { e.preventDefault(); installEv = e; $('[data-install]').hidden = standalone; });
   $('[data-install-btn]').addEventListener('click', async () => {
     if (!installEv) return;
     installEv.prompt();
@@ -600,26 +626,22 @@ details a { color: var(--ink2); }
     installEv = null;
     if (r.outcome === 'accepted') $('[data-install]').hidden = true;
   });
-  addEventListener('appinstalled', () => {
-    $('[data-install]').hidden = true;
-    toast('CC Admin terpasang. Buka dari layar utama HP-mu.');
-  });
+  addEventListener('appinstalled', () => { $('[data-install]').hidden = true; toast('CC Admin terpasang. Buka dari layar utama HP-mu.'); });
 
-  /* ---------- jalan ---------- */
+  /* ---------- selalu segar ---------- */
+  // Tiap 8 detik saat halaman terlihat. Saat aplikasi dibuka lagi (dari notifikasi, pindah aplikasi, layar
+  // menyala) langsung dimuat ulang. Di iPhone, timer berhenti saat aplikasi di latar belakang, jadi jeda
+  // panjang antar-detak juga dianggap "baru dibuka lagi".
   function startTimer() { clearInterval(timer); timer = setInterval(() => { if (!document.hidden && key) load(); }, 8000); }
-  document.addEventListener('visibilitychange', () => { if (!document.hidden && key) load(); });
-  setInterval(() => { if (lastOk && !document.hidden && !open.key) render(); }, 60000);  // perbarui "x menit lalu"
+  const segarkan = () => { if (!document.hidden && key) load(true); };
+  document.addEventListener('visibilitychange', segarkan);
+  addEventListener('focus', segarkan);
+  addEventListener('pageshow', segarkan);
+  addEventListener('online', segarkan);
+  let detak = Date.now();
+  setInterval(() => { const n = Date.now(); if (n - detak > 5000) segarkan(); detak = n; }, 1000);
+  setInterval(() => { if (lastOk) renderUpd(); }, 30000);
   if (key) { load(true); startTimer(); } else showGate();
-  // link admin lain dibuka di tab yang sama (hanya bagian #k= yang berubah)
-  addEventListener('hashchange', () => {
-    const k = keyFrom(location.href);
-    if (!k) return;
-    key = k;
-    try { localStorage.setItem(K_KEY, key); } catch (e) { /* abaikan */ }
-    history.replaceState(null, '', '/admin/');
-    load(true); startTimer();
-  });
-  $('[data-gate-form]').addEventListener('submit', startTimer);
 })();
 </script>
 </body>
