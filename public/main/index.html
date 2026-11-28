@@ -38,7 +38,7 @@ img { max-width: 100%; }
   color-scheme: light;
 }
 [hidden] { display: none !important; }
-html { box-sizing: border-box; height: 100%; }
+html { box-sizing: border-box; height: 100%; touch-action: manipulation; }
 body {
   margin: 0; height: 100%; box-sizing: border-box;
   display: flex; align-items: center; justify-content: center;
@@ -56,7 +56,7 @@ body {
   background: var(--krem);
   box-shadow: 0 12px 36px rgba(53, 37, 28, .35);
   touch-action: none; user-select: none; -webkit-user-select: none;
-  -webkit-tap-highlight-color: transparent;
+  -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none;
 }
 canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 /* Ditanam di halaman utama: panggung memenuhi iframe, bingkai diurus halaman */
@@ -856,6 +856,21 @@ onBtn('btnShare', () => {
 });
 onBtn('btnCardClose', () => { $('scrCard').hidden = true; });
 onBtn('snd', () => { muted = !muted; ls.set('caffeine.muted', muted); setSnd(); beep(700, 0.06, 'square', 0.04); });
+
+// Safari iPhone: ketukan cepat beruntun bisa dianggap "ketuk dua kali" lalu layar ikut zoom.
+// Ketukan kedua yang terlalu dekat dibatalkan (lompatnya tetap jalan karena dibaca saat pointerdown);
+// kalau yang diketuk tombol, klik tombolnya dijalankan manual supaya tetap berfungsi.
+let lastTouchEnd = 0;
+document.addEventListener('touchend', e => {
+  const now = Date.now(), dekat = now - lastTouchEnd < 450;
+  lastTouchEnd = now;
+  if (!dekat || e.touches.length) return;
+  e.preventDefault();
+  const b = e.target.closest && e.target.closest('button');
+  if (b && !b.disabled) b.click();
+}, { passive: false });
+document.addEventListener('dblclick', e => e.preventDefault());
+document.addEventListener('gesturestart', e => e.preventDefault());   // cubit-zoom di area game
 
 stage.addEventListener('pointerdown', e => {
   if (e.target.closest('button')) return;
