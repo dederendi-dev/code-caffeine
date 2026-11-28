@@ -1,15 +1,16 @@
 // API admin: /api/admin/<aksi>. Masuk dengan link rahasia per anggota (env ADMIN_KEYS = "Nama:kunci,Nama2:kunci2").
 import { store, update } from './lib/store.mjs';
-import { json, fail, body, str, pemilikKunci, rupiah } from './lib/util.mjs';
+import { json, fail, body, str, rupiah } from './lib/util.mjs';
 import { simpanLangganan, kirimNotif } from './lib/push.mjs';
 import { KEY, kedaluwarsa, hadiahTeks } from './lib/pesanan.mjs';
 import { imporForms, semuaWeb } from './lib/web.mjs';
 import { terapkan, LABEL } from './lib/alur.mjs';
+import { siapaAdmin } from './lib/adminkey.mjs';
 import { getConfig } from './lib/katalog.mjs';
 
 export const config = { path: '/api/admin/*' };
 
-const siapa = kunci => pemilikKunci('ADMIN_KEYS', kunci);
+const siapa = kunci => siapaAdmin(kunci);
 
 export default async (req) => {
   const url = new URL(req.url);
@@ -18,7 +19,7 @@ export default async (req) => {
   // Manifest untuk "Tambah ke Layar Utama" (iPhone perlu ini untuk notifikasi). Kunci ikut di start_url.
   if (aksi === 'manifest') {
     const k = url.searchParams.get('k') || '';
-    if (!siapa(k)) return fail('Link admin tidak valid.', 401);
+    if (!(await siapa(k))) return fail('Link admin tidak valid.', 401);
     return new Response(JSON.stringify({
       id: '/admin/', name: 'Admin Code Caffeine', short_name: 'CC Admin', lang: 'id',
       description: 'Kelola semua pesanan Code Caffeine bersama tim.',
@@ -32,7 +33,7 @@ export default async (req) => {
     }), { headers: { 'content-type': 'application/manifest+json', 'cache-control': 'no-store' } });
   }
 
-  const admin = siapa(req.headers.get('x-admin-key'));
+  const admin = await siapa(req.headers.get('x-admin-key'));
   if (!admin) return fail('Link admin tidak valid.', 401);
   const st = store('challenge');
 

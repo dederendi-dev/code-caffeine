@@ -46,7 +46,7 @@ button, input, select { font: inherit; color: inherit; }
 button { cursor: pointer; }
 :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 8px; }
 .num { font-variant-numeric: tabular-nums; }
-main { max-width: 680px; margin: 0 auto; padding: 18px 14px 60px; }
+main { max-width: 680px; margin: 0 auto; padding: 18px 14px calc(110px + env(safe-area-inset-bottom, 0px)); }
 
 /* kepala */
 .top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
@@ -81,20 +81,22 @@ main { max-width: 680px; margin: 0 auto; padding: 18px 14px 60px; }
 .tools select { height: 40px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--line2); background: var(--soft); max-width: 46%; }
 
 /* kelompok berwarna */
-.grp { --c: var(--c-baru); margin-top: 18px; border-radius: 18px; overflow: hidden;
-  border: 1px solid color-mix(in srgb, var(--c) 40%, transparent); background: color-mix(in srgb, var(--c) 5%, var(--bg)); scroll-margin-top: 12px; }
+.grp { --c: var(--c-baru); margin-top: 26px; scroll-margin-top: 12px; }
 .grp.proses { --c: var(--c-proses); } .grp.selesai { --c: var(--c-selesai); } .grp.batal { --c: var(--c-batal); }
-.grp-h { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 11px 14px;
-  background: color-mix(in srgb, var(--c) 18%, var(--bg)); border-bottom: 1px solid color-mix(in srgb, var(--c) 30%, transparent); }
+.grp-h { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 11px 14px; border-radius: 14px;
+  background: color-mix(in srgb, var(--c) 20%, var(--bg)); border: 1px solid color-mix(in srgb, var(--c) 45%, transparent); }
 .grp-h h2 { font: 700 16px/1.2 var(--f-head); display: flex; align-items: center; gap: 8px; color: var(--ink); }
 .grp-h h2 .n { min-width: 24px; height: 24px; padding: 0 7px; border-radius: 999px; background: var(--c); color: var(--bg); font: 700 13px/24px var(--f-body); text-align: center; }
 .grp-h .btn { min-height: 30px; padding: 0 12px; font-size: 12.5px; }
-.rekap { padding: 10px 14px; font-size: 13.5px; font-weight: 600; border-bottom: 1px solid var(--line); }
-.kosong { padding: 14px; color: var(--ink3); font-size: 14px; }
+.rekap { margin-top: 8px; padding: 10px 14px; font-size: 13.5px; font-weight: 600; border-radius: 12px;
+  background: color-mix(in srgb, var(--c) 8%, var(--bg)); border: 1px dashed color-mix(in srgb, var(--c) 45%, transparent); }
+.kosong { margin-top: 8px; padding: 14px; color: var(--ink3); font-size: 14px; border-radius: 14px; border: 1px dashed var(--line2); }
 .lihat-batal { display: block; width: 100%; margin-top: 14px; padding: 10px; border: 1px dashed var(--line2); border-radius: 14px; background: none; color: var(--ink2); font-size: 14px; }
 
 /* baris pesanan: ketuk untuk melihat detail */
-.ord + .ord { border-top: 1px solid var(--line); }
+.ord { margin-top: 10px; border-radius: 16px; overflow: hidden; background: color-mix(in srgb, var(--c) 7%, var(--bg2));
+  border: 1px solid color-mix(in srgb, var(--c) 35%, transparent); border-left: 5px solid var(--c); }
+.ord.buka { box-shadow: 0 8px 24px rgba(0, 0, 0, .18); }
 .ord.baru { animation: kilat 2.4s ease-out; }
 @keyframes kilat { 0% { background: color-mix(in srgb, var(--c) 30%, transparent); } 100% { background: transparent; } }
 .ring { width: 100%; display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; padding: 12px 14px; border: 0; background: none; text-align: left; }
@@ -154,7 +156,7 @@ main { max-width: 680px; margin: 0 auto; padding: 18px 14px 60px; }
 .gate form { margin-top: 18px; display: flex; flex-direction: column; gap: 10px; }
 .gate input { height: 46px; padding: 0 14px; border-radius: 12px; border: 1px solid var(--line2); background: var(--soft); }
 .gate .err { color: var(--off); font-size: 14px; }
-.toast { position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 20; max-width: calc(100% - 32px); padding: 12px 18px; border-radius: 14px; background: var(--btn); color: var(--btn-ink); font-weight: 600; font-size: 14px; box-shadow: 0 12px 30px rgba(0, 0, 0, .3); }
+.toast { position: fixed; left: 50%; top: calc(14px + env(safe-area-inset-top, 0px)); transform: translateX(-50%); z-index: 20; max-width: calc(100% - 32px); padding: 12px 18px; border-radius: 14px; background: var(--btn); color: var(--btn-ink); font-weight: 600; font-size: 14px; box-shadow: 0 12px 30px rgba(0, 0, 0, .3); }
 @media (prefers-reduced-motion: reduce) { .ord.baru { animation: none; } .ring .chev { transition: none; } }
 </style>
 </head>
@@ -312,6 +314,10 @@ main { max-width: 680px; margin: 0 auto; padding: 18px 14px 60px; }
     if (!isWeb(p) && p.status === 'main') c.push('<span class="chip">Sedang main</span>');
     if (!isWeb(p) && p.status === 'selesai' && g !== 'selesai') c.push(`<span class="chip">Hasil: ${p.tier === 'large' ? 'Large' : 'Medium'}</span>`);
     if (p.curiga) c.push('<span class="chip bahaya">Skor perlu dicek</span>');
+    if (p.di_luar_po) c.push('<span class="chip bahaya">Di luar jadwal PO</span>');
+    if (p.total_beda) c.push('<span class="chip bahaya">Total di WA beda</span>');
+    if (p.stamp_cek) c.push(p.stamp_cek.cukup ? '<span class="chip ok">Tukar 5 cap ✓</span>' : `<span class="chip bahaya">Cap belum cukup (${p.stamp_cek.sisa}/5)</span>`);
+    if (p.voucher_cek) c.push(p.voucher_cek.cukup ? '<span class="chip ok">Voucher ✓</span>' : '<span class="chip bahaya">Tidak punya voucher</span>');
     return c.join('');
   }
   // Aktivitas terakhir admin, tampil di baris ringkas supaya kelihatan siapa yang terakhir memegang
@@ -334,6 +340,8 @@ main { max-width: 680px; margin: 0 auto; padding: 18px 14px 60px; }
     if (jenis === 'antar') return p.cara_terima === 'Diantar'
       ? [halo, `Pesananmu (${p.kode}) sedang diantar ke ${p.lokasi} 🛵 Mohon ditunggu ya.`, lunasOf(p) ? '' : `Mohon siapkan ${rupiah(nominal(p))}${p.bayar === 'Transfer' ? ' atau kirim bukti transfernya' : ''}.`].filter(Boolean).join('\n')
       : [halo, `Pesananmu (${p.kode}) sudah siap diambil di ${String(p.lokasi).replace(/^Ambil sendiri di /, '')} ✅`, lunasOf(p) ? '' : `Mohon siapkan ${rupiah(nominal(p))}.`].filter(Boolean).join('\n');
+    if (jenis === 'batal') return [halo, `Mohon maaf, pesananmu (${p.kode}: ${isi}) kami batalkan${p.alasan_batal && p.alasan_batal !== 'Dibatalkan admin' ? ' karena ' + p.alasan_batal : ''}.`,
+      lunasOf(p) ? 'Pembayaranmu akan kami kembalikan, mohon kirim nomor rekening/e-wallet tujuan ya.' : '', 'Terima kasih sudah memesan, semoga lain kali bisa kami layani.'].filter(Boolean).join('\n');
     return `${halo} Soal pesanan ${p.kode} (${isi}).`;
   }
   const waLink = (p, jenis) => `https://wa.me/${waIntl(p.wa)}?text=${encodeURIComponent(waText(p, jenis))}`;
@@ -347,7 +355,7 @@ main { max-width: 680px; margin: 0 auto; padding: 18px 14px 60px; }
     diantar: { label: p => p.cara_terima === 'Diantar' ? 'Tandai sudah diterima pembeli' : 'Tandai sudah diambil', tanya: p => `${p.nama} sudah menerima pesanannya?${lunasOf(p) ? '' : ' Pembayarannya masih tercatat belum lunas.'}`, ya: 'Ya, selesai', ok: 'Pesanan selesai.' },
     belum_lunas: { label: 'Batalkan tanda lunas', kecil: true, tanya: p => isWeb(p) ? 'Tandai pesanan ini belum lunas lagi?' : 'Kembalikan ke cek transfer? Tantangan di HP pembeli terkunci lagi.', ya: 'Ya, belum lunas', ok: 'Ditandai belum lunas.' },
     belum_diantar: { label: 'Batalkan tanda selesai', kecil: true, tanya: () => 'Kembalikan pesanan ini ke diproses?', ya: 'Ya, kembalikan', ok: 'Dikembalikan ke diproses.' },
-    batal: { label: 'Batalkan pesanan', kecil: true, warn: true, tanya: p => `Batalkan pesanan ${p.kode} atas nama ${p.nama}?`, ya: 'Ya, batalkan', alasan: true, ok: 'Pesanan dibatalkan.' },
+    batal: { label: 'Batalkan pesanan', kecil: true, warn: true, tanya: p => `Batalkan pesanan ${p.kode} atas nama ${p.nama}? Setelah itu WhatsApp pembeli dibuka untuk mengabari.`, ya: 'Ya, batalkan', alasan: true, wa: 'batal', ok: 'Pesanan dibatalkan.' },
     aktifkan: { label: 'Aktifkan lagi', kecil: true, ok: 'Pesanan aktif lagi.' },
     ambil_alih: { label: 'Ambil alih', kecil: true, tanya: p => `Ambil alih pesanan ${p.nama} dari ${pjOf(p)}? ${pjOf(p)} dan admin lain dikabari, lalu kamu yang menghubungi dan mengantar.`, ya: 'Ya, ambil alih', ok: 'Sekarang kamu penanggung jawabnya.' }
   };
@@ -398,8 +406,10 @@ main { max-width: 680px; margin: 0 auto; padding: 18px 14px 60px; }
       ['Terima', p.cara_terima === 'Diantar' ? 'Diantar ke ' + p.lokasi : p.lokasi],
       ['Jam', `${p.jam || '-'} · ${hari(p)}`],
       ['Bayar', `${rupiah(nominal(p))} ${isWeb(p) ? p.bayar || '' : 'DANA'}`],
-      isWeb(p) && p.stamp_gratis ? ['Stamp', `Tukar kartu: ${p.stamp_gratis} gratis. Cek kartunya.`] : null,
-      isWeb(p) && p.pakai_voucher ? ['Voucher', 'Pakai voucher Rp1.000. Cek nomornya.'] : null,
+      isWeb(p) && p.stamp_gratis ? ['Stamp', `Tukar 5 cap: ${p.stamp_gratis} gratis. ${p.stamp_cek ? (p.stamp_cek.cukup ? `Cap cukup (${p.stamp_cek.sisa}).` : `Cap BELUM cukup (${p.stamp_cek.sisa}/5): tagih harga normal ${rupiah(p.potongan_stamp || 0)}.`) : 'Cek kartunya.'}`] : null,
+      isWeb(p) && p.pakai_voucher ? ['Voucher', p.voucher_cek && !p.voucher_cek.cukup ? 'Nomor ini tidak punya voucher Challenge: tagih Rp1.000.' : 'Pakai voucher Rp1.000 (tercatat di nomornya).'] : null,
+      p.di_luar_po ? ['Jadwal', 'Masuk di luar jadwal pre-order. Pastikan stok & jam antarnya ke pembeli.'] : null,
+      p.total_beda ? ['Total', `Di chat WA tertulis ${rupiah(p.total_beda)}, hitungan server ${rupiah(p.total)} (harga mungkin baru diubah). Pakai yang benar saat menagih.`] : null,
       p.catatan ? ['Catatan', p.catatan] : null,
       p.curiga ? ['Perlu dicek', p.curiga] : null,
       st(p) === 'batal' && p.alasan_batal ? ['Alasan batal', `${p.alasan_batal}${p.batal_oleh ? ' (' + p.batal_oleh + ')' : ''}`] : null

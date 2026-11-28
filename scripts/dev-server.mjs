@@ -26,6 +26,7 @@ const master = (await import(path.join(root, 'netlify/functions/master.mjs'))).d
 const order = (await import(path.join(root, 'netlify/functions/order.mjs'))).default;
 const configFn = (await import(path.join(root, 'netlify/functions/config.mjs'))).default;
 const foto = (await import(path.join(root, 'netlify/functions/foto.mjs'))).default;
+const poin = (await import(path.join(root, 'netlify/functions/poin.mjs'))).default;
 
 const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.mjs': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.json': 'application/json', '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg', '.webp': 'image/webp', '.woff2': 'font/woff2', '.ico': 'image/x-icon' };
 
@@ -50,6 +51,7 @@ http.createServer(async (req, res) => {
     if (url.pathname.startsWith('/api/admin/')) return await toFn(admin, req, res, url);
     if (url.pathname.startsWith('/api/master/')) return await toFn(master, req, res, url);
     if (url.pathname === '/api/order') return await toFn(order, req, res, url);
+    if (url.pathname === '/api/poin') return await toFn(poin, req, res, url);
     if (url.pathname === '/assets/js/config.js') return await toFn(configFn, req, res, url);
     if (url.pathname.startsWith('/foto/')) return await toFn(foto, req, res, url);
     let p = path.normalize(decodeURIComponent(url.pathname)).replace(/^(\.\.[/\\])+/, '');

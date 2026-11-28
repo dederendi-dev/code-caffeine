@@ -6,6 +6,8 @@ import { purgeCache } from '@netlify/functions';
 import { store, update } from './lib/store.mjs';
 import { json, fail, body, pemilikKunci } from './lib/util.mjs';
 import { imporForms } from './lib/web.mjs';
+import { daftarAdmin, linkBaru, aturAktif } from './lib/adminkey.mjs';
+import { hapusLanggananAdmin } from './lib/push.mjs';
 import { KEY, kedaluwarsa, hadiahTeks } from './lib/pesanan.mjs';
 import { bacaOverride, gabung, validasi, simpanConfig, hapusOverride } from './lib/katalog.mjs';
 
@@ -52,6 +54,8 @@ export default async (req) => {
     return json({ admin, config: gabung(o && o.config), diubah: o ? { at: o.diubah_at, oleh: o.diubah_oleh } : null });
   }
 
+  if (req.method === 'GET' && aksi === 'admin') return json({ admin, daftar: await daftarAdmin() });
+
   if (req.method !== 'POST') return fail('Metode tidak didukung.', 405);
 
   /* ---------- foto menu (badan permintaan = gambar mentah) ---------- */
@@ -86,6 +90,23 @@ export default async (req) => {
       if (r.data && !r.unchanged) n++;
     }
     return json({ ok: true, jumlah: n });
+  }
+
+  /* ---------- link CC Admin (tanpa deploy ulang) ---------- */
+  if (['admin-link', 'admin-cabut', 'admin-aktifkan'].includes(aksi)) {
+    const nama = String(b.nama || '').trim().replace(/\s+/g, ' ');
+    if (!/^[A-Za-z][A-Za-z .'-]{1,23}$/.test(nama)) return fail('Nama admin 2–24 huruf, misalnya Ridho.');
+    if (aksi === 'admin-link') {
+      const kunci = await linkBaru(nama, admin);
+      return json({ ok: true, nama, link: `${new URL(req.url).origin}/admin/#k=${kunci}`, daftar: await daftarAdmin() });
+    }
+    if (aksi === 'admin-cabut') {
+      await aturAktif(nama, false, admin);
+      const n = await hapusLanggananAdmin(nama);
+      return json({ ok: true, notifDihapus: n, daftar: await daftarAdmin() });
+    }
+    await aturAktif(nama, true, admin);
+    return json({ ok: true, daftar: await daftarAdmin() });
   }
 
   /* ---------- pengaturan toko ---------- */

@@ -224,6 +224,9 @@
       $('[data-add]', card).addEventListener('click', e => {
         const size = $(`input[name="size-${d.id}"]:checked`, card).value;
         addToCart(d.id, size);
+        const pesan = $('.nav [data-open-order]');
+        pesan.classList.remove('denyut'); void pesan.offsetWidth; pesan.classList.add('denyut');
+        kabar(`<b>${esc(d.nama)} ${sizeOf(size).nama}</b> masuk pesanan. Tekan <b>Pesan</b> di kanan atas untuk lanjut.`);
         const btn = e.currentTarget;
         btn.classList.add('added');
         btn.textContent = 'Ditambahkan';
@@ -231,6 +234,14 @@
         btn._t = setTimeout(() => { btn.classList.remove('added'); btn.textContent = 'Tambah'; }, 1300);
       });
     });
+  }
+
+  /* ================= Kabar singkat di atas layar ================= */
+  let kabarT = 0;
+  function kabar(html, lama) {
+    const k = $('[data-kabar]'); if (!k) return;
+    k.innerHTML = html; k.hidden = false;
+    clearTimeout(kabarT); kabarT = setTimeout(() => { k.hidden = true; }, lama || 2600);
   }
 
   /* ================= Lembar pesanan ================= */
@@ -241,9 +252,6 @@
   function renderCart() {
     const n = cartCount();
     $$('[data-cart-count]').forEach(el => { el.textContent = n; el.hidden = n === 0; });
-    $('[data-cartbar]').hidden = n === 0 || sheet.open;
-    $('[data-cartbar-count]').textContent = `${n} minuman`;
-    $('[data-cartbar-total]').textContent = rupiah(cartTotal());
 
     $$('[data-drink]').forEach(card => {
       const q = cart.filter(i => i.id === card.dataset.drink).reduce((a, i) => a + i.qty, 0);
@@ -455,10 +463,8 @@
       catatan: v.catatan, untuk_hari: tanggal(ev.day, true), untuk_ms: ev.day, total: netTotal(),
       items: cart.map(i => ({ id: i.id, size: i.size, qty: i.qty })), 'bot-field': f['bot-field'] ? f['bot-field'].value : ''
     });
-    try {
-      const ok = navigator.sendBeacon && navigator.sendBeacon('/api/order', new Blob([rekam], { type: 'text/plain;charset=UTF-8' }));
-      if (!ok) fetch('/api/order', { method: 'POST', body: rekam, keepalive: true }).catch(() => {});
-    } catch (err) { /* abaikan */ }
+    antrekan(kode, rekam);
+    try { localStorage.setItem('cc-wa', v.wa); } catch (err) { /* abaikan */ }
     $('[data-sent-kode]').textContent = ` dengan kode ${kode}`;
 
     // Keranjang dikosongkan supaya pesanan yang sama tidak terkirim dua kali
@@ -487,6 +493,105 @@
   $('[data-finish]').addEventListener('click', () => {
     form.reset(); syncLokasi(); renderCart(); closeSheet();
   });
+  $('[data-cek-status]').addEventListener('click', () => {
+    const wa = (() => { try { return localStorage.getItem('cc-wa') || ''; } catch (e) { return ''; } })();
+    form.reset(); syncLokasi(); renderCart(); closeSheet();
+    bukaPoin(wa);
+  });
+
+  /* ================= Catatan pesanan ke CC Admin: dijamin terkirim ================= */
+  // Pesanan disimpan dulu di HP. Kalau koneksi putus atau halaman langsung berpindah ke WhatsApp,
+  // pesanan dikirim ulang saat web dibuka lagi (server mengabaikan kiriman ganda dengan kode yang sama).
+  const Q_KEY = 'cc-pesanan-tertunda';
+  const bacaQ = () => { try { return JSON.parse(localStorage.getItem(Q_KEY) || '{}'); } catch (e) { return {}; } };
+  const tulisQ = q => { try { localStorage.setItem(Q_KEY, JSON.stringify(q)); } catch (e) { /* abaikan */ } };
+  async function kirimRekam(kode, rekam) {
+    try {
+      const r = await fetch('/api/order', { method: 'POST', body: rekam, keepalive: true, headers: { 'content-type': 'text/plain;charset=UTF-8' } });
+      if (r.ok || (r.status >= 400 && r.status < 500 && r.status !== 429)) { const q = bacaQ(); delete q[kode]; tulisQ(q); }
+    } catch (e) { /* tetap di antrean */ }
+  }
+  function antrekan(kode, rekam) {
+    const q = bacaQ(); q[kode] = { rekam, t: Date.now() }; tulisQ(q);
+    kirimRekam(kode, rekam);
+  }
+  (function kirimUlang() {
+    const q = bacaQ();
+    Object.entries(q).forEach(([kode, x]) => {
+      if (Date.now() - x.t > 3 * 86400000) { delete q[kode]; tulisQ(q); return; }
+      kirimRekam(kode, x.rekam);
+    });
+  })();
+
+  /* ================= Kartu stamp digital, voucher, skor, status pesanan (pakai nomor WA) ================= */
+  const poinForm = $('[data-poin-form]'), poinHasil = $('[data-poin-hasil]');
+  async function ambilPoin(wa) {
+    const r = await fetch('/api/poin?wa=' + encodeURIComponent(wa), { cache: 'no-store' });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(j.error || 'Data belum bisa dimuat. Coba lagi.');
+    return j;
+  }
+  const fmtTgl = new Intl.DateTimeFormat('id-ID', { timeZone: 'Asia/Jakarta', day: 'numeric', month: 'short' });
+  function renderPoin(d) {
+    if (!d.ada) {
+      poinHasil.innerHTML = '<p class="poin-kosong">Belum ada pesanan dengan nomor ini. Pastikan nomornya sama dengan yang kamu tulis saat pesan.</p>';
+      return;
+    }
+    const isi = d.cap.sisa >= 5 ? 5 : d.cap.progres;          // 5 cap atau lebih: kartu penuh, siap ditukar
+    const slot = Array.from({ length: 5 }, (_, i) => `<i class="${i < isi ? 'on' : ''}"></i>`).join('');
+    const ST = s => /Selesai/.test(s) ? 'ok' : /Batal/.test(s) ? 'off' : '';
+    poinHasil.innerHTML = `
+      <h3>Halo, ${esc(d.nama)}</h3>
+      <p class="sub">${d.cap.gratis ? `Kamu punya <b>${d.cap.gratis} cup Small gratis</b>. Tukar saat pesan berikutnya.` : `${5 - d.cap.progres} cap lagi menuju cup Small gratis.`}${d.cap.menunggu ? ` ${d.cap.menunggu} pesanan lagi menunggu selesai untuk dapat cap.` : ''}</p>
+      <div class="cap" aria-label="${isi} dari 5 cap">${slot}</div>
+      <div class="poin-angka">
+        <div><b>${d.cap.sisa}</b><span>Cap terkumpul</span></div>
+        <div><b>${d.voucher.sisa}</b><span>Voucher Rp1.000</span></div>
+        <div><b>${d.challenge.terbaik ? d.challenge.terbaik.toLocaleString('id-ID') : '–'}</b><span>Skor terbaik</span></div>
+      </div>
+      <ul class="poin-list">${d.pesanan.map(p => `<li><span>${esc(p.isi)}</span><span class="st ${ST(p.status)}">${esc(p.status)}</span><small>${esc(p.kode)} · ${esc(p.untuk || fmtTgl.format(new Date(p.t)))} · ${rupiah(p.total)}</small></li>`).join('')}</ul>`;
+  }
+  async function cekPoin(wa) {
+    const w = normalWA(wa);
+    if (!w) { poinHasil.innerHTML = '<p class="poin-kosong">Tulis nomor WhatsApp yang aktif, misalnya 0812 3456 7890.</p>'; return; }
+    try { localStorage.setItem('cc-wa', w); } catch (e) { /* abaikan */ }
+    poinHasil.innerHTML = '<p class="poin-kosong">Memuat…</p>';
+    try { renderPoin(await ambilPoin(w)); }
+    catch (err) { poinHasil.innerHTML = `<p class="poin-kosong">${esc(err.message)}</p>`; }
+  }
+  function bukaPoin(wa) {
+    $('#member').scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+    if (wa) { poinForm.elements.poin_wa.value = wa; cekPoin(wa); } else setTimeout(() => poinForm.elements.poin_wa.focus({ preventScroll: true }), 500);
+  }
+  poinForm.addEventListener('submit', e => { e.preventDefault(); cekPoin(poinForm.elements.poin_wa.value); });
+  try { const w = localStorage.getItem('cc-wa'); if (w) poinForm.elements.poin_wa.value = w; } catch (e) { /* abaikan */ }
+
+  // Di form pesanan: tampilkan saldo cap & voucher, dan kunci pilihan yang belum cukup
+  let saldoT = 0, saldoWA = '';
+  function cekSaldo() {
+    const hint = $('[data-saldo-hint]');
+    if (form.elements.pernah_beli.value !== 'Sudah') { hint.textContent = ''; return; }
+    const w = normalWA(form.elements.wa.value);
+    if (!w) { hint.textContent = 'Isi nomor WhatsApp di atas untuk melihat cap dan voucher-mu.'; return; }
+    if (w === saldoWA) return;
+    clearTimeout(saldoT);
+    saldoT = setTimeout(async () => {
+      saldoWA = w; hint.textContent = 'Mengecek cap dan voucher…';
+      try {
+        const d = await ambilPoin(w);
+        const ts = form.elements.tukar_stamp, pv = form.elements.pakai_voucher;
+        ts.disabled = d.cap.sisa < 5; pv.disabled = d.voucher.sisa < 1;
+        if (ts.disabled) ts.checked = false;
+        if (pv.disabled) pv.checked = false;
+        hint.textContent = d.ada
+          ? `Nomor ini punya ${d.cap.sisa} cap${d.cap.sisa < 5 ? ` (perlu 5 untuk tukar)` : ''} dan ${d.voucher.sisa} voucher.`
+          : 'Belum ada pesanan dengan nomor ini, jadi belum ada cap atau voucher.';
+        renderCart();
+      } catch (e) { saldoWA = ''; hint.textContent = ''; }
+    }, 400);
+  }
+  form.addEventListener('input', e => { if (['wa', 'pernah_beli'].includes(e.target.name)) cekSaldo(); });
+  form.addEventListener('change', e => { if (e.target.name === 'pernah_beli') { saldoWA = ''; cekSaldo(); } });
 
   /* ================= Paket Caffeine Challenge (game di halaman + transfer, dikonfirmasi admin) ================= */
   // Pesanan & kesempatan main disimpan di server (/api/challenge). Di HP hanya ada kode + token pesanan.
@@ -779,14 +884,23 @@
       { el: '.hero .status', judul: 'Cek jadwal pre-order', teks: 'Di sini tertulis pre-order sedang buka atau tutup, untuk hari apa, dan sampai jam berapa.' },
       { el: () => kartu() && $('.sizes', kartu()), judul: 'Pilih ukuran', teks: 'Small 12 oz, Medium 14 oz, atau Large 16 oz. Harganya ikut berubah.' },
       { el: () => kartu() && $('[data-add]', kartu()), judul: 'Tekan Tambah', teks: 'Minumannya masuk keranjang. Bisa tambah beberapa minuman sekaligus.' },
-      { el: () => (!$('[data-cartbar]').hidden ? $('[data-cartbar]') : null), judul: 'Buka pesanan', teks: 'Setelah menambah minuman, tombol pesanan muncul di bawah layar. Tekan untuk mengisi nama, nomor WhatsApp, dan alamat antar.' },
+      { el: '.nav [data-open-order]', judul: 'Buka pesanan', teks: 'Setelah menambah minuman, tekan Pesan di kanan atas. Angkanya menunjukkan jumlah minuman. Lalu isi nama, nomor WhatsApp, dan alamat antar.' },
       { el: null, judul: 'Kirim ke WhatsApp', teks: 'Tekan Kirim ke WhatsApp, lalu tekan kirim di chat-nya. Pesananmu langsung tercatat di tim kami dengan kode pesanan, dan admin membalas untuk konfirmasi.' },
-      { el: '#challenge .ch-game', judul: 'Mau berhadiah?', teks: 'Main Caffeine Challenge di sini. Latihan gratis; paket tantangan 1 cup Medium dengan bonus sesuai skormu.', tombol: 'Siap pesan' }
+      { el: '#challenge .ch-game', judul: 'Mau berhadiah?', teks: 'Main Caffeine Challenge di sini. Latihan gratis; paket tantangan 1 cup Medium dengan bonus sesuai skormu.' },
+      { el: '[data-poin]', judul: 'Cap dan status pesanan', teks: 'Tulis nomor WhatsApp-mu di sini untuk melihat cap kartu stamp, voucher, skor tantangan, dan status pesananmu.', tombol: 'Siap pesan' }
     ], { kunci: 'pesan-v1' });
   }
   $$('[data-tur-mulai]').forEach(b => b.addEventListener('click', e => { e.preventDefault(); turPesan(); }));
-  if (window.CCTur && !window.CCTur.sudah('pesan-v1') && !location.hash) {
-    setTimeout(() => { if (!document.querySelector('dialog[open]')) turPesan(); }, 1600);
+  // Kunjungan pertama: tawarkan dulu, jangan langsung memulai panduan
+  const sambut = $('[data-sambut]');
+  const sudahSambut = () => { try { return localStorage.getItem('cc-sambut-v1') === '1'; } catch (e) { return true; } };
+  const tutupSambut = () => { try { localStorage.setItem('cc-sambut-v1', '1'); } catch (e) { /* abaikan */ } if (sambut.open) sambut.close(); };
+  $('[data-sambut-tur]').addEventListener('click', () => { tutupSambut(); turPesan(); });
+  $('[data-sambut-lewati]').addEventListener('click', () => { tutupSambut(); $('#menu').scrollIntoView({ behavior: 'smooth' }); });
+  $('[data-sambut-poin]').addEventListener('click', () => { tutupSambut(); bukaPoin((() => { try { return localStorage.getItem('cc-wa') || ''; } catch (e) { return ''; } })()); });
+  sambut.addEventListener('cancel', () => tutupSambut());
+  if (!sudahSambut() && !location.hash && !(window.CCTur && window.CCTur.sudah('pesan-v1'))) {
+    setTimeout(() => { if (!document.querySelector('dialog[open]')) sambut.showModal(); }, 900);
   }
 
   /* ================= Sosial ================= */

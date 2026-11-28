@@ -53,8 +53,20 @@ dan paket Challenge (Cek transfer → Tandai lunas → main → Siap diantar). A
   dan dicek atomik di server, jadi dua admin yang menekan bersamaan tidak bisa sama-sama berhasil.
 - Setiap aksi (termasuk membuka WA) masuk riwayat dengan nama dan jam, dan dikirim sebagai notifikasi ke HP admin lain.
   Halaman yang terbuka langsung memuat ulang saat notifikasi datang. Tombol "Salin daftar antar" untuk pengantar.
-- Panduan interaktif (`public/assets/js/tur.js`) muncul sekali di web utama (cara pesan) dan di CC Admin;
-  bisa dibuka lagi lewat tombol "Cara pesan" / "Panduan".
+- Panduan interaktif (`public/assets/js/tur.js`): di web utama kunjungan pertama ditawari dulu lewat sambutan
+  (Tunjukkan cara pesan / Lewati / Cek cap); bisa dibuka lagi lewat "Cara pesan". CC Admin punya panduan sendiri.
+- Pemeriksaan otomatis pesanan web: di luar jadwal PO, total di WA beda dengan hitungan server, cap/voucher belum
+  cukup. Pesanan disimpan dulu di HP pembeli dan dikirim ulang kalau koneksi putus.
+
+### Kartu stamp digital & cek pesanan (`/api/poin?wa=`)
+Nomor WhatsApp = identitas pelanggan. Bagian **Member** di web utama menampilkan cap, cup gratis, voucher Challenge,
+skor terbaik, dan status 10 pesanan terakhir (nama disamarkan, tanpa alamat). Aturan di `netlify/functions/lib/poin.mjs`:
+1 pesanan selesai = 1 cap; Challenge skor 1.800–2.999 = +1 cap; 5 cap = 1 cup Small gratis; Challenge skor
+< 1.800 = voucher Rp1.000. Di form pesanan, pilihan tukar cap/voucher otomatis terkunci kalau saldonya belum cukup.
+
+### Link CC Admin tanpa deploy
+Tab **Admin** di master admin: buat link baru (link lama langsung mati), cabut akses (notifikasi HP-nya ikut berhenti),
+aktifkan lagi, atau tambah admin. Disimpan di Blobs (`pengaturan/admin`, hanya hash), `ADMIN_KEYS` tetap jadi dasar.
 - Notifikasi HP (Web Push) saat pembeli menekan "sudah transfer" dan saat hasil masuk. Env: `VAPID_PUBLIC_KEY`,
   `VAPID_PRIVATE_KEY` (buat dengan `npx web-push generate-vapid-keys`). Di iPhone, halaman admin harus
   ditambahkan ke Layar Utama dulu, lalu notifikasi diaktifkan dari ikon itu.

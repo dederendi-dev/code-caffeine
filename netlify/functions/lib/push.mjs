@@ -36,3 +36,15 @@ export async function kirimNotif({ title, body, tag, kecuali }) {
   }));
   return { sent };
 }
+
+// Dipakai saat akses admin dicabut: HP-nya berhenti menerima notifikasi pesanan
+export async function hapusLanggananAdmin(nama) {
+  const st = subStore();
+  const { blobs } = await st.list();
+  let n = 0;
+  await Promise.all(blobs.map(async b => {
+    const rec = await st.get(b.key, { type: 'json' });
+    if (rec && rec.admin === nama) { await st.delete(b.key); n++; }
+  }));
+  return n;
+}

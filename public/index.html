@@ -157,23 +157,28 @@
       </div>
     </section>
 
-    <!-- MEMBER: KARTU STAMP SEKARANG, POIN QR MENYUSUL -->
+    <!-- MEMBER: KARTU STAMP DIGITAL + CEK POIN DENGAN NOMOR WA -->
     <section class="section" id="member" aria-labelledby="stamp-title">
       <div class="wrap split">
         <div class="head">
           <h2 id="stamp-title">Beli lima kali, gratis satu cup.</h2>
-          <p>Setiap kali beli, kartu stamp-mu dapat satu cap, berapa pun jumlah cup-nya. Kartunya kami berikan bersama pesanan pertamamu.</p>
+          <p>Setiap pesanan yang selesai otomatis dapat satu cap, berapa pun jumlah cup-nya. Semuanya tercatat lewat nomor WhatsApp yang kamu pakai saat pesan, jadi tidak perlu bawa kartu.</p>
           <ul class="rules">
-            <li>Sudah lima cap? Saat pesan di web, pilih <b>Sudah pernah beli</b> lalu centang <b>Tukar kartu stamp</b>. Tunjukkan kartunya saat serah terima.</li>
-            <li>Hadiahnya satu cup ukuran Small, menu bebas.</li>
+            <li>Sudah lima cap? Saat pesan, pilih <b>Sudah pernah beli</b> lalu centang <b>Tukar kartu stamp</b>. Satu minuman Small, menu bebas, jadi gratis.</li>
+            <li>Voucher dan cap bonus dari Caffeine Challenge juga masuk ke nomormu.</li>
           </ul>
-          <p class="later"><b>Segera: poin digital.</b> Scan QR Code di cup, akunnya cukup nomor WhatsApp-mu. 10 poin bisa ditukar topping gratis, 80 poin satu minuman gratis. Sampai poin digital siap, kartu stamp yang berlaku.</p>
+          <p class="later"><b>Segera: QR Code di cup.</b> Scan untuk langsung membuka kartu stamp dan skor tantanganmu.</p>
         </div>
-        <div class="stamp glass" aria-hidden="true">
-          <div class="stamp-top"><img src="/assets/img/logo-ikon.svg" alt="" width="26" height="27"><span>Kartu stamp</span></div>
-          <div class="stamp-slots">
-            <span class="slot on"></span><span class="slot on"></span><span class="slot on"></span><span class="slot"></span><span class="slot"></span><span class="slot free">Gratis</span>
-          </div>
+        <div class="poin glass" data-poin>
+          <form class="poin-form" data-poin-form novalidate>
+            <label for="poin-wa">Cek cap, voucher, skor, dan status pesananmu</label>
+            <div class="poin-row">
+              <input id="poin-wa" name="poin_wa" type="tel" inputmode="tel" autocomplete="tel" placeholder="Nomor WhatsApp, misalnya 0812…" required>
+              <button class="btn btn-solid" type="submit">Cek</button>
+            </div>
+            <small class="hint">Pakai nomor yang sama dengan saat pesan.</small>
+          </form>
+          <div class="poin-hasil" data-poin-hasil aria-live="polite"></div>
         </div>
       </div>
     </section>
@@ -197,14 +202,8 @@
     </div>
   </footer>
 
-  <!-- Bar pesanan -->
-  <div class="cartbar glass" data-cartbar hidden>
-    <div class="cartbar-info">
-      <span data-cartbar-count></span>
-      <strong data-cartbar-total></strong>
-    </div>
-    <button class="btn btn-solid" type="button" data-open-order>Lanjut pesan</button>
-  </div>
+  <!-- Kabar singkat (muncul di atas, tidak tertutup lencana Netlify) -->
+  <div class="kabar glass" role="status" aria-live="polite" data-kabar hidden></div>
 
   <!-- Lembar pesanan -->
   <dialog class="sheet" data-sheet aria-labelledby="sheet-title">
@@ -274,7 +273,7 @@
           <div class="field" data-stamp-field hidden>
             <label class="check">
               <input type="checkbox" name="tukar_stamp" value="Ya">
-              <span><b>Tukar kartu stamp</b>Kartuku sudah lima cap. Satu minuman Small di pesanan ini jadi gratis.</span>
+              <span><b>Tukar kartu stamp</b>Lima cap ditukar. Satu minuman Small di pesanan ini jadi gratis.</span>
             </label>
             <small class="hint" data-stamp-hint></small>
           </div>
@@ -282,8 +281,9 @@
           <div class="field" data-voucher-field hidden>
             <label class="check">
               <input type="checkbox" name="pakai_voucher" value="Ya">
-              <span><b>Pakai voucher Caffeine Challenge</b>Potongan Rp1.000 dari voucher pesanan sebelumnya. Kami cek lewat nomor WhatsApp-mu.</span>
+              <span><b>Pakai voucher Caffeine Challenge</b>Potongan Rp1.000 dari voucher pesanan sebelumnya.</span>
             </label>
+            <small class="hint" data-saldo-hint></small>
           </div>
 
 
@@ -329,6 +329,10 @@
       <div class="sent-actions">
         <a class="btn btn-solid" data-wa-again href="#" target="_blank" rel="noopener">Buka WhatsApp</a>
         <button class="btn btn-glass glass" type="button" data-finish>Selesai</button>
+      </div>
+      <p class="sent-help">Status pesanan dan cap kartumu bisa dicek kapan saja di bagian <b>Member</b> dengan nomor WhatsApp-mu.</p>
+      <div class="sent-actions">
+        <button class="btn btn-glass glass" type="button" data-cek-status>Lihat status pesananku</button>
       </div>
     </div>
   </dialog>
@@ -446,6 +450,18 @@
         <a class="btn-link" data-ch-wa3 target="_blank" rel="noopener">Hubungi admin</a>
       </div>
     </div>
+  </dialog>
+
+  <!-- Sambutan kunjungan pertama -->
+  <dialog class="sambut" data-sambut aria-labelledby="sambut-judul">
+    <img src="/assets/img/logo-ikon.svg" alt="" width="44" height="46">
+    <h2 id="sambut-judul">Selamat datang di Code Caffeine</h2>
+    <p>Baru pertama ke sini? Kami bisa tunjukkan cara pesannya langkah demi langkah, kurang dari satu menit.</p>
+    <div class="sambut-aksi">
+      <button class="btn btn-solid" type="button" data-sambut-tur>Tunjukkan cara pesan</button>
+      <button class="btn btn-glass glass" type="button" data-sambut-lewati>Lewati, langsung lihat menu</button>
+    </div>
+    <button class="sambut-poin" type="button" data-sambut-poin>Sudah pernah beli? Cek cap dan pesananmu</button>
   </dialog>
 
   <script src="/assets/js/config.js"></script>

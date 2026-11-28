@@ -41,7 +41,16 @@ button, input, select, textarea { font: inherit; color: inherit; }
 button { cursor: pointer; }
 :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 8px; }
 .num { font-variant-numeric: tabular-nums; }
-main { max-width: 760px; margin: 0 auto; padding: 20px 16px 120px; }
+main { max-width: 760px; margin: 0 auto; padding: 20px 16px calc(200px + env(safe-area-inset-bottom, 0px)); }
+.admins { margin-top: 8px; }
+.adm { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; padding: 12px 14px; margin-top: 10px; border-radius: 14px; border: 1px solid var(--line2); }
+.adm.mati { opacity: .6; }
+.adm b { font: 650 15.5px/1.3 var(--f-head); }
+.adm small { display: block; color: var(--ink3); font-size: 12.5px; }
+.linkbaru { margin-top: 14px; padding: 14px; border-radius: 14px; background: color-mix(in srgb, var(--paid) 12%, transparent); border: 1px solid color-mix(in srgb, var(--paid) 40%, transparent); }
+.linkbaru p { font-size: 14px; }
+.adm .conf { flex-basis: 100%; }
+.linkbaru code { display: block; margin: 8px 0 10px; padding: 10px; border-radius: 10px; background: var(--soft); font-size: 13px; overflow-wrap: anywhere; }
 
 .top { display: flex; align-items: baseline; justify-content: space-between; gap: 4px 12px; flex-wrap: wrap; }
 .top h1 { font: 700 22px/1.2 var(--f-head); white-space: nowrap; }
@@ -50,8 +59,8 @@ main { max-width: 760px; margin: 0 auto; padding: 20px 16px 120px; }
 
 /* tab */
 .tabs { position: sticky; top: 0; z-index: 6; margin: 14px -16px 0; padding: 10px 16px; background: color-mix(in srgb, var(--bg) 92%, transparent); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
-.tabs div { display: grid; grid-template-columns: repeat(4, 1fr); padding: 4px; border-radius: 999px; background: var(--soft); }
-.tabs button { border: 0; background: none; padding: 8px 4px; border-radius: 999px; font-weight: 600; font-size: 14px; color: var(--ink2); }
+.tabs div { display: grid; grid-template-columns: repeat(5, 1fr); padding: 4px; border-radius: 999px; background: var(--soft); }
+.tabs button { border: 0; background: none; padding: 8px 2px; border-radius: 999px; font-weight: 600; font-size: 13.5px; color: var(--ink2); }
 .tabs button[aria-selected="true"] { background: var(--btn); color: var(--btn-ink); }
 .tabs small { font-weight: 500; opacity: .8; }
 
@@ -128,7 +137,8 @@ label.f input, label.f textarea {
 .warnmsg { color: var(--cek); font-size: 13px; }
 
 /* simpan */
-.savebar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 10; padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px)); background: var(--bg2); border-top: 1px solid var(--line2); box-shadow: 0 -10px 30px rgba(0, 0, 0, .25); }
+/* mengambang di atas lencana Netlify (pojok kanan bawah) supaya tombolnya bisa diketuk */
+.savebar { position: fixed; left: 12px; right: 12px; bottom: calc(84px + env(safe-area-inset-bottom, 0px)); z-index: 10; padding: 12px 14px; border-radius: 18px; background: var(--bg2); border: 1px solid var(--line2); box-shadow: 0 12px 34px rgba(0, 0, 0, .35); }
 .savebar div { max-width: 760px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
 .savebar p { font-size: 14px; font-weight: 600; }
 .savebar .err { color: var(--off); font-weight: 500; flex-basis: 100%; }
@@ -139,7 +149,7 @@ label.f input, label.f textarea {
 .gate form { margin-top: 18px; display: flex; flex-direction: column; gap: 10px; }
 .gate input { height: 46px; padding: 0 14px; border-radius: 12px; border: 1px solid var(--line2); background: var(--soft); }
 .gate .err { color: var(--off); font-size: 14px; }
-.toast { position: fixed; left: 50%; bottom: calc(86px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 20; max-width: calc(100% - 32px); padding: 12px 18px; border-radius: 14px; background: var(--btn); color: var(--btn-ink); font-weight: 600; font-size: 14px; box-shadow: 0 12px 30px rgba(0, 0, 0, .3); }
+.toast { position: fixed; left: 50%; top: calc(14px + env(safe-area-inset-top, 0px)); transform: translateX(-50%); z-index: 20; max-width: calc(100% - 32px); padding: 12px 18px; border-radius: 14px; background: var(--btn); color: var(--btn-ink); font-weight: 600; font-size: 14px; box-shadow: 0 12px 30px rgba(0, 0, 0, .3); }
 </style>
 </head>
 <body>
@@ -165,7 +175,8 @@ label.f input, label.f textarea {
       <button role="tab" type="button" data-tab="pesanan" aria-selected="true">Pesanan</button>
       <button role="tab" type="button" data-tab="sampah" aria-selected="false">Sampah <small data-n-sampah></small></button>
       <button role="tab" type="button" data-tab="menu" aria-selected="false">Menu</button>
-      <button role="tab" type="button" data-tab="atur" aria-selected="false">Pengaturan</button>
+      <button role="tab" type="button" data-tab="atur" aria-selected="false">Atur</button>
+      <button role="tab" type="button" data-tab="admin" aria-selected="false">Admin</button>
     </div>
   </nav>
 
@@ -214,6 +225,19 @@ label.f input, label.f textarea {
     <div data-menu></div>
     <div class="row" style="margin-top:16px"><button class="btn ghost" type="button" data-addmenu>Tambah menu</button></div>
     <input type="file" accept="image/png,image/webp,image/jpeg" data-file hidden>
+  </section>
+
+  <!-- ============ ADMIN ============ -->
+  <section data-pane="admin" hidden>
+    <p class="note">Kelola link CC Admin tiap anggota tanpa deploy ulang. Kalau link seseorang tersebar, buat link baru: link lamanya langsung tidak berlaku. Cabut akses juga menghentikan notifikasi pesanan di HP-nya.</p>
+    <div data-linkbaru></div>
+    <div class="admins" data-admins></div>
+    <div class="sec">
+      <h2>Tambah admin</h2>
+      <div class="block">
+        <div class="row"><input type="text" maxlength="24" placeholder="Nama, misalnya Mila" aria-label="Nama admin baru" data-adm-nama style="flex:1;min-width:0;padding:9px 12px;border-radius:10px;border:1px solid var(--line2);background:var(--soft);font-size:15px"><button class="btn" type="button" data-adm-tambah>Buat link</button></div>
+      </div>
+    </div>
   </section>
 
   <!-- ============ PENGATURAN ============ -->
@@ -741,11 +765,57 @@ label.f input, label.f textarea {
     catch (err) { b.disabled = false; gagal(err); }
   }
 
+  /* =========================================================
+     LINK CC ADMIN
+     ========================================================= */
+  function renderAdmins(daftar) {
+    $('[data-admins]').innerHTML = daftar.map(a => `<div class="adm${a.aktif ? '' : ' mati'}">
+      <div><b>${esc(a.nama)}</b><small>${a.aktif ? 'Aktif' : 'Akses dicabut'} · ${esc(a.sumber)}${a.diubah_at ? ` · diubah ${esc(waktu(a.diubah_at))} oleh ${esc(a.diubah_oleh)}` : ''}</small></div>
+      <div class="row">
+        <button class="btn ghost sm" type="button" data-adm="admin-link" data-nama="${esc(a.nama)}">Buat link baru</button>
+        ${a.aktif ? `<button class="btn warn sm" type="button" data-adm="admin-cabut" data-nama="${esc(a.nama)}">Cabut akses</button>`
+          : `<button class="btn sm" type="button" data-adm="admin-aktifkan" data-nama="${esc(a.nama)}">Aktifkan lagi</button>`}
+      </div></div>`).join('') || '<p class="empty">Belum ada admin.</p>';
+  }
+  async function loadAdmins() { const d = await api('admin'); renderAdmins(d.daftar); }
+  const TANYA_ADM = {
+    'admin-link': n => `Buat link baru untuk ${n}? Link ${n} yang lama langsung tidak berlaku.`,
+    'admin-cabut': n => `Cabut akses ${n}? ${n} tidak bisa membuka CC Admin dan berhenti menerima notifikasi.`,
+    'admin-aktifkan': n => `Aktifkan lagi akses ${n} dengan link terakhirnya?`
+  };
+  async function aksiAdmin(aksi, nama) {
+    try {
+      const r = await api(aksi, { nama });
+      renderAdmins(r.daftar);
+      if (r.link) {
+        $('[data-linkbaru]').innerHTML = `<div class="linkbaru"><p><b>Link CC Admin untuk ${esc(r.nama)}</b> (hanya tampil sekali). Kirim lewat chat pribadi, jangan di grup.</p><code>${esc(r.link)}</code><div class="row"><button class="btn sm" type="button" data-salin="${esc(r.link)}">Salin link</button><a class="btn ghost sm" href="https://wa.me/?text=${encodeURIComponent('Link CC Admin khusus untukmu, jangan disebar: ' + r.link)}" target="_blank" rel="noopener">Kirim lewat WA</a></div></div>`;
+      } else toast(aksi === 'admin-cabut' ? `Akses ${nama} dicabut${r.notifDihapus ? `, notifikasi di ${r.notifDihapus} HP dihentikan` : ''}.` : `Akses ${nama} aktif lagi.`);
+    } catch (err) { gagal(err); }
+  }
+  $('[data-pane="admin"]').addEventListener('click', async e => {
+    const b = e.target.closest('button'); if (!b) return;
+    if (b.dataset.salin) { try { await navigator.clipboard.writeText(b.dataset.salin); toast('Link tersalin'); } catch (err) { toast('Salin manual dari kotak di atas'); } return; }
+    if (b.dataset.adm) {
+      const box = document.createElement('div'); box.className = 'conf';
+      box.innerHTML = `<p>${esc(TANYA_ADM[b.dataset.adm](b.dataset.nama))}</p><div class="row"><button class="btn ${b.dataset.adm === 'admin-cabut' ? 'danger' : ''}" type="button" data-adm-ya>Ya, lanjut</button><button class="btn ghost" type="button" data-adm-tidak>Tidak jadi</button></div>`;
+      $$('.adm .conf').forEach(x => x.remove());
+      b.closest('.adm').appendChild(box);
+      box.querySelector('[data-adm-ya]').onclick = () => { box.remove(); aksiAdmin(b.dataset.adm, b.dataset.nama); };
+      box.querySelector('[data-adm-tidak]').onclick = () => box.remove();
+      return;
+    }
+    if (b.matches('[data-adm-tambah]')) {
+      const n = $('[data-adm-nama]').value.trim();
+      if (!n) { toast('Tulis nama admin dulu'); return; }
+      await aksiAdmin('admin-link', n); $('[data-adm-nama]').value = '';
+    }
+  });
+
   /* ---------- mulai ---------- */
   async function start() {
     if (!key) { showGate(); return; }
     try {
-      await Promise.all([loadData(), loadKatalog()]);
+      await Promise.all([loadData(), loadKatalog(), loadAdmins()]);
       gate.hidden = true; app.hidden = false;
     } catch (err) { gagal(err); }
   }
