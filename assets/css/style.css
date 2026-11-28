@@ -311,6 +311,7 @@ h3 { font-family: var(--f-display); font-weight: 600; letter-spacing: -.02em; }
 .rules b, .later b { color: var(--ink); font-weight: 600; }
 .head p.later { margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--line); font-size: 15px; }
 .soon { padding: 26px; border-radius: 26px; }
+.soon .btn { margin-top: 18px; height: 44px; padding: 0 20px; font-size: 15px; }
 .soon h3 { font-size: 20px; }
 .soon p { margin-top: 10px; color: var(--ink2); }
 .soon strong { color: var(--ink); }
@@ -383,6 +384,27 @@ h3 { font-family: var(--f-display); font-weight: 600; letter-spacing: -.02em; }
 .check span { display: grid; gap: 2px; font-size: 13.5px; color: var(--ink2); }
 .check b { font-size: 14.5px; font-weight: 600; color: var(--ink); }
 .seg.seg-3 { grid-template-columns: repeat(3, 1fr); }
+/* Caffeine Challenge di form pesanan */
+.ch-box { display: grid; gap: 10px; padding: 14px; border-radius: 16px; background: var(--seg-bg); }
+.ch-text { font-size: 14px; color: var(--ink2); text-wrap: pretty; }
+.ch-text b { color: var(--ink); font-weight: 600; }
+.ch-play { height: 44px; font-size: 15px; }
+.ch-play:disabled { opacity: .45; cursor: not-allowed; }
+.ch-box.done { background: transparent; border: 1px solid var(--accent); }
+
+/* Jendela game: layar penuh, game sendiri berlatar krem */
+.game-sheet {
+  padding: 0; border: 0; margin: 0; width: 100vw; height: 100dvh; max-width: none; max-height: none;
+  background: #faf5ee; color: #35251c;
+}
+.game-sheet[open] { display: flex; flex-direction: column; }
+.game-sheet::backdrop { background: rgba(10, 5, 2, .7); }
+.game-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: calc(10px + env(safe-area-inset-top)) 16px 8px; }
+.game-head h2 { font-family: var(--f-display); font-weight: 600; font-size: 17px; letter-spacing: -.01em; color: #35251c; }
+.game-head h2.warn { color: #8a3f1f; }
+.game-close { height: 36px; padding: 0 16px; font-size: 14px; color: #35251c; background: rgba(53, 37, 28, .08); border: 1px solid rgba(53, 37, 28, .18); }
+.game-close.warn { background: #8a3f1f; color: #f2e6d2; border-color: #8a3f1f; }
+.game-frame { flex: 1; width: 100%; border: 0; display: block; background: #faf5ee; }
 .seg { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; border-radius: 16px; background: var(--seg-bg); }
 .seg label { position: relative; }
 .seg input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }

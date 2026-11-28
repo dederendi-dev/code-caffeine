@@ -34,6 +34,7 @@
         <li><a href="#cara-pesan">Cara pesan</a></li>
         <li><a href="#jadwal">Jadwal</a></li>
         <li><a href="#member">Member</a></li>
+        <li><a href="/main/">Game</a></li>
         <li><a href="#tentang">Tentang</a></li>
       </ul>
       <button class="btn btn-solid btn-sm" type="button" data-open-order>
@@ -159,9 +160,10 @@
           <h2 id="about-title">Dari dapur kos, untuk teman sekampus.</h2>
           <p>Code Caffeine dijalankan oleh Bytepreneur, enam mahasiswa Teknik Informatika Universitas Muhammadiyah Purwokerto. Kami meracik sendiri setiap minuman di dapur kos di Kembaran, lalu mengantarnya ke kampus.</p>
         </div>
-        <div class="soon glass">
-          <h3>Sedang disiapkan</h3>
-          <p><strong>Caffeine Challenge</strong>, mini game di web ini. Skormu menentukan bonusnya: voucher, topping atau poin, sampai upgrade ke ukuran Large.</p>
+        <div class="soon glass" id="challenge">
+          <h3>Caffeine Challenge</h3>
+          <p>Mini game buatan tim kami. Saat pesan, pilih <strong>Main Caffeine Challenge</strong> untuk 1 cup Medium. Minimal tetap Medium, skormu menentukan bonusnya: voucher Rp1.000, +1 cap kartu stamp, atau upgrade ke Large.</p>
+          <a class="btn btn-glass glass" href="/main/">Coba mode latihan</a>
         </div>
       </div>
     </section>
@@ -200,6 +202,7 @@
         <ul class="cart-list" data-cart-list></ul>
         <p class="cart-empty" data-cart-empty>Belum ada minuman. Pilih dulu dari menu.</p>
         <p class="cart-disc" data-cart-disc hidden><span data-cart-disc-label></span><span data-cart-disc-value></span></p>
+        <p class="cart-disc" data-cart-voucher hidden><span>Voucher Caffeine Challenge</span><span data-cart-voucher-value></span></p>
         <p class="cart-total" data-cart-total-row><span>Total</span><strong data-cart-total></strong></p>
 
         <fieldset class="fields" data-fields>
@@ -256,12 +259,19 @@
             <small class="hint" data-stamp-hint></small>
           </div>
 
-          <div class="field">
-            <span id="minat-label">Nanti ada mini game berhadiah upgrade ukuran dan poin. Tertarik? <em>(opsional)</em></span>
-            <div class="seg seg-3" role="radiogroup" aria-labelledby="minat-label">
-              <label><input type="radio" name="minat_game" value="Tertarik"><span>Tertarik</span></label>
-              <label><input type="radio" name="minat_game" value="Mungkin"><span>Mungkin</span></label>
-              <label><input type="radio" name="minat_game" value="Tidak"><span>Tidak</span></label>
+          <div class="field" data-voucher-field hidden>
+            <label class="check">
+              <input type="checkbox" name="pakai_voucher" value="Ya">
+              <span><b>Pakai voucher Caffeine Challenge</b>Potongan Rp1.000 dari voucher pesanan sebelumnya. Kami cek lewat nomor WhatsApp-mu.</span>
+            </label>
+          </div>
+
+          <div class="field" data-challenge>
+            <span>Caffeine Challenge <em>(opsional)</em></span>
+            <div class="ch-box">
+              <p class="ch-text" data-ch-text>Main sekali untuk 1 cup Medium di pesanan ini. Minimal tetap Medium, skormu menentukan bonusnya: voucher Rp1.000, +1 cap kartu stamp, atau upgrade ke Large.</p>
+              <button type="button" class="btn btn-glass glass ch-play" data-ch-play>Main Caffeine Challenge</button>
+              <small class="hint" data-ch-hint></small>
             </div>
           </div>
 
@@ -289,6 +299,9 @@
           <input type="hidden" name="jumlah_cup">
           <input type="hidden" name="total">
           <input type="hidden" name="stamp_gratis">
+          <input type="hidden" name="challenge">
+          <input type="hidden" name="challenge_skor">
+          <input type="hidden" name="challenge_rekaman">
         </fieldset>
 
         <p class="form-error" data-form-error role="alert" hidden></p>
@@ -311,6 +324,22 @@
     </div>
   </dialog>
 
+  <!-- Jendela Caffeine Challenge (game di /main/, dibuka dari form pesanan) -->
+  <dialog class="game-sheet" data-game aria-labelledby="game-title">
+    <div class="game-head">
+      <h2 id="game-title" data-game-title>Caffeine Challenge</h2>
+      <button type="button" class="btn game-close" data-game-close>Tutup</button>
+    </div>
+    <iframe class="game-frame" data-game-frame title="Caffeine Challenge"></iframe>
+  </dialog>
+
+  <!-- Catatan setiap permainan tantangan untuk kelompok (Netlify Forms). Tidak terlihat oleh pembeli. -->
+  <form name="challenge" data-netlify="true" netlify-honeypot="bot-field" hidden>
+    <input type="hidden" name="form-name" value="challenge">
+    <input name="bot-field">
+    <input name="nama"><input name="wa"><input name="skor"><input name="hasil">
+    <input name="status"><input name="rekaman"><input name="untuk_hari">
+  </form>
   <script src="/assets/js/config.js"></script>
   <script src="/assets/js/app.js"></script>
 </body>

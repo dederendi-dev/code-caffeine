@@ -1,0 +1,1080 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Caffeine Challenge · Code Caffeine</title>
+<meta name="description" content="Mini game Code Caffeine. Pesan 1 cup Medium, main sekali, skormu menentukan bonusnya.">
+<meta name="theme-color" content="#faf5ee">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon.png" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="preload" href="/assets/fonts/press-start-2p.woff2" as="font" type="font/woff2" crossorigin>
+<style>
+@font-face { font-family: "Press Start 2P"; src: url("/assets/fonts/press-start-2p.woff2") format("woff2"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "Nunito"; src: url("/assets/fonts/nunito-700.woff2") format("woff2"); font-weight: 700; font-display: swap; }
+@font-face { font-family: "Nunito"; src: url("/assets/fonts/nunito-800.woff2") format("woff2"); font-weight: 800; font-display: swap; }
+:root { box-sizing: border-box; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+img { max-width: 100%; }
+</style>
+<style>
+/* Caffeine Challenge, dibuat oleh Ridho (Bytepreneur).
+   Satu panggung 9:16 di tengah layar. Canvas menggambar game; lapisan HTML untuk menu, aturan, hasil, dan kartu.
+   Warna dari logo Code Caffeine: espresso, karat, kopi, krema, krem, kayu. */
+:root {
+  --espresso: #35251c;
+  --karat: #8a3f1f;
+  --kopi: #7a4526;
+  --krema: #a86a3e;
+  --krem: #f2e6d2;
+  --kayu: #6b3517;
+  --page: #faf5ee;
+  --paper: #f2e6d2;
+  --paper-2: #e6d0ae;
+  --ink: #35251c;
+  --accent: #8a3f1f;
+  --font-display: "Press Start 2P", "Courier New", monospace;
+  --font-body: "Nunito", system-ui, -apple-system, "Segoe UI", sans-serif;
+  color-scheme: light;
+}
+[hidden] { display: none !important; }
+html { box-sizing: border-box; height: 100%; }
+body {
+  margin: 0; height: 100%; box-sizing: border-box;
+  display: flex; align-items: center; justify-content: center;
+  padding-block: 12px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  background: var(--page); color: var(--ink); font-family: var(--font-body);
+  overflow: hidden;
+}
+.stage {
+  position: relative; flex: none;
+  width: min(100%, 360px); aspect-ratio: 9 / 16;
+  container-type: size;
+  border-radius: 14px; overflow: hidden;
+  background: var(--krem);
+  box-shadow: 0 12px 36px rgba(53, 37, 28, .35);
+  touch-action: none; user-select: none; -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+
+.screen {
+  position: absolute; inset: 0; z-index: 2;
+  display: flex; flex-direction: column; align-items: center;
+  pointer-events: none;
+}
+.screen > * { pointer-events: auto; }
+
+button { font: inherit; color: inherit; cursor: pointer; }
+button:focus-visible { outline: .7cqw solid var(--karat); outline-offset: .5cqw; }
+button:disabled { cursor: default; opacity: .6; }
+
+.btn {
+  font: 3.4cqw var(--font-display);
+  padding: 2.6cqw 4cqw;
+  background: var(--paper-2); color: var(--ink);
+  border: .8cqw solid var(--ink); border-radius: 1.6cqw;
+  box-shadow: 0 1cqw 0 var(--ink);
+  transition: transform .06s, box-shadow .06s;
+}
+.btn:active:not(:disabled) { transform: translateY(.8cqw); box-shadow: 0 .2cqw 0 var(--ink); }
+.btn.primary { background: var(--accent); color: var(--krem); }
+.btn.mini { font-size: 2.6cqw; padding: 1.6cqw 2.6cqw; }
+
+.snd {
+  position: absolute; top: 2.6cqw; right: 2.6cqw; z-index: 3;
+  font: 800 3.1cqw var(--font-body);
+  padding: 1cqw 2.4cqw; border-radius: 5cqw;
+  background: rgba(53, 37, 28, .75); color: var(--krem);
+  border: .4cqw solid rgba(242, 230, 210, .45);
+}
+
+/* Menu / welcome */
+.welcome {
+  position: absolute; top: 8%; left: 0; right: 0;
+  display: flex; flex-direction: column; align-items: center; gap: 1.8cqw;
+  text-align: center; pointer-events: none;
+}
+.welcome small { font: 3.2cqw var(--font-display); color: var(--ink); }
+.welcome h1 { margin: 0; font: 8.4cqw/1.2 var(--font-display); color: var(--ink); text-shadow: 0 .9cqw 0 var(--krema); }
+.pills {
+  position: absolute; top: 27.5%; left: 0; right: 0;
+  display: flex; justify-content: center; gap: 2cqw; pointer-events: none;
+}
+.pills span {
+  font: 2.8cqw var(--font-display); color: var(--krem); background: var(--espresso);
+  padding: 1.6cqw 2.8cqw; border-radius: 1.4cqw; white-space: nowrap;
+}
+.hatwrap {
+  position: absolute; left: 0; right: 0; top: 34.5%;
+  display: flex; flex-direction: column; align-items: center; gap: 1.2cqw; pointer-events: none;
+}
+.hatwrap b { font: 3.4cqw var(--font-display); color: var(--ink); }
+.hatwrap span { font: 800 3.4cqw var(--font-body); color: var(--kopi); }
+.arrow {
+  position: absolute; top: 45.3%; transform: translateY(-50%);
+  width: 12cqw; height: 12cqw; display: grid; place-items: center; padding: 0;
+  background: var(--paper); border: .8cqw solid var(--ink); border-radius: 2cqw;
+  box-shadow: 0 1cqw 0 var(--ink);
+}
+.arrow:active { transform: translateY(calc(-50% + .8cqw)); box-shadow: 0 .2cqw 0 var(--ink); }
+.arrow svg { width: 5cqw; height: 5cqw; }
+#hatPrev { left: 6cqw; }
+#hatNext { right: 6cqw; }
+.lockrow {
+  position: absolute; top: 51.5%; left: 0; right: 0;
+  display: flex; align-items: center; justify-content: center; gap: 2.4cqw;
+}
+.lockrow span { font: 800 3cqw var(--font-body); color: var(--karat); }
+.actions {
+  position: absolute; left: 10cqw; right: 10cqw; top: 61%;
+  display: flex; flex-direction: column; gap: 3.4cqw;
+}
+.actions .btn { width: 100%; }
+.back { position: absolute; top: 2.6cqw; left: 2.6cqw; font-size: 3cqw; padding: 2cqw 3cqw; }
+
+/* Stakes + result panels */
+.screen.dim { justify-content: center; background: rgba(53, 37, 28, .42); }
+.panel { width: 80cqw; display: flex; flex-direction: column; gap: 3cqw; text-align: center; }
+.goTitle { margin: 0; font: 6.6cqw/1.15 var(--font-display); color: var(--krem); text-shadow: 0 1cqw 0 var(--karat); }
+.sheet {
+  background: var(--paper); color: var(--ink);
+  border: .9cqw solid var(--ink); border-radius: 2cqw; padding: 3.6cqw 3cqw;
+  box-shadow: 0 1.2cqw 0 var(--ink);
+  display: flex; flex-direction: column; align-items: center; gap: 1.6cqw;
+}
+.sheet.left { align-items: stretch; text-align: left; }
+.sheet .lead { margin: 0; font: 800 3.5cqw/1.3 var(--font-body); }
+.sheet .note { margin: 0; font: 700 3cqw/1.3 var(--font-body); color: var(--kopi); }
+.tiers { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 1.6cqw; }
+.tiers li { display: flex; flex-direction: column; gap: .6cqw; }
+.tiers b { font: 3.2cqw var(--font-display); color: var(--accent); }
+.tiers span { font: 800 3.1cqw/1.3 var(--font-body); }
+.sheet .lbl { font: 2.6cqw var(--font-display); color: var(--accent); }
+.sheet .big { font: 10cqw/1 var(--font-display); }
+.sheet .size { font: 7cqw/1 var(--font-display); color: var(--karat); }
+.sheet .bonus { font: 800 3.6cqw/1.2 var(--font-body); color: var(--karat); }
+.sheet .row { display: flex; gap: 3cqw; justify-content: center; flex-wrap: wrap; font: 800 3.1cqw var(--font-body); color: var(--kopi); }
+.sheet .badge { font: 2.6cqw var(--font-display); color: var(--krem); background: var(--accent); padding: 1.2cqw 2.4cqw; border-radius: 1.4cqw; }
+.msg { margin: 0; font: 700 3cqw/1.3 var(--font-body); color: var(--krem); }
+
+/* Share card */
+#scrCard { justify-content: center; gap: 3cqw; background: rgba(53, 37, 28, .8); }
+#cardImg { width: 62cqw; height: auto; border: .8cqw solid var(--krem); border-radius: 1.6cqw; background: var(--krem); }
+#scrCard p { margin: 0; font: 700 3.2cqw var(--font-body); color: var(--krem); text-align: center; padding: 0 6cqw; }
+#scrCek { justify-content: center; gap: 3cqw; background: rgba(53, 37, 28, .85); z-index: 5; }
+#scrCek .sheet { width: 80cqw; }
+
+@media (prefers-reduced-motion: reduce) {
+  .btn, .arrow { transition: none; }
+}
+</style>
+</head>
+<body>
+
+<div class="stage" id="stage">
+  <canvas id="c" aria-label="Area permainan Caffeine Challenge"></canvas>
+  <button class="snd" id="snd" type="button">Suara: nyala</button>
+
+  <!-- Menu / welcome -->
+  <section class="screen" id="scrMenu">
+    <div class="welcome">
+      <small>SELAMAT DATANG DI</small>
+      <h1>CAFFEINE<br>CHALLENGE</h1>
+    </div>
+    <div class="pills"><span id="recBox">REKOR 0</span><span id="beanBox">BIJI 0</span></div>
+    <div class="hatwrap"><b id="hatIdx">TOPI 1/6</b><span id="hatName">Tanpa topi</span></div>
+    <button class="arrow" id="hatPrev" type="button" aria-label="Topi sebelumnya">
+      <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M14 3 L5 10 L14 17 Z" fill="#35251c"/></svg>
+    </button>
+    <button class="arrow" id="hatNext" type="button" aria-label="Topi berikutnya">
+      <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M6 3 L15 10 L6 17 Z" fill="#35251c"/></svg>
+    </button>
+    <div class="lockrow" id="lockRow" hidden>
+      <span id="lockTxt">TERKUNCI</span>
+      <button class="btn mini primary" id="btnBuy" type="button">BUKA</button>
+    </div>
+    <div class="actions">
+      <button class="btn primary" id="btnChallenge" type="button">TANTANGAN</button>
+      <button class="btn" id="btnPractice" type="button">LATIHAN</button>
+    </div>
+  </section>
+
+  <!-- Stakes (before the challenge) -->
+  <section class="screen dim" id="scrStakes" hidden>
+    <div class="panel">
+      <h2 class="goTitle">MODE TANTANGAN</h2>
+      <div class="sheet left">
+        <p class="lead">Pesan 1 cup <b>Medium</b> seperti biasa, lalu main sekali. Minimal tetap Medium, skor kamu menentukan bonusnya.</p>
+        <ul class="tiers" id="tierList"></ul>
+        <p class="note" id="stakesNote">Cuma 1 kesempatan per pesanan. Keluar di tengah permainan dihitung skor 0. Mau coba dulu? Pakai mode latihan, gratis dan tanpa hadiah.</p>
+      </div>
+      <button class="btn primary" id="btnGo" type="button">MULAI</button>
+      <button class="btn" id="btnStakesBack" type="button">KEMBALI</button>
+    </div>
+  </section>
+
+  <!-- Ready (waiting for the first tap) -->
+  <section class="screen" id="scrPre" hidden>
+    <button class="btn back" id="btnPreBack" type="button">KEMBALI</button>
+  </section>
+
+  <!-- Result -->
+  <section class="screen dim" id="scrOver" hidden>
+    <div class="panel">
+      <h2 class="goTitle" id="ovTitle">GAME OVER</h2>
+      <div class="sheet">
+        <div class="lbl">SKOR</div>
+        <div class="big" id="ovScore">0</div>
+        <div class="lbl" id="ovSizeLbl">HADIAH KAMU</div>
+        <div class="size" id="ovSize">MEDIUM</div>
+        <div class="bonus" id="ovBonus"></div>
+        <div class="row"><span id="ovStage">Stage 1</span><span id="ovBeans">+0 biji</span></div>
+        <div class="lbl">REKOR <span id="ovBest">0</span></div>
+        <div class="badge" id="ovNew" hidden>REKOR BARU!</div>
+      </div>
+      <p class="msg" id="ovMsg"></p>
+      <button class="btn primary" id="btnMain" type="button">MAIN LAGI</button>
+      <button class="btn" id="btnShare" type="button">KARTU HASIL</button>
+      <button class="btn" id="btnMenu" type="button">MENU</button>
+    </div>
+  </section>
+
+  <!-- Cek rekaman permainan (untuk tim Code Caffeine) -->
+  <section class="screen" id="scrCek" hidden>
+    <div class="sheet">
+      <div class="lbl">CEK REKAMAN</div>
+      <div class="big" id="cekScore">0</div>
+      <div class="bonus" id="cekHasil"></div>
+      <p class="note" id="cekNote"></p>
+    </div>
+    <button class="btn" id="btnCekClose" type="button">TUTUP</button>
+  </section>
+
+  <!-- Share card preview -->
+  <section class="screen" id="scrCard" hidden style="z-index:4">
+    <img id="cardImg" alt="Kartu hasil Caffeine Challenge">
+    <p>Tahan gambar untuk menyimpan, lalu bagikan ke story.</p>
+    <button class="btn" id="btnCardClose" type="button">TUTUP</button>
+  </section>
+</div>
+
+<script>
+/*
+ * CAFFEINE CHALLENGE
+ *
+ * Integrasi dengan web Code Caffeine (form pesanan membuka halaman ini di iframe, asal yang sama):
+ *  - Mode tantangan dimulai (tap pertama): { type: 'caffeine-challenge:start', version }
+ *  - Permainan selesai:  { type: 'caffeine-challenge:result', version, mode, score, passed, stage, size, tier, reward, beans, won, taps }
+ *  - Tombol "KEMBALI KE PESANAN": { type: 'caffeine-challenge:close' }
+ *  - Dibuka langsung (bukan dari form pesanan), mode tantangan mengarahkan ke pemesanan; latihan tetap bisa.
+ *  - Cek rekaman: /main/#cek=<kode tap> menampilkan skor hasil replay (untuk tim).
+ *  - The course is fixed (seeded), and the simulation runs on a fixed 60 Hz step, so the server can
+ *    verify a result: window.CaffeineChallenge.replay(taps) returns the score for a list of tap steps.
+ *    Move the "SIM" section into a shared module to run the same code on the server.
+ *  - Size is decided only by the score: sizeFor(score).
+ */
+(() => {
+'use strict';
+
+/* ======================================================================
+   CONFIG (tune difficulty here)
+   ====================================================================== */
+const W = 360, H = 640, GROUND = 552, DPR = 2;
+const BX = 96, R = 10.5, PW = 58;               // bird x, bird radius, pillar width
+const STEP = 1 / 60;                             // fixed simulation step (seconds)
+const GRAV = 1500, FLAP = -400, ACCEL = 60;      // physics; ACCEL = speed change per second between stages
+const POINTS = 100;                              // score per pillar
+const PER_STAGE = 6;                             // pillars per stage
+const SLEEP_RATE = 0.045;                        // sleepiness gained per second (full in ~22 s)
+const SLEEP_FLAP = 0.30;                         // flap power lost at full sleepiness
+const SLEEP_GRAV = 0.22;                         // extra gravity at full sleepiness
+const BEAN_COOL = 0.22;                          // sleepiness removed per coffee bean
+const BEAN_SPOTS = [1, 4];                       // beans sit between pillar a and a+1 inside each stage
+
+// One stage per menu item. speed = px/s, gap = opening between pillars, spacing = distance between pillars,
+// delta = max vertical shift between two openings, seed = fixed layout (same for every player).
+const STAGES = [
+  { name: 'Americano',           color: '#e9b872', speed: 125, gap: 160, spacing: 210, delta: 90,  seed: 101 },
+  { name: 'Dalgona Coffee',      color: '#c98a4b', speed: 132, gap: 154, spacing: 206, delta: 110, seed: 202 },
+  { name: 'Ice Coffee Milo',     color: '#8a5a44', speed: 140, gap: 148, spacing: 202, delta: 130, seed: 303 },
+  { name: 'Cimory Matcha Latte', color: '#8a9a62', speed: 148, gap: 142, spacing: 198, delta: 145, seed: 404 },
+  { name: 'Dirty Latte',         color: '#f2e6d2', speed: 156, gap: 136, spacing: 194, delta: 160, seed: 505 }
+];
+// Sesuai rencana (naskah presentasi & laporan UTS): minimal tetap Medium, skor menentukan bonus.
+// Topping belum ada dan poin digital belum jadi, jadi "poin" memakai kartu stamp (versi manual poin).
+const VOUCHER = 1000;                                   // nilai voucher untuk pesanan berikutnya (Rp)
+const TIERS = [
+  { key: 'voucher', min: 0,    size: 'Medium', bonus: '+ voucher Rp1.000',   short: 'VOUCHER', desc: 'Skor di bawah 1.800. Cup tetap Medium, plus voucher Rp1.000 untuk pesanan berikutnya.' },
+  { key: 'cap',     min: 1800, size: 'Medium', bonus: '+ 1 cap kartu stamp', short: '+1 CAP',  desc: 'Capai 1.800 (tamat stage 3). Cup Medium, plus 1 cap tambahan di kartu stamp.' },
+  { key: 'large',   min: 3000, size: 'Large',  bonus: 'upgrade dari Medium', short: 'LARGE',   desc: 'Capai 3.000 (tamat semua stage). Cup kamu di-upgrade ke Large.' }
+];
+const TOTAL = PER_STAGE * STAGES.length * POINTS;   // 3000
+const VERSION = 1;
+
+const HATS = ['Tanpa topi', 'Topi baseball', 'Mahkota', 'Topi pesta', 'Topi tinggi', 'Ikat kepala'];
+const HAT_COST = [0, 5, 25, 12, 16, 8];             // coffee beans to unlock each hat
+
+const C = {
+  espresso: '#35251c', karat: '#8a3f1f', kopi: '#7a4526', krema: '#a86a3e', krem: '#f2e6d2', kayu: '#6b3517'
+};
+
+/* ======================================================================
+   HELPERS
+   ====================================================================== */
+const $ = id => document.getElementById(id);
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const mod = (a, n) => ((a % n) + n) % n;
+const fmt = n => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+const tierFor = score => (score >= TIERS[2].min ? TIERS[2] : score >= TIERS[1].min ? TIERS[1] : TIERS[0]);
+const sizeFor = score => tierFor(score).size;
+
+const ls = {   // per-viewer storage; may be unavailable
+  get(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+};
+
+/* ======================================================================
+   SIM (deterministic: no Math.random, no DOM, fixed step)
+   ====================================================================== */
+function mulberry32(a) {
+  return function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function buildCourse() {
+  const pipes = [], beans = [];
+  let x = 340, prevGy = 290;
+  STAGES.forEach((S, st) => {
+    const rnd = mulberry32(S.seed);
+    const lo = S.gap / 2 + 56, hi = GROUND - S.gap / 2 - 56;
+    let dir = rnd() < 0.5 ? -1 : 1;
+    for (let i = 0; i < PER_STAGE; i++) {
+      let gy = 290;
+      if (pipes.length) {
+        if (rnd() < 0.7) dir = -dir;                       // mostly alternate up and down
+        gy = clamp(prevGy + (0.35 + 0.65 * rnd()) * S.delta * dir, lo, hi);
+      }
+      pipes.push({ x, gy, gap: S.gap, stage: st });
+      prevGy = gy;
+      x += S.spacing;
+    }
+  });
+  STAGES.forEach((S, st) => {
+    const rnd = mulberry32(S.seed + 999);
+    BEAN_SPOTS.forEach(spot => {
+      const a = pipes[st * PER_STAGE + spot], b = pipes[st * PER_STAGE + spot + 1];
+      beans.push({
+        x: (a.x + b.x) / 2 + PW / 2,
+        y: clamp((a.gy + b.gy) / 2 + (rnd() - 0.5) * 50, 40, GROUND - 40),
+        stage: st
+      });
+    });
+  });
+  beans.sort((p, q) => p.x - q.x);
+  return { pipes, beans };
+}
+const COURSE = buildCourse();
+
+function createSim() {
+  return {
+    t: 0, y: 290, vy: 0, dist: 0, speed: STAGES[0].speed,
+    passed: 0, score: 0, sleepy: 0, beans: 0,
+    got: new Uint8Array(COURSE.beans.length),
+    alive: true, won: false
+  };
+}
+
+function hitRect(cx, cy, rx, ry, rw, rh) {
+  const nx = clamp(cx, rx, rx + rw), ny = clamp(cy, ry, ry + rh);
+  const dx = cx - nx, dy = cy - ny;
+  return dx * dx + dy * dy < R * R;
+}
+
+function simStep(s, tap) {
+  if (!s.alive || s.won) return;
+  const dt = STEP;
+  if (tap) s.vy = FLAP * (1 - SLEEP_FLAP * s.sleepy);
+  s.vy += GRAV * (1 + SLEEP_GRAV * s.sleepy) * dt;
+  s.y += s.vy * dt;
+  if (s.y < R) { s.y = R; if (s.vy < 0) s.vy = 0; }
+
+  const target = STAGES[Math.min(STAGES.length - 1, Math.floor(s.passed / PER_STAGE))].speed;
+  const dv = ACCEL * dt;
+  s.speed += clamp(target - s.speed, -dv, dv);
+  s.dist += s.speed * dt;
+  s.sleepy = Math.min(1, s.sleepy + SLEEP_RATE * dt);
+
+  const pipes = COURSE.pipes;
+  while (s.passed < pipes.length && pipes[s.passed].x - s.dist + PW / 2 < BX) {
+    s.passed++; s.score = s.passed * POINTS;
+  }
+  for (let i = Math.max(0, s.passed - 1); i < pipes.length; i++) {
+    const p = pipes[i], px = p.x - s.dist;
+    if (px > BX + R + 8) break;
+    if (px + PW < BX - R - 8) continue;
+    const top = p.gy - p.gap / 2, bot = p.gy + p.gap / 2;
+    if (hitRect(BX, s.y, px - 3, -20, PW + 6, top + 20) || hitRect(BX, s.y, px - 3, bot, PW + 6, GROUND - bot)) {
+      s.alive = false; break;
+    }
+  }
+  if (s.alive) {
+    const beans = COURSE.beans;
+    for (let i = 0; i < beans.length; i++) {
+      if (s.got[i]) continue;
+      const bx = beans[i].x - s.dist;
+      if (bx > BX + 40) break;
+      if (bx < BX - 40) continue;
+      if (Math.hypot(bx - BX, beans[i].y - s.y) < R + 9) {
+        s.got[i] = 1; s.beans++; s.sleepy = Math.max(0, s.sleepy - BEAN_COOL);
+      }
+    }
+  }
+  if (s.alive && s.y + R >= GROUND) { s.y = GROUND - R; s.alive = false; }
+  if (s.alive && s.passed >= pipes.length) s.won = true;
+  s.t++;
+}
+
+// Re-run a recorded run (list of step numbers where a tap happened). Used by the server to verify results.
+function replay(taps) {
+  const s = createSim();
+  let k = 0;
+  const maxT = (taps.length ? taps[taps.length - 1] : 0) + 60 * 20;
+  while (s.alive && !s.won && s.t < maxT) {
+    let tap = false;
+    while (k < taps.length && taps[k] === s.t) { tap = true; k++; }
+    simStep(s, tap);
+  }
+  return { score: s.score, passed: s.passed, beans: s.beans, won: s.won, alive: s.alive, steps: s.t, size: sizeFor(s.score), tier: tierFor(s.score).key };
+}
+
+/* ======================================================================
+   UI STATE
+   ====================================================================== */
+const stage = $('stage'), cv = $('c'), ctx = cv.getContext('2d');
+cv.width = W * DPR; cv.height = H * DPR;
+const scr = { menu: $('scrMenu'), stakes: $('scrStakes'), pre: $('scrPre'), over: $('scrOver') };
+
+let state = 'menu';           // menu | stakes | ready | play | dead | win | over
+let mode = 'practice';        // practice | challenge
+let best = +ls.get('caffeine.best', 0) || 0;
+let totalBeans = +ls.get('caffeine.beans', 0) || 0;
+let unlocked = new Set([0].concat(ls.get('caffeine.unlocked', []) || []));
+let hat = +ls.get('caffeine.hat', 0) || 0;
+if (!unlocked.has(hat)) hat = 0;
+let hatView = hat;
+let muted = !!ls.get('caffeine.muted', false);
+
+let sim = createSim();
+let taps = [], pendingTap = false, acc = 0, prevY = 290, prevDist = 0, alpha = 1;
+let evPassed = 0, evBeans = 0, newBest = false, lastResult = null;
+let parts = [], zs = [], zTimer = 0;
+let clock = 0, idleScroll = 0, shake = 0, deadAt = 0, winT = 0, cupFill = 0;
+let banner = { t: 99, stage: 0 }, toast = { t: 99, text: '' };
+let dead = { y: 290, vy: 0, rot: 0 };
+let rY = 290, rDist = 0, rRot = 0, rPhase = 0;
+
+/* ---------- sound ---------- */
+let ac = null;
+function beep(freq, dur, type, vol, slide) {
+  if (muted) return;
+  try {
+    if (!ac) ac = new (window.AudioContext || window.webkitAudioContext)();
+    if (ac.state === 'suspended') ac.resume();
+    const o = ac.createOscillator(), g = ac.createGain(), t = ac.currentTime;
+    o.type = type || 'square';
+    o.frequency.setValueAtTime(freq, t);
+    if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(40, freq + slide), t + dur);
+    g.gain.setValueAtTime(vol || 0.05, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(ac.destination);
+    o.start(t); o.stop(t + dur);
+  } catch (e) {}
+}
+function jingle(notes) { notes.forEach((f, i) => setTimeout(() => beep(f, 0.14, 'square', 0.05), i * 110)); }
+
+/* ---------- particles ---------- */
+function burst(x, y, col, n) {
+  for (let i = 0; i < n; i++) {
+    const a = Math.random() * 6.283, s = 40 + Math.random() * 140;
+    parts.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s - 40, l: 0.5 + Math.random() * 0.4, m: 0.9, c: col, s: 2 + Math.random() * 3 });
+  }
+}
+function updFx(dt) {
+  for (const p of parts) { p.l -= dt; p.vy += 500 * dt; p.x += p.vx * dt; p.y += p.vy * dt; }
+  parts = parts.filter(p => p.l > 0);
+  for (const z of zs) { z.l -= dt; z.y -= 22 * dt; z.x += 8 * dt; }
+  zs = zs.filter(z => z.l > 0);
+  banner.t += dt; toast.t += dt; shake = Math.max(0, shake - dt);
+}
+
+/* ======================================================================
+   FLOW
+   ====================================================================== */
+function resetRun() {
+  sim = createSim();
+  taps = []; pendingTap = false; acc = 0; prevY = sim.y; prevDist = 0; alpha = 1;
+  evPassed = 0; evBeans = 0; newBest = false; lastResult = null;
+  parts = []; zs = []; cupFill = 0; shake = 0; winT = 0;
+  banner = { t: 99, stage: 0 }; toast = { t: 99, text: '' };
+}
+function show(which) { for (const k in scr) scr[k].hidden = scr[k] !== which; }
+
+function refreshMenu() {
+  $('recBox').textContent = 'REKOR ' + fmt(best);
+  $('beanBox').textContent = 'BIJI ' + totalBeans;
+  $('hatIdx').textContent = 'TOPI ' + (hatView + 1) + '/' + HATS.length;
+  $('hatName').textContent = HATS[hatView];
+  const locked = !unlocked.has(hatView);
+  $('lockRow').hidden = !locked;
+  if (locked) {
+    $('lockTxt').textContent = 'TERKUNCI: ' + HAT_COST[hatView] + ' biji';
+    $('btnBuy').disabled = totalBeans < HAT_COST[hatView];
+  }
+}
+function toMenu() {
+  resetRun(); hatView = hat; state = 'menu'; refreshMenu(); show(scr.menu);
+}
+function enterReady() {
+  if (!unlocked.has(hatView)) hatView = hat; else hat = hatView;
+  ls.set('caffeine.hat', hat);
+  resetRun(); state = 'ready'; show(scr.pre);
+}
+function start() {
+  state = 'play'; show(null);
+  taps = []; pendingTap = true;
+  banner = { t: 0, stage: 0 };
+  if (mode === 'challenge') post({ type: 'caffeine-challenge:start', version: VERSION });
+}
+function changeHat(d) {
+  hatView = (hatView + d + HATS.length) % HATS.length;
+  if (unlocked.has(hatView)) { hat = hatView; ls.set('caffeine.hat', hat); }
+  refreshMenu(); beep(700, 0.05, 'square', 0.04);
+}
+function buyHat() {
+  const cost = HAT_COST[hatView];
+  if (unlocked.has(hatView) || totalBeans < cost) return;
+  totalBeans -= cost; unlocked.add(hatView); hat = hatView;
+  ls.set('caffeine.beans', totalBeans); ls.set('caffeine.unlocked', Array.from(unlocked)); ls.set('caffeine.hat', hat);
+  refreshMenu(); jingle([660, 880]);
+}
+
+/* ---------- run events ---------- */
+function flapFx() {
+  beep(420, 0.09, 'square', 0.04, 260);
+  parts.push({ x: BX - 10, y: sim.y + 4, vx: -50 - Math.random() * 30, vy: 20 + Math.random() * 30, l: 0.35, m: 0.35, c: C.krem, s: 2.4 });
+}
+function handleEvents() {
+  if (sim.passed !== evPassed) {
+    evPassed = sim.passed;
+    beep(880, 0.07, 'square', 0.05);
+    setTimeout(() => beep(1320, 0.09, 'square', 0.05), 70);
+    if (sim.score === TIERS[1].min) {
+      toast = { t: 0, text: 'BONUS +1 CAP!' }; jingle([523, 659, 784, 1047]); burst(BX, sim.y, '#e9b872', 18);
+    }
+    if (evPassed % PER_STAGE === 0 && evPassed < TOTAL / POINTS) banner = { t: 0, stage: evPassed / PER_STAGE };
+  }
+  if (sim.beans !== evBeans) {
+    evBeans = sim.beans;
+    beep(1200, 0.06, 'triangle', 0.06);
+    setTimeout(() => beep(1700, 0.08, 'triangle', 0.06), 50);
+    burst(BX + 6, sim.y, C.krem, 8);
+  }
+  if (sim.won) onEnd(true);
+  else if (!sim.alive) onEnd(false);
+}
+
+function onEnd(won) {
+  if (state !== 'play') return;
+  state = won ? 'win' : 'dead';
+  deadAt = performance.now();
+  const pass = sim.passed, score = sim.score, stageIdx = Math.min(STAGES.length - 1, Math.floor(Math.max(0, pass - (won ? 1 : 0)) / PER_STAGE));
+  if (won) {
+    winT = 0; toast = { t: 0, text: 'LARGE! TAMAT!' };
+    jingle([523, 659, 784, 1047, 1319]); burst(BX, sim.y, '#e9b872', 30); burst(BX, sim.y, C.krem, 20);
+  } else {
+    dead = { y: sim.y, vy: -220, rot: rRot };
+    shake = 0.3; burst(BX, sim.y, '#e9b872', 16); beep(180, 0.3, 'sawtooth', 0.07, -120);
+  }
+  if (score > best) { best = score; newBest = true; ls.set('caffeine.best', best); }
+  if (sim.beans) { totalBeans += sim.beans; ls.set('caffeine.beans', totalBeans); }
+  const tier = tierFor(score);
+  lastResult = {
+    type: 'caffeine-challenge:result', version: VERSION, mode, score, passed: pass,
+    stage: stageIdx + 1, size: tier.size, tier: tier.key, reward: tier.size + ' ' + tier.bonus,
+    beans: sim.beans, won, taps: taps.slice()
+  };
+  if (mode === 'challenge') post(lastResult);
+  setTimeout(showOver, won ? 1600 : 800);
+}
+
+function inEmbed() { try { return window.parent && window.parent !== window; } catch (e) { return false; } }
+function post(msg) { try { if (inEmbed()) window.parent.postMessage(msg, location.origin); } catch (e) {} }
+
+function showOver() {
+  if (state !== 'dead' && state !== 'win') return;
+  const r = lastResult, challenge = r.mode === 'challenge';
+  state = 'over';
+  $('ovTitle').textContent = r.won ? 'SELESAI!' : 'GAME OVER';
+  $('ovScore').textContent = fmt(r.score);
+  const tier = tierFor(r.score);
+  $('ovSizeLbl').textContent = challenge ? 'HADIAH KAMU' : 'SEANDAINYA INI TANTANGAN';
+  $('ovSize').textContent = tier.size.toUpperCase();
+  $('ovBonus').textContent = tier.bonus;
+  $('ovStage').textContent = 'Stage ' + r.stage + ' · ' + STAGES[r.stage - 1].name;
+  $('ovBeans').textContent = '+' + r.beans + ' biji';
+  $('ovBest').textContent = fmt(best);
+  $('ovNew').hidden = !newBest;
+  if (challenge) {
+    $('ovMsg').textContent = 'Hasil masuk ke pesananmu dan terkunci untuk pesanan ini.';
+    $('btnMain').textContent = 'KEMBALI KE PESANAN';
+  } else {
+    $('ovMsg').textContent = 'Mode latihan tidak memberi hadiah.';
+    $('btnMain').textContent = 'MAIN LAGI';
+  }
+  $('btnMain').disabled = false;
+  $('btnShare').hidden = !challenge;
+  $('btnMenu').hidden = challenge;
+  show(scr.over);
+}
+
+/* ======================================================================
+   DRAWING
+   ====================================================================== */
+function rr(x, y, w, h, r) {
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(x, y, w, h, r); else ctx.rect(x, y, w, h);
+}
+function txt(s, x, y, size, align, fill, stroke, lw) {
+  ctx.font = size + 'px "Press Start 2P", "Courier New", monospace';
+  ctx.textAlign = align || 'center'; ctx.textBaseline = 'middle'; ctx.lineJoin = 'round';
+  ctx.lineWidth = lw || size / 4; ctx.strokeStyle = stroke || C.espresso;
+  ctx.strokeText(s, x, y);
+  ctx.fillStyle = fill || C.krem; ctx.fillText(s, x, y);
+}
+
+const CLOUDS = [
+  { x: 30, y: 90, s: 1.1 }, { x: 150, y: 150, s: 0.8 }, { x: 260, y: 60, s: 1.0 },
+  { x: 330, y: 190, s: 0.7 }, { x: 90, y: 230, s: 0.9 }, { x: 210, y: 270, s: 0.6 }
+];
+function hills(base, a1, l1, a2, l2, par, col, scroll) {
+  ctx.fillStyle = col; ctx.beginPath(); ctx.moveTo(0, GROUND);
+  for (let x = 0; x <= W; x += 6) {
+    const xx = x + scroll * par;
+    ctx.lineTo(x, base + Math.sin(xx / l1) * a1 + Math.sin(xx / l2 + 1.7) * a2);
+  }
+  ctx.lineTo(W, GROUND); ctx.closePath(); ctx.fill();
+}
+function drawBG(scroll) {
+  const g = ctx.createLinearGradient(0, 0, 0, GROUND);
+  g.addColorStop(0, '#f6ecdb'); g.addColorStop(0.5, '#ecd5b1'); g.addColorStop(1, '#d9a877');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, GROUND + 2);
+
+  const sx = 262, sy = GROUND - 100;
+  const rg = ctx.createRadialGradient(sx, sy, 8, sx, sy, 120);
+  rg.addColorStop(0, 'rgba(255,248,236,.9)'); rg.addColorStop(1, 'rgba(255,248,236,0)');
+  ctx.fillStyle = rg; ctx.fillRect(sx - 120, sy - 120, 240, 240);
+  ctx.fillStyle = '#fff8ec'; ctx.beginPath(); ctx.arc(sx, sy, 30, 0, 7); ctx.fill();
+
+  ctx.fillStyle = 'rgba(255,250,240,.75)';
+  for (const c of CLOUDS) {
+    const x = mod(c.x - scroll * 0.08 * c.s, W + 160) - 80;
+    ctx.beginPath();
+    ctx.ellipse(x, c.y, 30 * c.s, 11 * c.s, 0, 0, 7);
+    ctx.ellipse(x + 22 * c.s, c.y - 8 * c.s, 20 * c.s, 11 * c.s, 0, 0, 7);
+    ctx.ellipse(x - 20 * c.s, c.y - 4 * c.s, 16 * c.s, 9 * c.s, 0, 0, 7);
+    ctx.fill();
+  }
+  hills(GROUND - 95, 16, 70, 6, 23, 0.12, '#d2ad82', scroll);
+  hills(GROUND - 52, 12, 52, 5, 19, 0.3, C.krema, scroll);
+  hills(GROUND - 24, 8, 40, 4, 15, 0.6, C.kopi, scroll);
+}
+
+function drawGround(scroll) {
+  ctx.fillStyle = C.kayu; ctx.fillRect(0, GROUND, W, H - GROUND);
+  ctx.fillStyle = '#5a2c12';
+  const off = scroll % 36;
+  for (let x = -off; x < W; x += 36) { ctx.fillRect(x + 6, GROUND + 30, 16, 4); ctx.fillRect(x + 22, GROUND + 52, 12, 4); }
+  ctx.fillStyle = C.karat; ctx.fillRect(0, GROUND, W, 14);
+  ctx.fillStyle = C.espresso; ctx.fillRect(0, GROUND + 11, W, 3);
+  ctx.fillStyle = C.krema;
+  const o2 = scroll % 18;
+  for (let x = -o2; x < W; x += 18) {
+    ctx.beginPath(); ctx.moveTo(x, GROUND); ctx.lineTo(x + 4, GROUND - 5); ctx.lineTo(x + 8, GROUND); ctx.fill();
+  }
+}
+
+function pillarGrad(x, w) {
+  const g = ctx.createLinearGradient(x, 0, x + w, 0);
+  g.addColorStop(0, C.espresso); g.addColorStop(0.28, C.krema); g.addColorStop(0.6, C.kopi); g.addColorStop(1, C.espresso);
+  return g;
+}
+function pillarNode(x, y, col) {
+  ctx.fillStyle = col; ctx.fillRect(x - 2, y - 3, PW + 4, 7);
+  ctx.fillStyle = 'rgba(242,230,210,.7)'; ctx.fillRect(x - 2, y - 3, PW + 4, 2);
+  ctx.strokeStyle = C.espresso; ctx.lineWidth = 1.5; ctx.strokeRect(x - 2, y - 3, PW + 4, 7);
+}
+function pillarCap(x, y, rimY) {
+  ctx.fillStyle = pillarGrad(x - 5, PW + 10); rr(x - 5, y, PW + 10, 20, 4); ctx.fill();
+  ctx.strokeStyle = C.espresso; ctx.lineWidth = 2; ctx.stroke();
+  ctx.fillStyle = C.krem; ctx.fillRect(x - 4, rimY, PW + 8, 4);
+}
+function drawPillar(p, dist) {
+  const x = p.x - dist;
+  if (x < -PW - 12 || x > W + 12) return;
+  const top = p.gy - p.gap / 2, bot = p.gy + p.gap / 2, col = STAGES[p.stage].color;
+  ctx.fillStyle = pillarGrad(x, PW);
+  ctx.fillRect(x, -10, PW, top + 10); ctx.fillRect(x, bot, PW, GROUND - bot);
+  ctx.strokeStyle = C.espresso; ctx.lineWidth = 2;
+  ctx.strokeRect(x, -10, PW, top + 10); ctx.strokeRect(x, bot, PW, GROUND - bot);
+  for (let ny = top - 52; ny > -10; ny -= 52) pillarNode(x, ny, col);
+  for (let ny = bot + 52; ny < GROUND; ny += 52) pillarNode(x, ny, col);
+  pillarCap(x, top - 20, top - 4);
+  pillarCap(x, bot, bot);
+}
+
+function drawBean(x, y, t) {
+  ctx.save(); ctx.translate(x, y + Math.sin(t * 4 + x * 0.05) * 2.5); ctx.rotate(-0.5);
+  ctx.fillStyle = C.espresso; ctx.strokeStyle = C.krem; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.ellipse(0, 0, 6.5, 9, 0, 0, 7); ctx.fill(); ctx.stroke();
+  ctx.strokeStyle = C.krema; ctx.lineWidth = 1.6;
+  ctx.beginPath(); ctx.moveTo(0, -8); ctx.quadraticCurveTo(-3.5, 0, 0, 8); ctx.stroke();
+  ctx.restore();
+}
+
+function drawHat(i) {
+  if (i === 1) {
+    ctx.fillStyle = C.karat; ctx.beginPath(); ctx.arc(3, -8, 9, Math.PI, 0); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = C.kayu; rr(5, -10, 15, 3.2, 1.5); ctx.fill();
+    ctx.fillStyle = C.krem; ctx.beginPath(); ctx.arc(3, -17, 1.6, 0, 7); ctx.fill();
+  } else if (i === 2) {
+    ctx.fillStyle = '#e9b872'; ctx.strokeStyle = C.kayu; ctx.lineWidth = 1.2;
+    ctx.beginPath(); ctx.moveTo(-4, -9); ctx.lineTo(-5, -20); ctx.lineTo(0, -14); ctx.lineTo(4, -22); ctx.lineTo(8, -14); ctx.lineTo(13, -20); ctx.lineTo(12, -9); ctx.closePath();
+    ctx.fill(); ctx.stroke();
+    ctx.fillStyle = C.karat; ctx.beginPath(); ctx.arc(4, -12, 1.8, 0, 7); ctx.fill();
+  } else if (i === 3) {
+    ctx.fillStyle = C.karat; ctx.beginPath(); ctx.moveTo(-2, -9); ctx.lineTo(10, -9); ctx.lineTo(4, -26); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = C.krem; ctx.beginPath(); ctx.moveTo(0.5, -15); ctx.lineTo(7.5, -15); ctx.lineTo(6.2, -19); ctx.lineTo(1.8, -19); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.arc(4, -26, 2.6, 0, 7); ctx.fill();
+  } else if (i === 4) {
+    ctx.fillStyle = C.espresso; rr(-6, -12, 20, 3.5, 1.5); ctx.fill(); rr(-1, -26, 12, 15, 1.5); ctx.fill();
+    ctx.fillStyle = C.karat; ctx.fillRect(-1, -15.5, 12, 3.2);
+  } else if (i === 5) {
+    ctx.fillStyle = C.karat; rr(-6, -9.5, 19, 4, 2); ctx.fill();
+    const f = Math.sin(clock * 12) * 2;
+    ctx.beginPath(); ctx.moveTo(-6, -7.5); ctx.lineTo(-15, -11 + f); ctx.lineTo(-14, -6 + f); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(-6, -7.5); ctx.lineTo(-15, -3 - f); ctx.lineTo(-12, -1 - f); ctx.closePath(); ctx.fill();
+  }
+}
+
+function drawBird(x, y, rot, phase, hatIdx, sleepy) {
+  ctx.save(); ctx.translate(x, y); ctx.rotate(rot);
+  ctx.fillStyle = C.karat; ctx.beginPath(); ctx.moveTo(-10, 2); ctx.lineTo(-22, -3); ctx.lineTo(-21, 7); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = C.krema; ctx.strokeStyle = C.espresso; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.ellipse(0, 0, 15, 12, 0, 0, 7); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = C.krem; ctx.beginPath(); ctx.ellipse(2, 5, 10, 5.5, 0, 0, Math.PI); ctx.fill();
+  ctx.save(); ctx.translate(-3, 2); ctx.rotate(Math.sin(phase) * 0.6 - 0.2);
+  ctx.fillStyle = C.karat; ctx.strokeStyle = C.espresso; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.ellipse(0, 0, 9, 5, 0, 0, 7); ctx.fill(); ctx.stroke(); ctx.restore();
+  ctx.fillStyle = '#fff8ec'; ctx.beginPath(); ctx.arc(7, -3.5, 4.2, 0, 7); ctx.fill();
+  ctx.fillStyle = C.espresso; ctx.beginPath(); ctx.arc(8.5, -3.5, 2, 0, 7); ctx.fill();
+  if (sleepy > 0.05) {   // heavy eyelid
+    ctx.save(); ctx.beginPath(); ctx.arc(7, -3.5, 4.4, 0, 7); ctx.clip();
+    ctx.fillStyle = C.krema; ctx.fillRect(2, -8.2, 10, 8.8 * clamp(sleepy * 0.9, 0, 0.9));
+    ctx.restore();
+  }
+  ctx.fillStyle = '#e9b872'; ctx.strokeStyle = C.espresso; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(13, -1); ctx.lineTo(22, 2.5); ctx.lineTo(13, 6); ctx.closePath(); ctx.fill(); ctx.stroke();
+  drawHat(hatIdx);
+  ctx.restore();
+}
+
+function drawCupGauge() {
+  const x = 314, y = 58, w = 34, h = 150, f = clamp(cupFill / TOTAL, 0, 1);
+  const path = () => {
+    ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + w, y); ctx.lineTo(x + w - 5, y + h); ctx.lineTo(x + 5, y + h); ctx.closePath();
+  };
+  path(); ctx.fillStyle = 'rgba(242,230,210,.85)'; ctx.fill();
+  ctx.save(); path(); ctx.clip();
+  const fh = h * f, g = ctx.createLinearGradient(0, y + h - fh, 0, y + h);
+  g.addColorStop(0, C.krema); g.addColorStop(1, C.kopi);
+  ctx.fillStyle = g; ctx.fillRect(x, y + h - fh, w, fh + 1);
+  ctx.restore();
+  const yM = y + h - h * (TIERS[1].min / TOTAL);
+  ctx.strokeStyle = C.karat; ctx.lineWidth = 2; ctx.setLineDash([4, 3]);
+  ctx.beginPath(); ctx.moveTo(x + 2, yM); ctx.lineTo(x + w - 2, yM); ctx.stroke(); ctx.setLineDash([]);
+  path(); ctx.lineWidth = 2.5; ctx.strokeStyle = C.espresso; ctx.stroke();
+  const reached = k => sim.score >= TIERS[k].min;
+  txt('L', x - 5, y + 7, 9, 'right', reached(2) ? '#ffe9b0' : 'rgba(242,230,210,.6)');
+  txt('+1', x - 5, yM, 9, 'right', reached(1) ? '#ffe9b0' : 'rgba(242,230,210,.6)');
+  txt('M', x - 5, y + h - 7, 9, 'right', '#ffe9b0');
+}
+
+function drawHUD() {
+  if (state === 'play' || state === 'dead' || state === 'win') {
+    txt(fmt(sim.score), W / 2, 92, fmt(sim.score).length > 4 ? 30 : 38);
+    txt('REKOR ' + fmt(best), 12, 22, 9, 'left');
+    // beans
+    drawBean(18, 46, clock);
+    txt(String(sim.beans), 32, 47, 12, 'left');
+    // sleepiness meter
+    txt('KANTUK', 12, 70, 8, 'left', sim.sleepy > 0.6 ? '#ffd1b0' : C.krem);
+    ctx.fillStyle = 'rgba(53,37,28,.55)'; ctx.fillRect(12, 78, 70, 7);
+    ctx.fillStyle = sim.sleepy > 0.6 ? C.karat : C.krema; ctx.fillRect(12, 78, 70 * sim.sleepy, 7);
+    ctx.strokeStyle = C.espresso; ctx.lineWidth = 1.5; ctx.strokeRect(12, 78, 70, 7);
+    drawCupGauge();
+    // stage banner
+    if (banner.t < 2.4) {
+      const a = Math.min(1, banner.t / 0.3, (2.4 - banner.t) / 0.3), S = STAGES[banner.stage];
+      ctx.save(); ctx.globalAlpha = a;
+      ctx.fillStyle = 'rgba(53,37,28,.88)'; rr(W / 2 - 138, 118, 276, 46, 8); ctx.fill();
+      ctx.fillStyle = S.color; ctx.beginPath(); ctx.arc(W / 2 - 116, 141, 9, 0, 7); ctx.fill();
+      ctx.strokeStyle = C.krem; ctx.lineWidth = 2; ctx.stroke();
+      txt('STAGE ' + (banner.stage + 1), W / 2 + 14, 131, 8, 'center', C.krem, 'rgba(0,0,0,0)', 0);
+      txt(S.name.toUpperCase(), W / 2 + 14, 150, S.name.length > 15 ? 9 : 11, 'center', C.krem, 'rgba(0,0,0,0)', 0);
+      ctx.restore();
+    }
+    if (toast.t < 2) {
+      const a = Math.min(1, toast.t / 0.2, (2 - toast.t) / 0.4);
+      ctx.save(); ctx.globalAlpha = a; txt(toast.text, W / 2, 196 - toast.t * 6, 14); ctx.restore();
+    }
+  } else if (state === 'ready') {
+    txt(mode === 'challenge' ? 'MODE TANTANGAN' : 'MODE LATIHAN', W / 2, 150, 14);
+    txt(mode === 'challenge' ? 'MINIMAL MEDIUM, SKOR = BONUS' : 'TANPA HADIAH, BEBAS COBA', W / 2, 178, 8);
+    if (Math.floor(clock * 2) % 2 === 0) txt('TAP UNTUK MULAI', W / 2, 430, 12);
+    txt('TAP = LOMPAT', W / 2, 466, 8);
+    txt('AMBIL BIJI KOPI BIAR NGGAK NGANTUK', W / 2, 486, 8);
+  }
+}
+
+function drawVignette() {
+  if (sim.sleepy < 0.2 || (state !== 'play' && state !== 'dead')) return;
+  const a = 0.42 * (sim.sleepy - 0.2) / 0.8;
+  const g = ctx.createRadialGradient(W / 2, H / 2, 150, W / 2, H / 2, 420);
+  g.addColorStop(0, 'rgba(53,37,28,0)'); g.addColorStop(1, 'rgba(53,37,28,' + a.toFixed(3) + ')');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+}
+
+function draw() {
+  const playing = state === 'play' || state === 'dead' || state === 'win' || state === 'over';
+  const scroll = playing ? rDist : idleScroll;
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  ctx.save();
+  if (shake > 0) ctx.translate((Math.random() - 0.5) * 8 * (shake / 0.3), (Math.random() - 0.5) * 8 * (shake / 0.3));
+  drawBG(scroll);
+  if (playing) {
+    COURSE.beans.forEach((b, i) => {
+      if (state === 'play' && !sim.got[i]) { const bx = b.x - rDist; if (bx > -20 && bx < W + 20) drawBean(bx, b.y, clock); }
+      else if (state !== 'play' && !sim.got[i]) { const bx = b.x - rDist; if (bx > -20 && bx < W + 20) drawBean(bx, b.y, clock); }
+    });
+    for (const p of COURSE.pipes) drawPillar(p, rDist);
+  }
+  drawGround(scroll);
+
+  let by = 290 + Math.sin(clock * 3) * 7, brot = Math.sin(clock * 3) * 0.08, bphase = clock * 12;
+  if (state === 'play') { by = rY; brot = rRot; bphase = rPhase; }
+  else if (state === 'dead' || state === 'over' && lastResult && !lastResult.won) { by = dead.y; brot = dead.rot; bphase = rPhase; }
+  else if (state === 'win' || state === 'over') { by = sim.y + Math.sin(clock * 5) * 3; brot = -0.15; bphase = clock * 14; }
+  if (state !== 'stakes') drawBird(BX, by, brot, bphase, state === 'menu' ? hatView : hat, playing ? sim.sleepy : 0);
+
+  for (const p of parts) {
+    ctx.globalAlpha = Math.max(0, p.l / p.m); ctx.fillStyle = p.c;
+    ctx.fillRect(p.x - p.s / 2, p.y - p.s / 2, p.s, p.s);
+  }
+  ctx.globalAlpha = 1;
+  for (const z of zs) { ctx.globalAlpha = clamp(z.l / z.m, 0, 1); txt('Z', z.x, z.y, z.s, 'center', C.krem); }
+  ctx.globalAlpha = 1;
+  ctx.restore();
+  drawVignette();
+  drawHUD();
+}
+
+/* ======================================================================
+   SHARE CARD (a picture the player can save and post)
+   ====================================================================== */
+function makeCard(r) {
+  const cw = 540, ch = 960, c = document.createElement('canvas'); c.width = cw; c.height = ch;
+  const g = c.getContext('2d');
+  const T = (s, x, y, size, col, align) => {
+    g.font = size + 'px "Press Start 2P", "Courier New", monospace';
+    g.textAlign = align || 'center'; g.textBaseline = 'middle'; g.fillStyle = col; g.fillText(s, x, y);
+  };
+  const bg = g.createLinearGradient(0, 0, 0, ch); bg.addColorStop(0, '#f6ecdb'); bg.addColorStop(1, '#d9a877');
+  g.fillStyle = bg; g.fillRect(0, 0, cw, ch);
+  g.fillStyle = C.kayu; g.fillRect(0, ch - 100, cw, 100);
+  g.fillStyle = C.karat; g.fillRect(0, ch - 100, cw, 12);
+  T('CODE CAFFEINE', cw / 2, 80, 22, C.espresso);
+  T('CAFFEINE', cw / 2, 160, 42, C.karat);
+  T('CHALLENGE', cw / 2, 215, 42, C.karat);
+  const earned = TIERS.findIndex(t => t.key === r.tier);
+  [[120, 108, 196, 'VOUCHER'], [270, 108, 196, '+1 CAP'], [420, 124, 230, 'LARGE']].forEach((cup, i) => {
+    const cx = cup[0], w = cup[1], h = cup[2], base = 570, top = base - h, on = i === earned;
+    g.beginPath(); g.moveTo(cx - w / 2, top); g.lineTo(cx + w / 2, top); g.lineTo(cx + w / 2 - 12, base); g.lineTo(cx - w / 2 + 12, base); g.closePath();
+    g.fillStyle = 'rgba(242,230,210,.8)'; g.fill();
+    if (i <= earned) {
+      g.save(); g.clip();
+      const fh = h * (on ? 0.82 : 0.82), gr = g.createLinearGradient(0, base - fh, 0, base);
+      gr.addColorStop(0, on ? C.krema : '#c9a27a'); gr.addColorStop(1, on ? C.kopi : '#a8805a');
+      g.fillStyle = gr; g.fillRect(cx - w / 2, base - fh, w, fh); g.restore();
+    }
+    g.lineWidth = on ? 8 : 4; g.strokeStyle = on ? C.karat : C.espresso; g.stroke();
+    T(cup[3], cx, base + 36, 14, on ? C.karat : C.kopi);
+  });
+  const tier = TIERS[earned];
+  T('AKU DAPAT', cw / 2, 652, 18, C.espresso);
+  T(tier.size.toUpperCase(), cw / 2, 706, 44, C.karat);
+  T(tier.bonus.toUpperCase(), cw / 2, 752, 14, C.kopi);
+  T('SKOR ' + fmt(r.score), cw / 2, 800, 22, C.espresso);
+  T('STAGE ' + r.stage + ' - ' + STAGES[r.stage - 1].name.toUpperCase(), cw / 2, 836, 15, C.kopi);
+  T('codecaffeine-ump.netlify.app', cw / 2, ch - 44, 14, C.krem);
+  return c.toDataURL('image/png');
+}
+
+/* ======================================================================
+   INPUT + WIRING
+   ====================================================================== */
+function onBtn(id, fn) { $(id).addEventListener('click', e => { fn(); e.currentTarget.blur(); }); }
+function setSnd() { $('snd').textContent = muted ? 'Suara: mati' : 'Suara: nyala'; }
+
+onBtn('btnPractice', () => { mode = 'practice'; enterReady(); });
+function renderStakes() {
+  $('tierList').innerHTML = TIERS.map(t => '<li><b>' + (t.size === 'Large' ? 'LARGE' : 'MEDIUM ' + t.short) + '</b><span>' + t.desc + '</span></li>').join('');
+  if (!inEmbed()) {
+    $('btnGo').textContent = 'PESAN & MAIN';
+    $('stakesNote').textContent = 'Tantangan dimainkan saat kamu pesan lewat web, supaya hasilnya tercatat di pesananmu. Sambil menunggu, coba mode latihan dulu.';
+  }
+}
+onBtn('btnChallenge', () => { hatView = unlocked.has(hatView) ? hatView : hat; renderStakes(); state = 'stakes'; show(scr.stakes); });
+onBtn('btnGo', () => {
+  // Dibuka langsung (misalnya dari QR poster): tantangan hanya lewat form pesanan supaya hasilnya tercatat
+  if (!inEmbed()) { location.href = '/#menu'; return; }
+  mode = 'challenge'; enterReady();
+});
+onBtn('btnStakesBack', toMenu);
+onBtn('btnPreBack', toMenu);
+onBtn('hatPrev', () => changeHat(-1));
+onBtn('hatNext', () => changeHat(1));
+onBtn('btnBuy', buyHat);
+onBtn('btnMenu', toMenu);
+onBtn('btnMain', () => {
+  if (mode === 'practice') { enterReady(); return; }
+  if (inEmbed()) {
+    post({ type: 'caffeine-challenge:close' });
+    $('btnMain').disabled = true; $('btnMain').textContent = 'MENGALIHKAN...';
+  } else toMenu();
+});
+onBtn('btnShare', () => {
+  if (!lastResult) return;
+  $('cardImg').src = makeCard(lastResult);
+  $('scrCard').hidden = false;
+});
+onBtn('btnCardClose', () => { $('scrCard').hidden = true; });
+onBtn('snd', () => { muted = !muted; ls.set('caffeine.muted', muted); setSnd(); beep(700, 0.06, 'square', 0.04); });
+
+stage.addEventListener('pointerdown', e => {
+  if (e.target.closest('button')) return;
+  if (state === 'ready') start();
+  else if (state === 'play') pendingTap = true;
+});
+addEventListener('keydown', e => {
+  if (e.repeat) return;
+  if (e.target.closest && e.target.closest('button')) return;
+  const k = e.code;
+  if (k === 'Space' || k === 'ArrowUp' || k === 'KeyW' || k === 'Enter') {
+    e.preventDefault();
+    if (state === 'ready') start();
+    else if (state === 'play') pendingTap = true;
+    else if (state === 'over' && mode === 'practice' && performance.now() - deadAt > 900) enterReady();
+  } else if (state === 'menu' && k === 'ArrowLeft') changeHat(-1);
+  else if (state === 'menu' && k === 'ArrowRight') changeHat(1);
+});
+
+function fit() {
+  const cs = getComputedStyle(document.body), rs = getComputedStyle(document.documentElement);
+  const aw = document.body.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+  const ah = window.innerHeight - parseFloat(rs.paddingTop) - parseFloat(rs.paddingBottom) - 24;
+  const w = Math.max(240, Math.min(aw, ah * 9 / 16, 540));
+  stage.style.width = w + 'px'; stage.style.height = (w * 16 / 9) + 'px';
+}
+addEventListener('resize', fit);
+fit();
+
+/* ======================================================================
+   MAIN LOOP
+   ====================================================================== */
+function frame(now) {
+  const dt = Math.min(0.1, Math.max(0, (now - last) / 1000)); last = now;
+  clock += dt;
+  if (state === 'play') {
+    acc += dt;
+    while (acc >= STEP && state === 'play') {
+      prevY = sim.y; prevDist = sim.dist;
+      const tap = pendingTap; pendingTap = false;
+      if (tap) { taps.push(sim.t); flapFx(); }
+      simStep(sim, tap);
+      if (tap) rPhase += 1.2;
+      handleEvents();
+      acc -= STEP;
+    }
+    alpha = state === 'play' ? acc / STEP : 1;
+    rY = prevY + (sim.y - prevY) * alpha;
+    rDist = prevDist + (sim.dist - prevDist) * alpha;
+    rRot = clamp(sim.vy / 520, -0.5, 1.15) + 0.12 * sim.sleepy;
+    rPhase += dt * (sim.vy < 0 ? 26 : 10);
+    zTimer -= dt;
+    if (sim.sleepy > 0.35 && zTimer <= 0) { zTimer = 0.9 - 0.5 * sim.sleepy; zs.push({ x: BX + 12, y: rY - 20, l: 1.4, m: 1.4, s: 9 }); }
+    cupFill += (sim.score - cupFill) * Math.min(1, dt * 6);
+  } else if (state === 'dead') {
+    dead.vy += GRAV * dt; dead.y += dead.vy * dt;
+    if (dead.y > GROUND - R) { dead.y = GROUND - R; dead.vy = 0; }
+    dead.rot = Math.min(1.5, dead.rot + dt * 4);
+    rDist = sim.dist;
+    cupFill += (sim.score - cupFill) * Math.min(1, dt * 6);
+  } else if (state === 'win') {
+    winT += dt; rDist = sim.dist;
+    if (winT % 0.35 < dt) burst(60 + Math.random() * 240, 120 + Math.random() * 120, Math.random() < 0.5 ? '#e9b872' : C.krem, 8);
+    cupFill += (sim.score - cupFill) * Math.min(1, dt * 6);
+  } else {
+    idleScroll += 40 * dt;
+  }
+  updFx(dt);
+  draw();
+  requestAnimationFrame(frame);
+}
+let last = performance.now();
+
+// Rekaman tap dikirim web sebagai selisih langkah dalam basis 36, dipisah titik.
+function decodeTaps(code) {
+  const out = []; let t = 0;
+  for (const part of String(code || '').split('.')) { if (!part) continue; t += parseInt(part, 36); out.push(t); }
+  return out;
+}
+function encodeTaps(list) { let p = 0; return list.map(t => { const d = (t - p).toString(36); p = t; return d; }).join('.'); }
+function checkFromHash() {
+  const m = location.hash.match(/^#cek=([0-9a-z.]+)$/);
+  if (!m) return;
+  const r = replay(decodeTaps(m[1])), tier = tierFor(r.score);
+  $('cekScore').textContent = fmt(r.score);
+  $('cekHasil').textContent = tier.size + ' ' + tier.bonus;
+  $('cekNote').textContent = 'Skor dihitung ulang dari rekaman tap. Kalau sama dengan skor di pesanan, hasilnya asli.';
+  $('scrCek').hidden = false;
+}
+onBtn('btnCekClose', () => { $('scrCek').hidden = true; history.replaceState(null, '', location.pathname); });
+
+window.CaffeineChallenge = { version: VERSION, replay, sizeFor, tierFor, tiers: TIERS, encodeTaps, decodeTaps };
+/*TEST_HOOK*/
+
+if (document.fonts && document.fonts.load) document.fonts.load('20px "Press Start 2P"');
+setSnd(); toMenu(); checkFromHash();
+addEventListener('hashchange', checkFromHash);
+requestAnimationFrame(frame);
+})();
+</script>
+
+</body></html>
