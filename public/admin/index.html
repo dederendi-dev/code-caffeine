@@ -156,6 +156,11 @@ details a { color: var(--ink2); }
     <div><b class="num" data-omzet>Rp0</b><span>Sudah lunas</span></div>
   </div>
 
+  <section class="notif" data-install hidden>
+    <p><b>Pasang sebagai aplikasi</b> supaya CC Admin ada di layar utama dan terbuka tanpa link.</p>
+    <div class="acts"><button class="btn" type="button" data-install-btn>Pasang aplikasi</button></div>
+  </section>
+
   <section class="notif" data-notif>
     <p data-notif-text>Memeriksa notifikasi…</p>
     <div class="acts">
@@ -469,6 +474,8 @@ details a { color: var(--ink2); }
   async function setupNotif() {
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.addEventListener('message', e => { if (e.data && e.data.type === 'refresh') load(); });
+      // dipasang walau notifikasi belum diatur: dibutuhkan untuk mode aplikasi dan halaman offline
+      try { reg = await navigator.serviceWorker.register('/admin/sw.js', { scope: '/admin/' }); } catch (e) { reg = null; }
     }
     if (!pushOK) {
       if (isIOS && !standalone) {
@@ -477,8 +484,7 @@ details a { color: var(--ink2); }
       return;
     }
     if (!vapid) { notifUI('Notifikasi belum diatur di server. Halaman ini tetap memuat pesanan baru tiap 8 detik.', false, false); return; }
-    try { reg = await navigator.serviceWorker.register('/admin/sw.js', { scope: '/admin/' }); }
-    catch (e) { notifUI('Notifikasi tidak bisa disiapkan di browser ini.', false, false); return; }
+    if (!reg) { notifUI('Notifikasi tidak bisa disiapkan di browser ini.', false, false); return; }
     if (Notification.permission === 'denied') { notifUI('Notifikasi diblokir untuk situs ini. Izinkan lewat pengaturan situs di browser, lalu muat ulang halaman.', false, false); return; }
     const sub = await reg.pushManager.getSubscription();
     if (sub && Notification.permission === 'granted') {
@@ -506,6 +512,24 @@ details a { color: var(--ink2); }
     try { const r = await api('tes-notif', {}); toast(r.sent ? `Notifikasi terkirim ke ${r.sent} HP admin` : (r.error || 'Belum ada HP yang menerima notifikasi')); }
     catch (err) { toast(err.message); }
     finally { b.disabled = false; }
+  });
+
+  /* ---------- pasang sebagai aplikasi (Chrome, Edge) ---------- */
+  let installEv = null;
+  addEventListener('beforeinstallprompt', e => {
+    e.preventDefault(); installEv = e;
+    $('[data-install]').hidden = standalone;
+  });
+  $('[data-install-btn]').addEventListener('click', async () => {
+    if (!installEv) return;
+    installEv.prompt();
+    const r = await installEv.userChoice.catch(() => ({}));
+    installEv = null;
+    if (r.outcome === 'accepted') $('[data-install]').hidden = true;
+  });
+  addEventListener('appinstalled', () => {
+    $('[data-install]').hidden = true;
+    toast('CC Admin terpasang. Buka dari layar utama HP-mu.');
   });
 
   /* ---------- jalan ---------- */

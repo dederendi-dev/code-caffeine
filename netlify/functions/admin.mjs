@@ -34,9 +34,15 @@ export default async (req) => {
     const k = url.searchParams.get('k') || '';
     if (!siapa(k)) return fail('Link admin tidak valid.', 401);
     return new Response(JSON.stringify({
-      name: 'Admin Code Caffeine', short_name: 'CC Admin', start_url: '/admin/?k=' + encodeURIComponent(k), scope: '/admin/',
-      display: 'standalone', background_color: '#16100c', theme_color: '#16100c',
-      icons: [{ src: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' }, { src: '/favicon.png', sizes: '32x32', type: 'image/png' }]
+      id: '/admin/', name: 'Admin Code Caffeine', short_name: 'CC Admin', lang: 'id',
+      description: 'Cek transfer dan kelola pesanan paket Caffeine Challenge.',
+      start_url: '/admin/?k=' + encodeURIComponent(k), scope: '/admin/',
+      display: 'standalone', orientation: 'portrait', background_color: '#16100c', theme_color: '#16100c',
+      icons: [
+        { src: '/admin/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+        { src: '/admin/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+        { src: '/admin/icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' }
+      ]
     }), { headers: { 'content-type': 'application/manifest+json', 'cache-control': 'no-store' } });
   }
 
