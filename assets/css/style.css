@@ -232,7 +232,7 @@ h3 { font-family: var(--f-display); font-weight: 600; letter-spacing: -.02em; }
   border: 1px solid var(--glass-border);
   box-shadow: inset 0 1px 0 var(--glass-hi);
 }
-.card-cup { height: 230px; display: flex; align-items: flex-end; justify-content: center; margin-bottom: 14px; }
+.card-cup { height: 260px; display: flex; align-items: flex-end; justify-content: center; margin-bottom: 14px; }
 /* Foto minuman: tinggi tetap, ukuran S/M/L = skala dari dasar gelas */
 .cup-photo {
   position: relative; height: 100%;
@@ -415,7 +415,7 @@ h3 { font-family: var(--f-display); font-weight: 600; letter-spacing: -.02em; }
   }
   .card { padding: 26px; }
   .card.featured { grid-column: span 2; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: repeat(5, auto); align-content: center; column-gap: 32px; }
-  .card.featured .card-cup { grid-column: 1; grid-row: 1 / -1; height: 340px; margin: 0; align-self: center; }
+  .card.featured .card-cup { grid-column: 1; grid-row: 1 / -1; height: 380px; margin: 0; align-self: center; }
   .card.featured > :not(.card-cup) { grid-column: 2; }
   .card.featured .card-title { padding-top: 12px; }
   .card.featured h3 { font-size: 34px; }
