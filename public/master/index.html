@@ -1,0 +1,757 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#16100c">
+<title>Master Admin · Code Caffeine</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<style>
+@font-face { font-family: "Inter Tight"; src: url("/assets/fonts/inter-tight.woff2") format("woff2"); font-weight: 100 900; font-display: swap; }
+@font-face { font-family: "Inter"; src: url("/assets/fonts/inter.woff2") format("woff2"); font-weight: 100 900; font-display: swap; }
+:root {
+  color-scheme: dark;
+  --bg: #16100c; --bg2: #1f1611; --ink: #f5ecdf; --ink2: rgba(245, 236, 223, .7); --ink3: rgba(245, 236, 223, .48);
+  --line: rgba(255, 255, 255, .09); --line2: rgba(255, 255, 255, .16);
+  --btn: #f3e9da; --btn-ink: #1a100a; --soft: rgba(255, 255, 255, .07);
+  --cek: #f2b46c; --paid: #7ddc8e; --off: #e27d6a; --accent: #dda56c;
+  --focus: #f2b46c;
+  --f-head: "Inter Tight", "Inter", system-ui, sans-serif; --f-body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: light) {
+  :root {
+    color-scheme: light;
+    --bg: #f4ede4; --bg2: #fbf7f1; --ink: #20140d; --ink2: #6b5849; --ink3: #978373;
+    --line: rgba(40, 24, 14, .1); --line2: rgba(40, 24, 14, .18);
+    --btn: #24160e; --btn-ink: #f7efe4; --soft: rgba(40, 24, 14, .06);
+    --cek: #b86a1e; --paid: #2f8f4c; --off: #b2442f; --accent: #9c5b2a; --focus: #b86a1e;
+  }
+}
+*, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.5 var(--f-body); -webkit-font-smoothing: antialiased;
+  padding: env(safe-area-inset-top, 0) env(safe-area-inset-right, 0) env(safe-area-inset-bottom, 0) env(safe-area-inset-left, 0); }
+h1, h2, h3, p { margin: 0; }
+a { color: inherit; }
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 8px; }
+.num { font-variant-numeric: tabular-nums; }
+main { max-width: 760px; margin: 0 auto; padding: 20px 16px 120px; }
+
+.top { display: flex; align-items: baseline; justify-content: space-between; gap: 4px 12px; flex-wrap: wrap; }
+.top h1 { font: 700 22px/1.2 var(--f-head); white-space: nowrap; }
+.who { color: var(--ink2); font-size: 14px; }
+.who button { background: none; border: 0; padding: 0; color: var(--ink3); text-decoration: underline; text-underline-offset: 3px; font-size: 13px; margin-left: 8px; }
+
+/* tab */
+.tabs { position: sticky; top: 0; z-index: 6; margin: 14px -16px 0; padding: 10px 16px; background: color-mix(in srgb, var(--bg) 92%, transparent); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+.tabs div { display: grid; grid-template-columns: repeat(4, 1fr); padding: 4px; border-radius: 999px; background: var(--soft); }
+.tabs button { border: 0; background: none; padding: 8px 4px; border-radius: 999px; font-weight: 600; font-size: 14px; color: var(--ink2); }
+.tabs button[aria-selected="true"] { background: var(--btn); color: var(--btn-ink); }
+.tabs small { font-weight: 500; opacity: .8; }
+
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 40px; padding: 0 16px; border-radius: 999px; border: 1px solid transparent; background: var(--btn); color: var(--btn-ink); font-weight: 600; font-size: 14px; text-decoration: none; white-space: nowrap; }
+.btn.ghost { background: transparent; color: var(--ink); border-color: var(--line2); }
+.btn.warn { background: transparent; color: var(--off); border-color: color-mix(in srgb, var(--off) 45%, transparent); }
+.btn.danger { background: var(--off); color: #fff; }
+.btn.sm { min-height: 32px; padding: 0 12px; font-size: 13px; }
+.btn:disabled { opacity: .5; cursor: default; }
+.row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+
+.sum { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; margin-top: 16px; background: var(--line); border-radius: 14px; overflow: hidden; }
+.sum div { background: var(--bg2); padding: 10px 12px; }
+.sum b { display: block; font: 700 19px/1.2 var(--f-head); }
+.sum span { color: var(--ink2); font-size: 12.5px; }
+@media (max-width: 420px) { .sum { grid-template-columns: repeat(2, 1fr); } }
+
+.tools { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+.tools input, .tools select { height: 40px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--line2); background: var(--soft); }
+.tools input { flex: 1 1 200px; min-width: 0; }
+.note { color: var(--ink3); font-size: 13px; margin-top: 8px; }
+.empty { color: var(--ink3); font-size: 14px; padding: 18px 0; }
+
+/* daftar data */
+.selbar { position: sticky; top: 62px; z-index: 5; display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-top: 12px; padding: 10px 12px; border-radius: 14px; background: var(--bg2); border: 1px solid var(--line2); }
+.selbar label { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 14px; }
+.conf { margin-top: 10px; padding: 12px; border-radius: 12px; background: var(--soft); }
+.conf p { font-size: 14px; margin-bottom: 10px; }
+.item { display: grid; grid-template-columns: 28px 1fr; gap: 4px 8px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+.item input[type=checkbox], .selbar input[type=checkbox] { width: 20px; height: 20px; margin: 2px 0 0; accent-color: var(--accent); }
+.item .r1 { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
+.item h3 { font: 650 15.5px/1.3 var(--f-head); }
+.item .total { font-weight: 650; white-space: nowrap; }
+.item .sub { color: var(--ink2); font-size: 13.5px; }
+.item .meta { color: var(--ink3); font-size: 13px; }
+.chip { display: inline-block; padding: 1px 9px; border-radius: 999px; font-size: 12px; font-weight: 600; background: var(--soft); color: var(--ink2); margin-right: 4px; }
+.chip.ok { color: var(--paid); background: color-mix(in srgb, var(--paid) 14%, transparent); }
+.chip.warn { color: var(--cek); background: color-mix(in srgb, var(--cek) 14%, transparent); }
+.chip.off { color: var(--off); background: color-mix(in srgb, var(--off) 14%, transparent); }
+details.more { grid-column: 2; font-size: 13px; color: var(--ink2); }
+details.more summary { cursor: pointer; color: var(--ink3); width: max-content; }
+details.more dl { display: grid; grid-template-columns: max-content 1fr; gap: 2px 12px; margin: 6px 0 0; }
+details.more dt { color: var(--ink3); }
+details.more dd { margin: 0; overflow-wrap: anywhere; }
+
+/* editor */
+.sec { margin-top: 26px; }
+.sec > h2 { font: 650 17px/1.3 var(--f-head); padding-bottom: 8px; border-bottom: 1px solid var(--line2); }
+.sec > p.note { margin-top: 8px; }
+.mcard { padding: 16px 0; border-bottom: 1px solid var(--line); display: grid; grid-template-columns: 96px 1fr; gap: 14px; }
+.mcard.off { opacity: .6; }
+.thumb { width: 96px; height: 150px; border-radius: 14px; display: flex; align-items: flex-end; justify-content: center; overflow: hidden;
+  background: repeating-conic-gradient(var(--soft) 0% 25%, transparent 0% 50%) 50% / 16px 16px; border: 1px solid var(--line); }
+.thumb img { max-width: 100%; max-height: 100%; }
+.thumb.kosong img { width: 60%; opacity: .6; margin-bottom: 30px; }
+.fotobtn { margin-top: 8px; width: 96px; }
+.fields { display: grid; gap: 10px; min-width: 0; }
+.f label, label.f { display: grid; gap: 4px; font-size: 13px; color: var(--ink2); }
+.f input[type=text], .f input[type=number], .f input[type=tel], .f input[type=date], .f input[type=time], .f input[type=datetime-local], .f textarea, .f select,
+label.f input, label.f textarea {
+  width: 100%; min-width: 0; padding: 9px 12px; border-radius: 10px; border: 1px solid var(--line2); background: var(--soft); color: var(--ink); font-size: 15px; }
+.f textarea, label.f textarea { min-height: 64px; resize: vertical; }
+.harga { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.toggles { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 14px; }
+.toggles label { display: flex; align-items: center; gap: 6px; }
+.toggles input { width: 18px; height: 18px; accent-color: var(--accent); }
+.mini { display: flex; gap: 6px; flex-wrap: wrap; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+@media (max-width: 420px) { .mcard { grid-template-columns: 80px 1fr; } .thumb, .fotobtn { width: 80px; } .thumb { height: 124px; } }
+.block { padding: 14px 0; border-bottom: 1px solid var(--line); display: grid; gap: 10px; }
+.days { display: flex; flex-wrap: wrap; gap: 6px; }
+.days label { display: flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; border: 1px solid var(--line2); font-size: 14px; }
+.days input { accent-color: var(--accent); }
+.warnmsg { color: var(--cek); font-size: 13px; }
+
+/* simpan */
+.savebar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 10; padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px)); background: var(--bg2); border-top: 1px solid var(--line2); box-shadow: 0 -10px 30px rgba(0, 0, 0, .25); }
+.savebar div { max-width: 760px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.savebar p { font-size: 14px; font-weight: 600; }
+.savebar .err { color: var(--off); font-weight: 500; flex-basis: 100%; }
+
+.gate { max-width: 440px; margin: 12vh auto 0; padding: 0 20px; }
+.gate h1 { font: 700 24px/1.2 var(--f-head); }
+.gate p { color: var(--ink2); margin-top: 10px; }
+.gate form { margin-top: 18px; display: flex; flex-direction: column; gap: 10px; }
+.gate input { height: 46px; padding: 0 14px; border-radius: 12px; border: 1px solid var(--line2); background: var(--soft); }
+.gate .err { color: var(--off); font-size: 14px; }
+.toast { position: fixed; left: 50%; bottom: calc(86px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 20; max-width: calc(100% - 32px); padding: 12px 18px; border-radius: 14px; background: var(--btn); color: var(--btn-ink); font-weight: 600; font-size: 14px; box-shadow: 0 12px 30px rgba(0, 0, 0, .3); }
+</style>
+</head>
+<body>
+
+<div class="gate" data-gate hidden>
+  <h1>Master Admin</h1>
+  <p data-gate-text>Halaman ini khusus pemilik link master admin. Buka link master pribadimu, atau tempel di sini.</p>
+  <form data-gate-form>
+    <input name="link" type="url" inputmode="url" autocomplete="off" placeholder="https://…/master/#k=…" aria-label="Link master admin" required>
+    <p class="err" data-gate-err hidden></p>
+    <button class="btn" type="submit">Masuk</button>
+  </form>
+</div>
+
+<main data-app hidden>
+  <header class="top">
+    <h1>Master Admin</h1>
+    <p class="who">Masuk sebagai <b data-who></b><button type="button" data-logout>Keluar</button></p>
+  </header>
+
+  <nav class="tabs" aria-label="Bagian master admin">
+    <div role="tablist">
+      <button role="tab" type="button" data-tab="pesanan" aria-selected="true">Pesanan</button>
+      <button role="tab" type="button" data-tab="sampah" aria-selected="false">Sampah <small data-n-sampah></small></button>
+      <button role="tab" type="button" data-tab="menu" aria-selected="false">Menu</button>
+      <button role="tab" type="button" data-tab="atur" aria-selected="false">Pengaturan</button>
+    </div>
+  </nav>
+
+  <!-- ============ PESANAN ============ -->
+  <section data-pane="pesanan">
+    <div class="sum">
+      <div><b class="num" data-s-pesanan>0</b><span>Pesanan</span></div>
+      <div><b class="num" data-s-cup>0</b><span>Cup</span></div>
+      <div><b class="num" data-s-lunas>Rp0</b><span>Sudah lunas</span></div>
+      <div><b class="num" data-s-belum>Rp0</b><span>Belum lunas</span></div>
+    </div>
+    <div class="tools">
+      <input type="search" placeholder="Cari nama, nomor WA, atau kode" aria-label="Cari" data-q>
+      <select aria-label="Jenis pesanan" data-jenis>
+        <option value="">Semua jenis</option><option value="web">Pesanan web</option><option value="challenge">Paket Challenge</option>
+      </select>
+      <select aria-label="Hari jual" data-hari></select>
+      <button class="btn ghost" type="button" data-csv>Unduh CSV</button>
+    </div>
+    <p class="note">Angka di atas tidak menghitung pesanan yang batal. Data yang dihapus pindah ke Sampah dan bisa dipulihkan.</p>
+    <div class="selbar" data-selbar="pesanan">
+      <label><input type="checkbox" data-all="pesanan"> <span data-selinfo="pesanan">Pilih semua</span></label>
+      <button class="btn warn sm" type="button" data-bulk="hapus" disabled>Pindahkan ke sampah</button>
+    </div>
+    <div data-confbox="pesanan"></div>
+    <div data-list="pesanan"></div>
+  </section>
+
+  <!-- ============ SAMPAH ============ -->
+  <section data-pane="sampah" hidden>
+    <p class="note">Data di sini tidak tampil di CC Admin dan tidak dihitung. Pulihkan kalau salah hapus. Hapus permanen tidak bisa dibatalkan.</p>
+    <div class="selbar" data-selbar="sampah">
+      <label><input type="checkbox" data-all="sampah"> <span data-selinfo="sampah">Pilih semua</span></label>
+      <div class="row">
+        <button class="btn ghost sm" type="button" data-bulk="pulihkan" disabled>Pulihkan</button>
+        <button class="btn warn sm" type="button" data-bulk="hapus-permanen" disabled>Hapus permanen</button>
+      </div>
+    </div>
+    <div data-confbox="sampah"></div>
+    <div data-list="sampah"></div>
+  </section>
+
+  <!-- ============ MENU ============ -->
+  <section data-pane="menu" hidden>
+    <p class="note">Perubahan menu, harga, dan foto tampil di web sekitar satu menit setelah disimpan. Pesanan yang sudah masuk tetap memakai harga lamanya.</p>
+    <div data-menu></div>
+    <div class="row" style="margin-top:16px"><button class="btn ghost" type="button" data-addmenu>Tambah menu</button></div>
+    <input type="file" accept="image/png,image/webp,image/jpeg" data-file hidden>
+  </section>
+
+  <!-- ============ PENGATURAN ============ -->
+  <section data-pane="atur" hidden>
+    <div class="sec">
+      <h2>Pengumuman di web</h2>
+      <p class="note">Kalau diisi, pengumuman ini menggantikan status buka/tutup otomatis di bagian atas web. Contoh: libur, stok habis.</p>
+      <div class="block">
+        <div class="toggles"><label><input type="checkbox" data-pengumuman-aktif> Tampilkan pengumuman</label></div>
+        <label class="f">Judul<input type="text" maxlength="60" data-f="statusManual.judul" placeholder="Libur dulu"></label>
+        <label class="f">Pesan<textarea maxlength="240" data-f="statusManual.pesan" placeholder="Kami libur sampai Senin, 30 November."></textarea></label>
+      </div>
+    </div>
+
+    <div class="sec">
+      <h2>Hari jual khusus</h2>
+      <p class="note">Hari jual di luar jadwal rutin. Pre-order hanya bisa dikirim di antara waktu dibuka dan ditutup.</p>
+      <div data-khusus></div>
+      <div class="row" style="margin-top:12px"><button class="btn ghost" type="button" data-addkhusus>Tambah hari jual</button></div>
+    </div>
+
+    <div class="sec">
+      <h2>Jadwal rutin</h2>
+      <p class="note">Hari jual mingguan. Kosongkan semua hari kalau jualan hanya mengikuti hari jual khusus. Pre-order dibuka sehari sebelumnya.</p>
+      <div class="block">
+        <div class="days" data-days></div>
+        <div class="grid2">
+          <label class="f">Pre-order dibuka (H-1)<input type="time" data-f="preorder.buka"></label>
+          <label class="f">Pre-order ditutup (H-1)<input type="time" data-f="preorder.tutup"></label>
+          <label class="f">Serah terima mulai<input type="time" data-f="serahTerima.mulai"></label>
+          <label class="f">Serah terima selesai<input type="time" data-f="serahTerima.selesai"></label>
+        </div>
+        <label class="f">Pilihan jam serah terima (pisahkan dengan koma)<input type="text" data-f="slotSerahTerima" data-t="csv" placeholder="09.30–10.30, 10.30–11.30"></label>
+      </div>
+    </div>
+
+    <div class="sec">
+      <h2>Tujuan transfer paket Challenge</h2>
+      <p class="note">Ditampilkan ke pembeli paket Challenge dan dipakai di pesan WA untuk pembeli yang memilih transfer.</p>
+      <div data-bayar></div>
+      <div class="row" style="margin-top:12px"><button class="btn ghost" type="button" data-addbayar>Tambah tujuan transfer</button></div>
+    </div>
+
+    <div class="sec">
+      <h2>Kontak & lokasi</h2>
+      <div class="block">
+        <div class="grid2">
+          <label class="f">WhatsApp pesanan<input type="tel" data-f="whatsapp" data-t="wa" placeholder="085604504216"></label>
+          <label class="f">WhatsApp admin (opsional)<input type="tel" data-f="whatsappAdmin" data-t="wa" placeholder="sama dengan nomor pesanan"></label>
+          <label class="f">Instagram (tanpa @)<input type="text" data-f="instagram" placeholder="codecaffeine.ump"></label>
+          <label class="f">TikTok (tanpa @)<input type="text" data-f="tiktok"></label>
+          <label class="f">Area antar<input type="text" data-f="areaAntar"></label>
+          <label class="f">Lokasi ambil sendiri<input type="text" data-f="lokasiAmbil"></label>
+        </div>
+      </div>
+    </div>
+
+    <div class="sec">
+      <h2>Kembalikan ke bawaan</h2>
+      <p class="note" data-diubah></p>
+      <div data-confbox="reset"></div>
+      <div class="row" style="margin-top:10px"><button class="btn warn" type="button" data-reset>Kembalikan semua pengaturan ke bawaan</button></div>
+    </div>
+  </section>
+</main>
+
+<div class="savebar" data-savebar hidden>
+  <div>
+    <p>Ada perubahan yang belum disimpan</p>
+    <div class="row"><button class="btn ghost" type="button" data-undo>Batalkan</button><button class="btn" type="button" data-save>Simpan perubahan</button></div>
+    <p class="err" data-saveerr hidden></p>
+  </div>
+</div>
+<div class="toast" role="status" aria-live="polite" data-toast hidden></div>
+
+<script>
+(function () {
+  'use strict';
+  const $ = (s, el = document) => el.querySelector(s);
+  const $$ = (s, el = document) => Array.from(el.querySelectorAll(s));
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const rupiah = n => 'Rp' + Number(n || 0).toLocaleString('id-ID');
+  const K_KEY = 'cc-master-key';
+  const UK = { S: 'Small', M: 'Medium', L: 'Large' };
+
+  /* ---------- masuk ---------- */
+  function keyFrom(str) {
+    try { const u = new URL(str, location.origin); return new URLSearchParams(u.hash.slice(1)).get('k') || u.searchParams.get('k') || ''; }
+    catch (e) { return ''; }
+  }
+  let key = keyFrom(location.href);
+  if (key) { try { localStorage.setItem(K_KEY, key); } catch (e) { /* mode privat */ } history.replaceState(null, '', '/master/'); }
+  else { try { key = localStorage.getItem(K_KEY) || ''; } catch (e) { key = ''; } }
+  const gate = $('[data-gate]'), app = $('[data-app]');
+  function showGate(msg) {
+    app.hidden = true; gate.hidden = false; $('[data-savebar]').hidden = true;
+    if (msg) { $('[data-gate-err]').textContent = msg; $('[data-gate-err]').hidden = false; }
+  }
+  $('[data-gate-form]').addEventListener('submit', e => {
+    e.preventDefault();
+    const k = keyFrom(e.target.link.value.trim());
+    if (!k) { $('[data-gate-err]').textContent = 'Link ini tidak berisi kunci. Salin ulang link lengkapnya.'; $('[data-gate-err]').hidden = false; return; }
+    key = k; try { localStorage.setItem(K_KEY, key); } catch (err) { /* abaikan */ }
+    start();
+  });
+  $('[data-logout]').addEventListener('click', () => {
+    try { localStorage.removeItem(K_KEY); } catch (e) { /* abaikan */ }
+    key = ''; showGate();
+    $('[data-gate-text]').textContent = 'Kamu sudah keluar dari HP ini. Buka lagi link master pribadimu untuk masuk.';
+  });
+  addEventListener('hashchange', () => {
+    const k = keyFrom(location.href); if (!k) return;
+    key = k; try { localStorage.setItem(K_KEY, key); } catch (e) { /* abaikan */ }
+    history.replaceState(null, '', '/master/'); start();
+  });
+
+  async function api(path, data, raw) {
+    const opt = { headers: { 'x-master-key': key }, cache: 'no-store' };
+    if (raw) { opt.method = 'POST'; opt.headers['content-type'] = raw.type; opt.body = raw; }
+    else if (data) { opt.method = 'POST'; opt.headers['content-type'] = 'application/json'; opt.body = JSON.stringify(data); }
+    let res;
+    try { res = await fetch('/api/master/' + path, opt); } catch (e) { throw new Error('Koneksi bermasalah. Coba lagi.'); }
+    let j = {}; try { j = await res.json(); } catch (e) { /* bukan JSON */ }
+    if (!res.ok) { const err = new Error(j.error || 'Terjadi kesalahan.'); err.status = res.status; throw err; }
+    return j;
+  }
+  let toastT = 0;
+  function toast(msg) { const t = $('[data-toast]'); t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => { t.hidden = true; }, 2800); }
+  function gagal(err) {
+    if (err.status === 401) {
+      try { localStorage.removeItem(K_KEY); } catch (e) { /* abaikan */ }
+      key = ''; showGate('Link master ini tidak valid atau sudah diganti.');
+    } else toast(err.message);
+  }
+
+  /* ---------- tab ---------- */
+  let tab = 'pesanan';
+  $$('[data-tab]').forEach(b => b.addEventListener('click', () => {
+    tab = b.dataset.tab;
+    $$('[data-tab]').forEach(x => x.setAttribute('aria-selected', String(x === b)));
+    $$('[data-pane]').forEach(p => { p.hidden = p.dataset.pane !== tab; });
+    scrollTo({ top: 0 });
+  }));
+
+  /* =========================================================
+     DATA PEMBELI
+     ========================================================= */
+  let rows = [];
+  const sel = { pesanan: new Set(), sampah: new Set() };
+  const keyOf = r => r.jenis + ':' + r.id;
+  const isWeb = r => r.jenis === 'web';
+  const hari = r => (isWeb(r) ? r.untuk_hari : r.untuk) || 'Tanpa tanggal';
+  const totalOf = r => isWeb(r) ? r.total : r.harga;
+  const cupOf = r => isWeb(r) ? (r.jumlah_cup || 0) : 1;
+  const batal = r => (r.status || 'baru') === 'batal';
+  const lunas = r => isWeb(r) ? !!r.lunas && !batal(r) : ['lunas', 'main', 'selesai'].includes(r.status);
+  const fmt = new Intl.DateTimeFormat('id-ID', { timeZone: 'Asia/Jakarta', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+  const waktu = iso => iso ? fmt.format(new Date(iso)) : '';
+  const STATUS_CH = { menunggu_bayar: ['Menunggu transfer', ''], cek_admin: ['Cek transfer', 'warn'], lunas: ['Lunas, belum main', 'ok'], main: ['Sedang main', 'ok'], selesai: ['Selesai main', 'ok'], batal: ['Batal', 'off'] };
+  const STATUS_WEB = { baru: ['Baru', 'warn'], diproses: ['Diproses', ''], batal: ['Batal', 'off'] };
+  function chips(r) {
+    const out = [];
+    const [t, c] = (isWeb(r) ? STATUS_WEB[r.status || 'baru'] : STATUS_CH[r.status]) || [r.status, ''];
+    out.push(`<span class="chip ${c}">${esc(t)}</span>`);
+    if (isWeb(r) && !batal(r)) out.push(r.lunas ? '<span class="chip ok">Lunas</span>' : `<span class="chip">${esc(r.bayar || 'Bayar')} belum lunas</span>`);
+    if (r.diantar) out.push('<span class="chip ok">Diantar</span>');
+    return out.join('');
+  }
+  function detail(r) {
+    const d = [
+      ['Kode', r.kode], ['Jenis', isWeb(r) ? 'Pesanan web' + (r.dari_forms ? ' (data lama)' : '') : 'Paket Challenge'],
+      ['Masuk', waktu(r.dibuat)], ['Untuk', `${hari(r)}${r.jam ? ', ' + r.jam : ''}`],
+      ['WhatsApp', r.wa], ['Terima', r.cara_terima === 'Diantar' ? 'Diantar ke ' + r.lokasi : r.lokasi],
+      ['Bayar', isWeb(r) ? r.bayar : `${r.bayar_ke ? r.bayar_ke.jenis : ''} (paket)`],
+      isWeb(r) && r.potongan_stamp ? ['Tukar stamp', `${r.stamp_gratis} gratis (−${rupiah(r.potongan_stamp)})`] : null,
+      isWeb(r) && r.potongan_voucher ? ['Voucher', '−' + rupiah(r.potongan_voucher)] : null,
+      !isWeb(r) && r.hadiah ? ['Hadiah', `${r.hadiah} (skor ${r.skor})`] : null,
+      ['Pernah beli', r.pernah_beli], ['Tahu dari', r.sumber], ['Catatan', r.catatan],
+      r.alasan_batal ? ['Alasan batal', r.alasan_batal] : null,
+      r.dihapus_at ? ['Dihapus', `${waktu(r.dihapus_at)} oleh ${r.dihapus_oleh}`] : null
+    ].filter(x => x && x[1]);
+    const riwayat = (r.riwayat || []).map(x => `${waktu(x.t)}: ${x.ev}${x.oleh ? ' (' + x.oleh + ')' : ''}`).join('\n');
+    return `<details class="more"><summary>Detail</summary><dl>${d.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('')}${riwayat ? `<dt>Riwayat</dt><dd style="white-space:pre-line">${esc(riwayat)}</dd>` : ''}</dl></details>`;
+  }
+  function itemHTML(r, pane) {
+    const k = keyOf(r);
+    const isi = isWeb(r) ? r.pesanan : `${r.menuNama} Medium · paket Challenge`;
+    return `<div class="item">
+      <input type="checkbox" data-sel="${pane}" value="${esc(k)}"${sel[pane].has(k) ? ' checked' : ''} aria-label="Pilih ${esc(r.nama)} ${esc(r.kode)}">
+      <div>
+        <div class="r1"><h3>${esc(r.nama)}</h3><span class="total num">${esc(rupiah(totalOf(r)))}</span></div>
+        <p class="sub">${esc(isi)}</p>
+        <p class="meta num">${esc(r.kode)} · ${esc(hari(r))} · masuk ${esc(waktu(r.dibuat))}</p>
+        <p style="margin-top:4px">${chips(r)}</p>
+      </div>
+      ${detail(r)}
+    </div>`;
+  }
+
+  function filtered() {
+    const q = $('[data-q]').value.trim().toLowerCase(), digits = q.replace(/\D/g, '');
+    const j = $('[data-jenis]').value, h = $('[data-hari]').value;
+    return rows.filter(r => !r.dihapus_at && (!j || r.jenis === j) && (!h || hari(r) === h) &&
+      (!q || String(r.nama).toLowerCase().includes(q) || String(r.kode).toLowerCase().includes(q) || (digits.length >= 3 && String(r.wa).includes(digits))))
+      .sort((a, b) => Date.parse(b.dibuat) - Date.parse(a.dibuat));
+  }
+  const sampah = () => rows.filter(r => r.dihapus_at).sort((a, b) => Date.parse(b.dihapus_at) - Date.parse(a.dihapus_at));
+
+  function renderData() {
+    const list = filtered(), aktif = list.filter(r => !batal(r));
+    $('[data-s-pesanan]').textContent = aktif.length;
+    $('[data-s-cup]').textContent = aktif.reduce((a, r) => a + cupOf(r), 0);
+    $('[data-s-lunas]').textContent = rupiah(aktif.filter(lunas).reduce((a, r) => a + totalOf(r), 0));
+    $('[data-s-belum]').textContent = rupiah(aktif.filter(r => !lunas(r) && (isWeb(r) || r.status === 'cek_admin')).reduce((a, r) => a + totalOf(r), 0));
+    const hs = $('[data-hari]'), cur = hs.value, days = [...new Set(rows.filter(r => !r.dihapus_at).map(hari))];
+    hs.innerHTML = '<option value="">Semua hari</option>' + days.map(d => `<option value="${esc(d)}">${esc(d)}</option>`).join('');
+    if (days.includes(cur)) hs.value = cur;
+    // pilihan yang sudah tidak terlihat dibuang
+    const vis = new Set(list.map(keyOf)); [...sel.pesanan].forEach(k => { if (!vis.has(k)) sel.pesanan.delete(k); });
+    const tr = sampah(), visT = new Set(tr.map(keyOf)); [...sel.sampah].forEach(k => { if (!visT.has(k)) sel.sampah.delete(k); });
+    $('[data-list="pesanan"]').innerHTML = list.length ? list.map(r => itemHTML(r, 'pesanan')).join('') : '<p class="empty">Belum ada pesanan yang cocok.</p>';
+    $('[data-list="sampah"]').innerHTML = tr.length ? tr.map(r => itemHTML(r, 'sampah')).join('') : '<p class="empty">Tempat sampah kosong.</p>';
+    $('[data-n-sampah]').textContent = tr.length ? `(${tr.length})` : '';
+    renderSel('pesanan', list.length); renderSel('sampah', tr.length);
+  }
+  function renderSel(pane, total) {
+    const n = sel[pane].size;
+    $(`[data-selinfo="${pane}"]`).textContent = n ? `${n} dipilih` : 'Pilih semua';
+    const all = $(`[data-all="${pane}"]`); all.checked = total > 0 && n === total; all.indeterminate = n > 0 && n < total;
+    $$(`[data-selbar="${pane}"] [data-bulk]`).forEach(b => { b.disabled = !n; });
+  }
+
+  document.addEventListener('change', e => {
+    const t = e.target;
+    if (t.matches('[data-sel]')) { const p = t.dataset.sel; t.checked ? sel[p].add(t.value) : sel[p].delete(t.value); renderSel(p, p === 'pesanan' ? filtered().length : sampah().length); closeConf(p); }
+    if (t.matches('[data-all]')) {
+      const p = t.dataset.all, list = p === 'pesanan' ? filtered() : sampah();
+      sel[p] = t.checked ? new Set(list.map(keyOf)) : new Set();
+      renderData(); closeConf(p);
+    }
+  });
+  ['[data-q]', '[data-jenis]', '[data-hari]'].forEach(s => $(s).addEventListener(s === '[data-q]' ? 'input' : 'change', renderData));
+
+  // konfirmasi aksi massal
+  const TANYA = {
+    hapus: n => [`Pindahkan ${n} data ke sampah? Data ini hilang dari CC Admin, tapi bisa dipulihkan dari tab Sampah.`, 'Ya, pindahkan', 'warn'],
+    pulihkan: n => [`Pulihkan ${n} data? Data kembali tampil di CC Admin.`, 'Ya, pulihkan', ''],
+    'hapus-permanen': n => [`Hapus permanen ${n} data? Ini tidak bisa dibatalkan.`, 'Ya, hapus permanen', 'danger']
+  };
+  function closeConf(p) { const box = $(`[data-confbox="${p}"]`); if (box) box.innerHTML = ''; }
+  $$('[data-bulk]').forEach(b => b.addEventListener('click', () => {
+    const pane = b.closest('[data-pane]').dataset.pane, aksi = b.dataset.bulk, n = sel[pane].size;
+    if (!n) return;
+    const [q, ya, cls] = TANYA[aksi](n);
+    $(`[data-confbox="${pane}"]`).innerHTML = `<div class="conf"><p>${esc(q)}</p><div class="row"><button class="btn ${cls}" type="button" data-yes="${aksi}">${ya}</button><button class="btn ghost" type="button" data-no>Tidak jadi</button></div></div>`;
+  }));
+  document.addEventListener('click', async e => {
+    const b = e.target.closest('[data-yes],[data-no]');
+    if (!b || !b.closest('[data-confbox]')) return;
+    const pane = b.closest('[data-confbox]').dataset.confbox;
+    if (b.matches('[data-no]')) return closeConf(pane);
+    if (pane === 'reset') return doReset(b);
+    const aksi = b.dataset.yes, items = [...sel[pane]].map(k => { const i = k.indexOf(':'); return { jenis: k.slice(0, i), id: k.slice(i + 1) }; });
+    b.disabled = true; b.textContent = 'Memproses…';
+    try {
+      const r = await api(aksi, { items });
+      sel[pane].clear(); closeConf(pane);
+      toast({ hapus: `${r.jumlah} data dipindah ke sampah`, pulihkan: `${r.jumlah} data dipulihkan`, 'hapus-permanen': `${r.jumlah} data dihapus permanen` }[aksi]);
+      await loadData();
+    } catch (err) { b.disabled = false; gagal(err); }
+  });
+
+  async function loadData() {
+    const d = await api('data');
+    $('[data-who]').textContent = d.admin;
+    rows = [...d.web.map(r => ({ ...r, jenis: 'web' })), ...d.challenge.map(r => ({ ...r, jenis: 'challenge', id: r.kode }))];
+    renderData();
+  }
+
+  // CSV untuk laporan (pemisah titik koma supaya langsung rapi di Excel Indonesia)
+  $('[data-csv]').addEventListener('click', () => {
+    const list = filtered();
+    if (!list.length) return toast('Tidak ada data untuk diunduh');
+    const H = ['Jenis', 'Kode', 'Masuk', 'Untuk hari', 'Jam', 'Nama', 'WhatsApp', 'Pesanan', 'Cup', 'Total', 'Bayar', 'Status', 'Lunas', 'Diantar', 'Cara terima', 'Lokasi', 'Catatan', 'Pernah beli', 'Tahu dari'];
+    const v = r => [isWeb(r) ? 'Web' : 'Challenge', r.kode, waktu(r.dibuat), hari(r), r.jam, r.nama, r.wa,
+      isWeb(r) ? r.pesanan : `${r.menuNama} Medium (paket)${r.hadiah ? ' → ' + r.hadiah : ''}`, cupOf(r), totalOf(r),
+      isWeb(r) ? r.bayar : 'DANA', r.status || 'baru', lunas(r) ? 'Ya' : 'Tidak', r.diantar ? 'Ya' : 'Tidak', r.cara_terima, r.lokasi, r.catatan, r.pernah_beli, r.sumber];
+    const cell = x => { const s = String(x == null ? '' : x); return /[";\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+    const csv = '﻿' + [H, ...list.map(v)].map(r => r.map(cell).join(';')).join('\r\n');
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+    a.download = `pesanan-code-caffeine-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  });
+
+  /* =========================================================
+     MENU & PENGATURAN (satu tombol simpan untuk keduanya)
+     ========================================================= */
+  let cfg = null, saved = '';
+  const dirty = () => cfg && JSON.stringify(cfg) !== saved;
+  function syncSavebar() { $('[data-savebar]').hidden = !dirty(); if (!dirty()) $('[data-saveerr]').hidden = true; }
+  addEventListener('beforeunload', e => { if (dirty()) { e.preventDefault(); e.returnValue = ''; } });
+
+  function getPath(o, path) { return path.split('.').reduce((a, k) => (a == null ? a : a[k]), o); }
+  function setPath(o, path, val) {
+    const ks = path.split('.'); let a = o;
+    ks.slice(0, -1).forEach((k, i) => { if (a[k] == null) a[k] = /^\d+$/.test(ks[i + 1]) ? [] : {}; a = a[k]; });
+    a[ks[ks.length - 1]] = val;
+  }
+  const toInput = (t, v) => t === 'csv' ? (v || []).join(', ') : t === 'dt' ? String(v || '').replace(' ', 'T') : t === 'wa' ? (v ? '0' + String(v).replace(/^62/, '') : '') : (v == null ? '' : v);
+  const fromInput = (t, el) => t === 'num' ? (el.value === '' ? null : Number(el.value)) : t === 'bool' ? el.checked : t === 'csv' ? el.value.split(',').map(s => s.trim()).filter(Boolean)
+    : t === 'dt' ? el.value.replace('T', ' ') : el.value;
+  function fill(root) {
+    $$('[data-f]', root).forEach(el => {
+      const t = el.dataset.t || 'text', v = getPath(cfg, el.dataset.f);
+      if (t === 'bool') el.checked = el.dataset.f.endsWith('.aktif') ? v !== false : !!v;
+      else el.value = toInput(t, v);
+    });
+  }
+  document.addEventListener('input', e => {
+    const el = e.target;
+    if (!el.matches('[data-f]') || !cfg) return;
+    const t = el.dataset.t || 'text';
+    if (el.dataset.f.startsWith('statusManual.') && !cfg.statusManual) cfg.statusManual = { judul: '', pesan: '' };
+    setPath(cfg, el.dataset.f, fromInput(t, el));
+    if (t === 'bool' && /^menu\.\d+\.(aktif|andalan)$/.test(el.dataset.f)) {
+      // hanya satu andalan
+      if (el.dataset.f.endsWith('.andalan') && el.checked) cfg.menu.forEach((m, i) => { if (`menu.${i}.andalan` !== el.dataset.f) m.andalan = false; });
+      renderMenu();
+    }
+    if (el.matches('[data-pengumuman-aktif]')) return;
+    syncSavebar();
+  });
+  document.addEventListener('change', e => { if (e.target.matches('[data-f]')) e.target.dispatchEvent(new Event('input', { bubbles: true })); });
+
+  /* ---------- menu ---------- */
+  function renderMenu() {
+    $('[data-menu]').innerHTML = cfg.menu.map((m, i) => {
+      const foto = m.foto || '/assets/img/logo-ikon.svg';
+      return `<div class="mcard${m.aktif === false ? ' off' : ''}" data-idx="${i}">
+        <div>
+          <div class="thumb${m.foto ? '' : ' kosong'}"><img src="${esc(foto)}" alt=""></div>
+          <button class="btn ghost sm fotobtn" type="button" data-foto="${i}">${m.foto ? 'Ganti foto' : 'Pasang foto'}</button>
+        </div>
+        <div class="fields">
+          <label class="f">Nama menu<input type="text" maxlength="40" data-f="menu.${i}.nama"></label>
+          <label class="f">Deskripsi<textarea maxlength="200" data-f="menu.${i}.deskripsi"></textarea></label>
+          <div class="harga">
+            <label class="f">Small (Rp)<input type="number" inputmode="numeric" min="1000" step="500" data-f="menu.${i}.harga.S" data-t="num"></label>
+            <label class="f">Medium (Rp)<input type="number" inputmode="numeric" min="1000" step="500" data-f="menu.${i}.harga.M" data-t="num"></label>
+            <label class="f">Large (Rp)<input type="number" inputmode="numeric" min="1000" step="500" data-f="menu.${i}.harga.L" data-t="num"></label>
+          </div>
+          <div class="toggles">
+            <label><input type="checkbox" data-f="menu.${i}.aktif" data-t="bool"> Tampil di web</label>
+            <label><input type="checkbox" data-f="menu.${i}.habis" data-t="bool"> Habis</label>
+            <label><input type="checkbox" data-f="menu.${i}.andalan" data-t="bool"> Menu andalan</label>
+          </div>
+          <div class="mini">
+            <button class="btn ghost sm" type="button" data-move="-1" data-i="${i}"${i === 0 ? ' disabled' : ''}>Naik</button>
+            <button class="btn ghost sm" type="button" data-move="1" data-i="${i}"${i === cfg.menu.length - 1 ? ' disabled' : ''}>Turun</button>
+            <button class="btn warn sm" type="button" data-delmenu="${i}">Hapus menu</button>
+          </div>
+          <div data-delconf="${i}"></div>
+        </div>
+      </div>`;
+    }).join('');
+    fill($('[data-menu]'));
+    syncSavebar();
+  }
+  $('[data-addmenu]').addEventListener('click', () => {
+    cfg.menu.push({ id: '', nama: 'Menu baru', deskripsi: '', harga: { S: 10000, M: 12000, L: 14000 }, andalan: false, aktif: false, habis: false });
+    renderMenu();
+    const last = $(`[data-idx="${cfg.menu.length - 1}"] input[type=text]`); last.focus(); last.select();
+    toast('Menu baru disembunyikan dulu. Pasang foto, lalu centang "Tampil di web".');
+  });
+  $('[data-menu]').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    if (b.dataset.move) {
+      const i = Number(b.dataset.i), j = i + Number(b.dataset.move);
+      [cfg.menu[i], cfg.menu[j]] = [cfg.menu[j], cfg.menu[i]]; renderMenu(); return;
+    }
+    if (b.dataset.delmenu != null) {
+      const i = Number(b.dataset.delmenu);
+      $(`[data-delconf="${i}"]`).innerHTML = `<div class="conf"><p>Hapus ${esc(cfg.menu[i].nama)} dari daftar menu? Kalau cuma sementara, lebih baik hilangkan centang "Tampil di web".</p><div class="row"><button class="btn warn" type="button" data-delyes="${i}">Ya, hapus menu</button><button class="btn ghost" type="button" data-delno>Tidak jadi</button></div></div>`;
+      return;
+    }
+    if (b.dataset.delyes != null) { cfg.menu.splice(Number(b.dataset.delyes), 1); renderMenu(); return; }
+    if (b.matches('[data-delno]')) { b.closest('[data-delconf]').innerHTML = ''; return; }
+    if (b.dataset.foto != null) { fotoIdx = Number(b.dataset.foto); $('[data-file]').value = ''; $('[data-file]').click(); }
+  });
+
+  // Foto: dipangkas ke bagian yang tidak transparan, dikecilkan, lalu diunggah (kartu 760 px, versi besar 1200 px)
+  let fotoIdx = -1;
+  async function bacaGambar(file) {
+    const url = URL.createObjectURL(file);
+    try {
+      const img = new Image(); img.decoding = 'async'; img.src = url;
+      await img.decode();
+      return img;
+    } finally { setTimeout(() => URL.revokeObjectURL(url), 1000); }
+  }
+  function pangkas(img) {
+    const W = img.naturalWidth, H = img.naturalHeight, s = Math.min(1, 1600 / Math.max(W, H));
+    const c = document.createElement('canvas'); c.width = Math.round(W * s); c.height = Math.round(H * s);
+    const x = c.getContext('2d', { willReadFrequently: true }); x.drawImage(img, 0, 0, c.width, c.height);
+    const d = x.getImageData(0, 0, c.width, c.height).data;
+    let t = c.height, b = -1, l = c.width, r = -1, transparan = false;
+    for (let y = 0; y < c.height; y++) for (let i = 0; i < c.width; i++) {
+      const a = d[(y * c.width + i) * 4 + 3];
+      if (a < 250) transparan = true;
+      if (a > 12) { if (y < t) t = y; if (y > b) b = y; if (i < l) l = i; if (i > r) r = i; }
+    }
+    if (b < 0) return { canvas: c, transparan };
+    const out = document.createElement('canvas'); out.width = r - l + 1; out.height = b - t + 1;
+    out.getContext('2d').drawImage(c, l, t, out.width, out.height, 0, 0, out.width, out.height);
+    return { canvas: out, transparan };
+  }
+  function ukurUlang(src, tinggi) {
+    const s = Math.min(1, tinggi / src.height), c = document.createElement('canvas');
+    c.width = Math.max(1, Math.round(src.width * s)); c.height = Math.max(1, Math.round(src.height * s));
+    const x = c.getContext('2d'); x.imageSmoothingQuality = 'high'; x.drawImage(src, 0, 0, c.width, c.height);
+    return new Promise(res => c.toBlob(b => {
+      if (b && b.type === 'image/webp') res(b); else c.toBlob(p => res(p), 'image/png');   // Safari belum bisa membuat WebP
+    }, 'image/webp', 0.88));
+  }
+  $('[data-file]').addEventListener('change', async e => {
+    const file = e.target.files[0], i = fotoIdx;
+    if (!file || i < 0 || !cfg.menu[i]) return;
+    const btn = $(`[data-foto="${i}"]`); btn.disabled = true; btn.textContent = 'Memproses…';
+    try {
+      const { canvas, transparan } = pangkas(await bacaGambar(file));
+      const kecil = await ukurUlang(canvas, 760), besar = await ukurUlang(canvas, 1200);
+      if (kecil.size > 2.5 * 1024 * 1024 || besar.size > 2.5 * 1024 * 1024) throw new Error('Foto terlalu besar setelah diproses. Coba foto lain.');
+      btn.textContent = 'Mengunggah…';
+      const a = await api('foto', null, kecil), bg = await api('foto', null, besar);
+      cfg.menu[i].foto = a.url; cfg.menu[i].fotoBesar = bg.url;
+      renderMenu();
+      toast(transparan ? 'Foto terpasang. Tekan Simpan perubahan supaya tampil di web.' : 'Foto terpasang, tapi latarnya tidak transparan, jadi akan terlihat kotak di web. Lebih rapi pakai PNG latar transparan.');
+    } catch (err) {
+      toast(err.message || 'Foto tidak bisa dibaca. Pakai PNG, WebP, atau JPG.');
+      btn.disabled = false; btn.textContent = cfg.menu[i].foto ? 'Ganti foto' : 'Pasang foto';
+    }
+  });
+
+  /* ---------- pengaturan ---------- */
+  const HARI = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+  function renderAtur() {
+    $('[data-pengumuman-aktif]').checked = !!cfg.statusManual;
+    $$('[data-f^="statusManual."]').forEach(el => { el.disabled = !cfg.statusManual; });
+    $('[data-days]').innerHTML = [1, 2, 3, 4, 5, 6, 0].map(d => `<label><input type="checkbox" value="${d}" data-day${(cfg.hariJual || []).includes(d) ? ' checked' : ''}> ${HARI[d]}</label>`).join('');
+    $('[data-khusus]').innerHTML = (cfg.jadwalKhusus || []).map((k, i) => `<div class="block">
+        <div class="grid2">
+          <label class="f">Tanggal jual<input type="date" data-f="jadwalKhusus.${i}.tanggal"></label>
+          <span></span>
+          <label class="f">Pre-order dibuka<input type="datetime-local" data-f="jadwalKhusus.${i}.poBuka" data-t="dt"></label>
+          <label class="f">Pre-order ditutup<input type="datetime-local" data-f="jadwalKhusus.${i}.poTutup" data-t="dt"></label>
+          <label class="f">Serah terima mulai<input type="time" data-f="jadwalKhusus.${i}.serahTerima.mulai"></label>
+          <label class="f">Serah terima selesai<input type="time" data-f="jadwalKhusus.${i}.serahTerima.selesai"></label>
+        </div>
+        <label class="f">Pilihan jam (pisahkan dengan koma)<input type="text" data-f="jadwalKhusus.${i}.slot" data-t="csv" placeholder="15.00–16.00, 16.00–17.00"></label>
+        <div class="row"><button class="btn warn sm" type="button" data-delkhusus="${i}">Hapus hari jual ini</button></div>
+      </div>`).join('') || '<p class="empty">Belum ada hari jual khusus.</p>';
+    $('[data-bayar]').innerHTML = (cfg.pembayaran || []).map((b, i) => `<div class="block">
+        <div class="grid2">
+          <label class="f">Jenis<input type="text" maxlength="24" data-f="pembayaran.${i}.jenis" placeholder="DANA"></label>
+          <label class="f">Nomor<input type="text" maxlength="32" data-f="pembayaran.${i}.nomor" placeholder="0856-0450-4216"></label>
+        </div>
+        <label class="f">Atas nama<input type="text" maxlength="60" data-f="pembayaran.${i}.atasNama"></label>
+        <div class="row"><button class="btn warn sm" type="button" data-delbayar="${i}">Hapus tujuan ini</button></div>
+      </div>`).join('') || '<p class="warnmsg">Belum ada tujuan transfer: pembelian paket Challenge ditutup sampai ada yang diisi.</p>';
+    fill($('[data-pane="atur"]'));
+    syncSavebar();
+  }
+  $('[data-pengumuman-aktif]').addEventListener('change', e => {
+    cfg.statusManual = e.target.checked ? (cfg.statusManual || { judul: '', pesan: '' }) : null;
+    renderAtur();
+  });
+  $('[data-days]').addEventListener('change', () => {
+    cfg.hariJual = $$('[data-day]').filter(x => x.checked).map(x => Number(x.value)).sort();
+    syncSavebar();
+  });
+  const pad = n => String(n).padStart(2, '0');
+  const tglWIB = ms => { const d = new Date(ms + 7 * 3600000); return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}`; };
+  $('[data-addkhusus]').addEventListener('click', () => {
+    const jual = tglWIB(Date.now() + 2 * 86400000), buka = tglWIB(Date.now());
+    cfg.jadwalKhusus = [...(cfg.jadwalKhusus || []), { tanggal: jual, poBuka: `${buka} 08:00`, poTutup: `${jual} 12:00`, serahTerima: { mulai: '15:00', selesai: '18:00' }, slot: ['15.00–16.00', '16.00–17.00', '17.00–18.00'] }];
+    renderAtur();
+  });
+  $('[data-addbayar]').addEventListener('click', () => { cfg.pembayaran = [...(cfg.pembayaran || []), { jenis: '', nomor: '', atasNama: '' }]; renderAtur(); });
+  $('[data-pane="atur"]').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    if (b.dataset.delkhusus != null) { cfg.jadwalKhusus.splice(Number(b.dataset.delkhusus), 1); renderAtur(); }
+    if (b.dataset.delbayar != null) { cfg.pembayaran.splice(Number(b.dataset.delbayar), 1); renderAtur(); }
+  });
+
+  function renderDiubah(d) {
+    $('[data-diubah]').textContent = d ? `Pengaturan terakhir disimpan ${waktu(d.at)} oleh ${d.oleh}. Kembalikan ke bawaan = memakai isi file config.js di repo lagi.` : 'Web sedang memakai pengaturan bawaan dari file config.js.';
+  }
+  function setCfg(c, d) {
+    cfg = c; cfg.statusManual = cfg.statusManual || null; saved = JSON.stringify(cfg);
+    renderMenu(); renderAtur(); renderDiubah(d); syncSavebar();
+  }
+  async function loadKatalog() { const d = await api('katalog'); setCfg(d.config, d.diubah); }
+
+  $('[data-undo]').addEventListener('click', () => setCfg(JSON.parse(saved), null) || loadKatalog().catch(gagal));
+  $('[data-save]').addEventListener('click', async e => {
+    const b = e.currentTarget; b.disabled = true; b.textContent = 'Menyimpan…';
+    $('[data-saveerr]').hidden = true;
+    try {
+      const r = await api('katalog', { config: cfg });
+      setCfg(r.config, r.diubah);
+      toast('Tersimpan. Web memakai pengaturan baru dalam sekitar satu menit.');
+    } catch (err) {
+      if (err.status === 401) gagal(err);
+      else { $('[data-saveerr]').textContent = err.message; $('[data-saveerr]').hidden = false; }
+    } finally { b.disabled = false; b.textContent = 'Simpan perubahan'; }
+  });
+  $('[data-reset]').addEventListener('click', () => {
+    $('[data-confbox="reset"]').innerHTML = '<div class="conf"><p>Kembalikan menu, harga, foto, jadwal, pembayaran, dan pengumuman ke isi bawaan? Semua perubahan dari halaman ini hilang.</p><div class="row"><button class="btn danger" type="button" data-yes="reset">Ya, kembalikan</button><button class="btn ghost" type="button" data-no>Tidak jadi</button></div></div>';
+  });
+  async function doReset(b) {
+    b.disabled = true;
+    try { const r = await api('katalog-reset', {}); setCfg(r.config, null); closeConf('reset'); toast('Pengaturan kembali ke bawaan.'); }
+    catch (err) { b.disabled = false; gagal(err); }
+  }
+
+  /* ---------- mulai ---------- */
+  async function start() {
+    if (!key) { showGate(); return; }
+    try {
+      await Promise.all([loadData(), loadKatalog()]);
+      gate.hidden = true; app.hidden = false;
+    } catch (err) { gagal(err); }
+  }
+  document.addEventListener('visibilitychange', () => { if (!document.hidden && key && !app.hidden) loadData().catch(() => {}); });
+  start();
+})();
+</script>
+</body>
+</html>
