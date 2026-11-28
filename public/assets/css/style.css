@@ -384,27 +384,6 @@ h3 { font-family: var(--f-display); font-weight: 600; letter-spacing: -.02em; }
 .check span { display: grid; gap: 2px; font-size: 13.5px; color: var(--ink2); }
 .check b { font-size: 14.5px; font-weight: 600; color: var(--ink); }
 .seg.seg-3 { grid-template-columns: repeat(3, 1fr); }
-/* Caffeine Challenge di form pesanan */
-.ch-box { display: grid; gap: 10px; padding: 14px; border-radius: 16px; background: var(--seg-bg); }
-.ch-text { font-size: 14px; color: var(--ink2); text-wrap: pretty; }
-.ch-text b { color: var(--ink); font-weight: 600; }
-.ch-play { height: 44px; font-size: 15px; }
-.ch-play:disabled { opacity: .45; cursor: not-allowed; }
-.ch-box.done { background: transparent; border: 1px solid var(--accent); }
-
-/* Jendela game: layar penuh, game sendiri berlatar krem */
-.game-sheet {
-  padding: 0; border: 0; margin: 0; width: 100vw; height: 100dvh; max-width: none; max-height: none;
-  background: #faf5ee; color: #35251c;
-}
-.game-sheet[open] { display: flex; flex-direction: column; }
-.game-sheet::backdrop { background: rgba(10, 5, 2, .7); }
-.game-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: calc(10px + env(safe-area-inset-top)) 16px 8px; }
-.game-head h2 { font-family: var(--f-display); font-weight: 600; font-size: 17px; letter-spacing: -.01em; color: #35251c; }
-.game-head h2.warn { color: #8a3f1f; }
-.game-close { height: 36px; padding: 0 16px; font-size: 14px; color: #35251c; background: rgba(53, 37, 28, .08); border: 1px solid rgba(53, 37, 28, .18); }
-.game-close.warn { background: #8a3f1f; color: #f2e6d2; border-color: #8a3f1f; }
-.game-frame { flex: 1; width: 100%; border: 0; display: block; background: #faf5ee; }
 .seg { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; border-radius: 16px; background: var(--seg-bg); }
 .seg label { position: relative; }
 .seg input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
@@ -454,4 +433,69 @@ h3 { font-family: var(--f-display); font-weight: 600; letter-spacing: -.02em; }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+
+/* ---------- Caffeine Challenge: game di halaman ---------- */
+.ch-split { display: grid; gap: 32px; align-items: start; }
+@media (min-width: 900px) { .ch-split { grid-template-columns: 1fr minmax(340px, 400px); gap: 64px; align-items: center; } }
+.ch-tiers { list-style: none; padding: 0; margin: 22px 0 0; display: grid; gap: 8px; }
+.ch-tiers li { display: grid; gap: 2px; padding: 12px 16px; border-radius: 16px; background: var(--seg-bg); }
+.ch-tiers b { font-weight: 600; color: var(--ink); font-size: 15px; }
+.ch-tiers span { color: var(--ink2); font-size: 14.5px; }
+.head p.ch-how { margin-top: 18px; font-size: 15px; }
+.ch-how b { color: var(--ink); font-weight: 600; }
+.ch-status { margin-top: 18px; display: flex; align-items: center; gap: 12px; padding: 10px 10px 10px 16px; border-radius: 18px; }
+.ch-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--accent); flex: none; }
+.ch-status[data-state="cek_admin"] .ch-dot { animation: denyut 1.4s ease-in-out infinite; }
+.ch-status[data-state="lunas"] .ch-dot, .ch-status[data-state="selesai"] .ch-dot { background: var(--ok); }
+.ch-status[data-state="batal"] .ch-dot { background: #E5484D; }
+@keyframes denyut { 50% { opacity: .25; } }
+.ch-status-text { flex: 1; font-size: 14.5px; font-weight: 500; color: var(--ink); }
+.ch-status .btn { height: 38px; padding: 0 16px; font-size: 14px; flex: none; }
+.ch-game { display: flex; justify-content: center; }
+.ch-game iframe {
+  width: min(100%, 400px); aspect-ratio: 9 / 16; border: 0; display: block;
+  border-radius: 26px; background: #f2e6d2; box-shadow: 0 30px 70px -30px rgba(0, 0, 0, .7);
+}
+
+/* ---------- Pop-up paket challenge ---------- */
+.ch-pane { display: flex; flex-direction: column; min-height: 0; flex: 1; }
+.ch-menu, .ch-pay { display: grid; gap: 8px; }
+.ch-opt { display: block; cursor: pointer; position: relative; }
+.ch-opt input { position: absolute; opacity: 0; pointer-events: none; }
+.ch-opt span { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 13px 16px; border-radius: 14px; background: var(--seg-bg); border: 1.5px solid transparent; transition: border-color .15s, background-color .15s; }
+.ch-opt b { font-weight: 600; color: var(--ink); font-size: 15px; }
+.ch-opt em { font-style: normal; color: var(--ink2); font-size: 14.5px; font-variant-numeric: tabular-nums; }
+.ch-opt input:checked + span { border-color: var(--accent); }
+.ch-opt input:checked + span em { color: var(--ink); font-weight: 600; }
+.ch-opt input:focus-visible + span { outline: 2px solid var(--focus); outline-offset: 2px; }
+.ch-pay-one { padding: 13px 16px; border-radius: 14px; background: var(--seg-bg); color: var(--ink2); font-size: 15px; font-variant-numeric: tabular-nums; }
+.ch-pay-one b { color: var(--ink); font-weight: 600; margin-right: 6px; }
+.ch-label { font-size: 14px; color: var(--ink2); margin-top: 8px; }
+.ch-amount { display: flex; align-items: center; gap: 12px; font-family: var(--f-display); font-size: 40px; font-weight: 600; letter-spacing: -.03em; font-variant-numeric: tabular-nums; color: var(--ink); }
+.ch-copy { height: 32px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--line-strong); background: var(--seg-bg); color: var(--ink); font: 600 13px var(--f-body); letter-spacing: 0; cursor: pointer; flex: none; }
+.ch-dest { margin-top: 16px; padding: 16px 18px; border-radius: 18px; display: grid; gap: 4px; }
+.ch-dest-jenis { font-size: 14px; color: var(--ink2); font-weight: 600; }
+.ch-dest-nomor { display: flex; align-items: center; gap: 12px; font-size: 24px; font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums; }
+.ch-dest-nama { font-size: 14px; color: var(--ink2); }
+.ch-code { margin-top: 16px; font-size: 14.5px; color: var(--ink2); }
+.ch-code b { color: var(--ink); font-weight: 600; letter-spacing: .04em; }
+.ch-center { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 10px; padding-top: 22px; padding-bottom: 22px; }
+.ch-center h3 { font-family: var(--f-display); font-size: 22px; font-weight: 600; letter-spacing: -.02em; color: var(--ink); }
+.ch-center p { color: var(--ink2); font-size: 15px; max-width: 36ch; text-wrap: pretty; }
+.ch-center p b { color: var(--ink); font-weight: 600; }
+.ch-center p.ch-late { color: var(--warn); font-weight: 600; }
+.ch-spin { width: 34px; height: 34px; border-radius: 50%; border: 3px solid var(--line-strong); border-top-color: var(--accent); animation: putar .9s linear infinite; }
+@keyframes putar { to { transform: rotate(360deg); } }
+.ch-ok { width: 52px; height: 52px; border-radius: 50%; display: grid; place-items: center; background: var(--ok); color: #0D0805; font-size: 26px; font-weight: 700; }
+.ch-prize { font-family: var(--f-display); font-size: 30px; font-weight: 600; letter-spacing: -.03em; color: var(--ink); line-height: 1.15; margin-top: 4px; text-wrap: balance; }
+.ch-score { margin-top: 6px; color: var(--accent); font-weight: 600; }
+.ch-receipt { margin: 18px 0 10px; border-top: 1px solid var(--line); }
+.ch-receipt div { display: grid; grid-template-columns: 112px 1fr; gap: 12px; padding: 11px 0; border-bottom: 1px solid var(--line); font-size: 14.5px; }
+.ch-receipt dt { color: var(--ink2); }
+.ch-receipt dd { margin: 0; color: var(--ink); font-weight: 500; }
+.btn-link { display: block; width: 100%; margin-top: 12px; padding: 6px; background: none; border: 0; color: var(--ink2); font: 500 14.5px var(--f-body); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; text-align: center; }
+@media (prefers-reduced-motion: reduce) {
+  .ch-spin { animation-duration: 3s; }
+  .ch-status[data-state="cek_admin"] .ch-dot { animation: none; }
 }

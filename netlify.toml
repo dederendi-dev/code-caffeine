@@ -1,6 +1,11 @@
-# Situs statis: tidak ada perintah build, langsung terbit dari folder ini.
+# Situs statis di folder public/, fungsi server (API pesanan Caffeine Challenge) di netlify/functions/.
 [build]
-  publish = "."
+  publish = "public"
+  command = ""
+
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
 
 [[headers]]
   for = "/*"
@@ -20,4 +25,11 @@
   [headers.values]
     Cache-Control = "public, max-age=604800"
 
-# QR "Caffeine Challenge" di poster mengarah ke /main: halaman game ada di folder main/.
+# Halaman admin tidak boleh diindeks mesin pencari dan tidak boleh di-cache.
+[[headers]]
+  for = "/admin/*"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow"
+    Cache-Control = "no-store"
+
+# QR "Caffeine Challenge" di poster mengarah ke /main: halaman game ada di public/main/.

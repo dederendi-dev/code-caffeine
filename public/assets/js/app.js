@@ -274,7 +274,6 @@
     $('[data-voucher-field]').hidden = !stampOn;
     $('[data-cart-voucher]').hidden = !(n > 0 && wantsVoucher());
     $('[data-cart-voucher-value]').textContent = '−' + rupiah(voucherCut());
-    renderChallenge();
     $('[data-stamp-hint]').textContent = wantsStamp()
       ? (si ? 'Jangan lupa tunjukkan kartunya saat serah terima. Kalau kartu belum penuh, bayar harga normal.' : 'Tambahkan satu minuman ukuran Small dari menu untuk ditukar.')
       : '';
@@ -342,7 +341,6 @@
   });
   form.addEventListener('input', e => {
     if (e.target.hasAttribute('aria-invalid')) e.target.removeAttribute('aria-invalid');
-    if (e.target.name === 'nama' || e.target.name === 'wa') renderChallenge();
   });
   syncLokasi();
 
@@ -356,118 +354,6 @@
     $$('[aria-invalid]', form).forEach(f => f.removeAttribute('aria-invalid'));
   }
 
-  /* ================= Caffeine Challenge ================= */
-  // Aturan hadiah ada di game (/main/, TIERS). Web membaca aturan dan menghitung ulang skor dari game itu sendiri.
-  // Satu kesempatan per pesanan: hasil tersimpan sampai pesanan terkirim. Keluar di tengah = skor 0.
-  const CH_KEY = 'cc-challenge-v1';
-  const game = $('[data-game]'), frame = $('[data-game-frame]');
-  let ch = { status: 'none' };
-  try { ch = JSON.parse(localStorage.getItem(CH_KEY)) || ch; } catch (e) { /* abaikan */ }
-  const saveCh = () => { try { localStorage.setItem(CH_KEY, JSON.stringify(ch)); } catch (e) { /* abaikan */ } };
-  // Hadiah berlaku untuk 1 cup Medium (yang termahal kalau ada beberapa)
-  const chItem = () => cart.filter(i => i.size === 'M').sort((a, b) => priceOf(b) - priceOf(a))[0] || null;
-  const BONUS = {
-    voucher: { teks: 'Medium + voucher Rp1.000', pesan: d => `${d} Medium + voucher Rp1.000 untuk pesanan berikutnya` },
-    cap: { teks: 'Medium + 1 cap kartu stamp', pesan: d => `${d} Medium + 1 cap tambahan di kartu stamp` },
-    large: { teks: 'upgrade ke Large', pesan: d => `${d} Medium di-upgrade jadi Large` }
-  };
-  const fmtSkor = n => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-
-  function renderChallenge() {
-    const box = $('.ch-box'), play = $('[data-ch-play]'), hint = $('[data-ch-hint]'), text = $('[data-ch-text]');
-    const item = chItem();
-    if (ch.status === 'done') {
-      box.classList.add('done');
-      play.hidden = true;
-      const b = BONUS[ch.tier] || BONUS.voucher;
-      text.innerHTML = `Skor <b>${fmtSkor(ch.score)}</b>: <b>${item ? b.pesan(drinkOf(item.id).nama) : b.teks}</b>.` +
-        (ch.stopped ? ' Permainan dihentikan di tengah, jadi skor dihitung 0.' : '');
-      hint.textContent = item ? 'Hasil terkunci untuk pesanan ini.' : 'Hasil ini berlaku untuk 1 cup Medium. Tambahkan minuman ukuran Medium supaya bonusnya terpakai.';
-      return;
-    }
-    box.classList.remove('done');
-    play.hidden = false;
-    text.innerHTML = 'Main sekali untuk 1 cup Medium di pesanan ini. Minimal tetap Medium, skormu menentukan bonusnya: voucher Rp1.000, +1 cap kartu stamp, atau upgrade ke Large.';
-    const open = openEvent(nowWIB());
-    play.disabled = !item || !open;
-    hint.textContent = !open ? 'Bisa dimainkan saat pre-order dibuka.'
-      : !item ? 'Tambahkan minimal 1 minuman ukuran Medium untuk ikut.'
-      : (form.elements.nama.value.trim() && normalWA(form.elements.wa.value))
-        ? 'Satu kesempatan per pesanan. Keluar di tengah permainan dihitung skor 0.'
-        : 'Isi nama dan nomor WhatsApp dulu, supaya hasilnya tercatat atas namamu.';
-  }
-
-  function logChallenge(status) {
-    try {
-      if (!location.protocol.startsWith('http') || !navigator.sendBeacon) return;
-      const f = form.elements, ev = openEvent(nowWIB());
-      const data = new URLSearchParams({
-        'form-name': 'challenge', nama: f.nama.value.trim(), wa: normalWA(f.wa.value),
-        skor: String(ch.score), hasil: (BONUS[ch.tier] || BONUS.voucher).teks, status,
-        rekaman: ch.taps || '', untuk_hari: ev ? tanggal(ev.day, true) : ''
-      });
-      navigator.sendBeacon('/', data);
-    } catch (e) { /* abaikan */ }
-  }
-
-  let confirmQuit = false;
-  function setGameHead(warn) {
-    confirmQuit = warn;
-    const t = $('[data-game-title]'), b = $('[data-game-close]');
-    t.textContent = warn ? 'Keluar sekarang? Skor dihitung 0.' : 'Caffeine Challenge';
-    t.classList.toggle('warn', warn);
-    b.textContent = warn ? 'Keluar' : 'Tutup';
-    b.classList.toggle('warn', warn);
-  }
-  function openGame() {
-    hideError();
-    const f = form.elements;
-    if (!f.nama.value.trim()) return showError('Tulis nama dulu, supaya hasil Caffeine Challenge tercatat atas namamu.', f.nama);
-    if (!normalWA(f.wa.value)) return showError('Tulis nomor WhatsApp yang aktif dulu, contoh 081234567890.', f.wa);
-    if (!chItem() || !openEvent(nowWIB()) || ch.status === 'done') return renderChallenge();
-    setGameHead(false);
-    frame.src = '/main/?pesanan=1';
-    game.showModal();
-  }
-  function closeGame() {
-    if (ch.status === 'started') {                    // keluar di tengah permainan
-      if (!confirmQuit) { setGameHead(true); return; }
-      ch = { status: 'done', score: 0, tier: 'voucher', taps: '', stopped: true };
-      saveCh(); logChallenge('keluar di tengah');
-    }
-    game.close();
-  }
-  $('[data-ch-play]').addEventListener('click', openGame);
-  $('[data-game-close]').addEventListener('click', closeGame);
-  game.addEventListener('cancel', e => { e.preventDefault(); closeGame(); });   // tombol Esc / kembali
-  game.addEventListener('close', () => { frame.src = 'about:blank'; setGameHead(false); renderCart(); });
-
-  window.addEventListener('message', e => {
-    if (e.origin !== location.origin || e.source !== frame.contentWindow) return;
-    const m = e.data || {};
-    if (m.type === 'caffeine-challenge:start') {
-      if (ch.status === 'done') return;
-      ch = { status: 'started', at: Date.now() }; saveCh();
-    } else if (m.type === 'caffeine-challenge:result' && m.mode === 'challenge') {
-      if (ch.status !== 'started') return;           // hanya hasil dari permainan yang dimulai di sini
-      let api = null;
-      try { api = frame.contentWindow.CaffeineChallenge; } catch (err) { api = null; }
-      const taps = Array.isArray(m.taps) ? m.taps : [];
-      let score = 0, tier = 'voucher';
-      if (api) {
-        const r = api.replay(taps);                   // hitung ulang dari rekaman tap, bukan percaya angka kiriman
-        score = r.score; tier = api.tierFor(r.score).key;
-      }
-      ch = { status: 'done', score, tier, taps: api ? api.encodeTaps(taps) : '', stopped: false };
-      saveCh(); logChallenge('selesai');
-      setGameHead(false);
-    } else if (m.type === 'caffeine-challenge:close') {
-      game.close();
-    }
-  });
-  // Kalau halaman ditutup di tengah permainan, kesempatan tetap terpakai
-  if (ch.status === 'started') { ch = { status: 'done', score: 0, tier: 'voucher', taps: '', stopped: true }; saveCh(); }
-
   // 0812-3456-7890, +62 812..., 62812... -> 081234567890. Kosong kalau tidak valid.
   function normalWA(str) {
     let d = String(str).replace(/\D/g, '');
@@ -476,7 +362,7 @@
     return /^08\d{8,12}$/.test(d) ? d : '';
   }
 
-  function buildMessage(v, t, free, chLine) {
+  function buildMessage(v, t, free) {
     const lines = cart.map(i => {
       const d = drinkOf(i.id), u = sizeOf(i.size);
       return `- ${i.qty}x ${d.nama} ${u.nama} (${u.oz} oz) = ${rupiah(priceOf(i) * i.qty)}`;
@@ -493,7 +379,6 @@
       ...lines,
       free ? `Tukar kartu stamp: 1 ${drinkOf(free.id).nama} Small gratis (−${rupiah(priceOf(free))})` : null,
       wantsVoucher() ? `Pakai voucher Caffeine Challenge: −${rupiah(voucherCut())}` : null,
-      chLine,
       `Total: ${rupiah(netTotal())}`,
       free ? 'Kartu stamp saya tunjukkan saat serah terima.' : null,
       '',
@@ -537,9 +422,7 @@
     const ev = openEvent(nowWIB());
     if (!ev) { renderCart(); return showError(closedText(nowWIB())); }
     const free = wantsStamp() ? stampItem() : null;
-    const chI = ch.status === 'done' ? chItem() : null;
-    const chLine = chI ? `Caffeine Challenge: skor ${fmtSkor(ch.score)}, ${(BONUS[ch.tier] || BONUS.voucher).pesan(drinkOf(chI.id).nama)}${ch.stopped ? ' (berhenti di tengah)' : ''}` : null;
-    const msg = buildMessage(v, ev.day, free, chLine);
+    const msg = buildMessage(v, ev.day, free);
 
     // Catatan pesanan untuk kelompok (Netlify Forms). Gagal mencatat tidak menghalangi pesanan.
     f.wa.value = v.wa;
@@ -548,9 +431,6 @@
     f.jumlah_cup.value = String(cartCount());
     f.total.value = String(netTotal());
     f.stamp_gratis.value = free ? `${drinkOf(free.id).nama} Small (${priceOf(free)})` : '';
-    f.challenge.value = chI ? `${drinkOf(chI.id).nama} Medium: ${(BONUS[ch.tier] || BONUS.voucher).teks}${ch.stopped ? ' (berhenti di tengah)' : ''}` : '';
-    f.challenge_skor.value = chI ? String(ch.score) : '';
-    f.challenge_rekaman.value = chI ? (ch.taps || '') : '';
     try {
       if (location.protocol.startsWith('http') && navigator.sendBeacon) {
         navigator.sendBeacon('/', new URLSearchParams(new FormData(form)));
@@ -561,7 +441,6 @@
     cart = []; save();
     f.tukar_stamp.checked = false;
     f.pakai_voucher.checked = false;
-    if (chI) { ch = { status: 'none' }; saveCh(); }  // pesanan baru dapat kesempatan baru
     f.catatan.value = '';
     renderCart();
 
@@ -584,6 +463,287 @@
   $('[data-finish]').addEventListener('click', () => {
     form.reset(); syncLokasi(); renderCart(); closeSheet();
   });
+
+  /* ================= Paket Caffeine Challenge (game di halaman + transfer, dikonfirmasi admin) ================= */
+  // Pesanan & kesempatan main disimpan di server (/api/challenge). Di HP hanya ada kode + token pesanan.
+  const T_KEY = 'cc-tantangan-v2';
+  const chSheet = $('[data-ch-sheet]'), chFrame = $('[data-ch-frame]'), chForm = $('[data-ch-step="form"]');
+  let tOrder = null;            // { kode, token, rekaman? }
+  try { tOrder = JSON.parse(localStorage.getItem(T_KEY)); } catch (e) { tOrder = null; }
+  let tData = null;             // status terakhir dari server
+  let pollTimer = 0, lateTimer = 0;
+  const waAdmin = () => C.whatsappAdmin || C.whatsapp;
+  const saveT = () => { try { if (tOrder) localStorage.setItem(T_KEY, JSON.stringify(tOrder)); else localStorage.removeItem(T_KEY); } catch (e) { /* abaikan */ } };
+
+  async function api(path, data) {
+    const opt = data ? { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(data) } : { cache: 'no-store' };
+    let res;
+    try { res = await fetch('/api/challenge/' + path, opt); } catch (e) { throw new Error('Koneksi bermasalah. Cek internetmu lalu coba lagi.'); }
+    let j = {};
+    try { j = await res.json(); } catch (e) { /* bukan JSON */ }
+    if (!res.ok) { const err = new Error(j.error || 'Terjadi kesalahan. Coba lagi.'); err.status = res.status; throw err; }
+    return j;
+  }
+  const toGame = msg => { try { chFrame.contentWindow.postMessage(msg, location.origin); } catch (e) { /* game belum siap */ } };
+  const syncGame = () => toGame({ type: 'caffeine-challenge:' + (tData && tData.status === 'lunas' ? 'siap' : 'tidak-siap') });
+
+  const waLink = text => `https://wa.me/${waAdmin()}?text=${encodeURIComponent(text)}`;
+  function waText() {
+    if (!tData) return 'Halo admin Code Caffeine, saya mau tanya soal paket Caffeine Challenge.';
+    const belum = tData.status === 'cek_admin' || tData.status === 'menunggu_bayar';
+    return [
+      `Halo admin Code Caffeine, saya ${tData.nama}.`,
+      belum ? `Saya sudah transfer ${tData.hargaTeks} ke ${tData.bayar_ke.jenis} ${tData.bayar_ke.nomor} untuk paket Caffeine Challenge, tapi belum dikonfirmasi.`
+            : 'Saya mau tanya soal pesanan paket Caffeine Challenge saya.',
+      `Kode pesanan: ${tData.kode}`,
+      `Minuman: ${tData.menuNama} Medium`
+    ].join('\n');
+  }
+
+  const TITLES = { form: 'Paket Challenge', bayar: 'Transfer ke admin', tunggu: 'Menunggu konfirmasi', lunas: 'Siap main', hasil: 'Struk Challenge', info: 'Caffeine Challenge' };
+  function step(name) {
+    $$('[data-ch-step]', chSheet).forEach(p => { p.hidden = p.dataset.chStep !== name; });
+    $('[data-ch-title]').textContent = TITLES[name] || 'Caffeine Challenge';
+    const wa = waLink(waText());
+    $$('[data-ch-wa],[data-ch-wa2],[data-ch-wa3]', chSheet).forEach(a => { a.href = wa; a.hidden = !waAdmin(); });
+  }
+  function info(title, text, btn) {
+    $('[data-ch-info-title]').textContent = title;
+    $('[data-ch-info-text]').textContent = text;
+    $('[data-ch-info-btn]').textContent = btn || 'Oke';
+    step('info');
+  }
+  function openCh() { if (!chSheet.open) { document.documentElement.classList.add('lock'); chSheet.showModal(); } }
+  function closeCh() { if (chSheet.open) chSheet.close(); }
+  chSheet.addEventListener('close', () => document.documentElement.classList.remove('lock'));
+  chSheet.addEventListener('click', e => { if (e.target === chSheet) closeCh(); });
+  $$('[data-ch-close]', chSheet).forEach(b => b.addEventListener('click', closeCh));
+
+  function clearOrder() { tOrder = null; tData = null; saveT(); stopPoll(); renderPill(); syncGame(); }
+
+  /* ---------- isi tiap langkah ---------- */
+  function fillForm(ev) {
+    const f = chForm.elements;
+    $('[data-ch-target]').textContent = `Untuk hari jual ${tanggal(ev.day, true)}, diantar ${jamMs(ev.mulai)}–${jamMs(ev.selesai)}. Pre-order ditutup ${kapan(ev.tutup, nowWIB())}.`;
+    const cur = f.menu ? f.menu.value : '';
+    $('[data-ch-menu]').innerHTML = C.menu.map((m, i) => `<label class="ch-opt"><input type="radio" name="menu" value="${m.id}"${(cur ? cur === m.id : i === 0) ? ' checked' : ''}><span><b>${m.nama}</b><em>${rupiah(m.harga.M)}</em></span></label>`).join('');
+    const rentang = `${jamMs(ev.mulai)}–${jamMs(ev.selesai)}`;
+    $('[data-ch-jam]').innerHTML = ev.slot.map(x => `<option>${x}</option>`).join('') + `<option>Kapan saja, ${rentang}</option>`;
+    const an = b => (b.atasNama ? `a.n. ${b.atasNama}` : b.nomor);
+    $('[data-ch-bayar]').innerHTML = C.pembayaran.length === 1
+      ? `<p class="ch-pay-one"><b>${C.pembayaran[0].jenis}</b> ${an(C.pembayaran[0])}</p><input type="hidden" name="bayar_ke" value="0">`
+      : C.pembayaran.map((b, i) => `<label class="ch-opt"><input type="radio" name="bayar_ke" value="${i}"${i === 0 ? ' checked' : ''}><span><b>${b.jenis}</b><em>${an(b)}</em></span></label>`).join('');
+    // ambil nama & WA dari form pesanan biasa kalau sudah diisi
+    const of = form.elements;
+    if (!f.nama.value && of.nama.value) f.nama.value = of.nama.value;
+    if (!f.wa.value && of.wa.value) f.wa.value = of.wa.value;
+    syncChLokasi();
+    $('[data-ch-error]').hidden = true;
+  }
+  function syncChLokasi() { $('[data-ch-lokasi]').hidden = chForm.elements.cara_terima.value !== 'Diantar'; }
+  chForm.addEventListener('change', e => { if (e.target.name === 'cara_terima') syncChLokasi(); });
+
+  function fillBayar() {
+    const d = tData;
+    $('[data-ch-amount]').textContent = d.hargaTeks;
+    $('[data-ch-jenis]').textContent = d.bayar_ke.jenis;
+    $('[data-ch-nomor]').textContent = d.bayar_ke.nomor;
+    $('[data-ch-atasnama]').textContent = d.bayar_ke.atasNama || '';
+    $('.ch-dest-nama').hidden = !d.bayar_ke.atasNama;
+    $('[data-ch-kode]').textContent = d.kode;
+    $('[data-ch-error2]').hidden = true;
+  }
+  function fillTunggu() {
+    const d = tData;
+    $('[data-ch-amount2]').textContent = d.hargaTeks;
+    $('[data-ch-kode2]').textContent = d.kode;
+    clearTimeout(lateTimer);
+    const late = $('[data-ch-late]');
+    const sisa = 3 * 60000 - (Date.now() - Date.parse(d.sudah_bayar_at || new Date().toISOString()));
+    late.hidden = sisa > 0;
+    if (sisa > 0) lateTimer = setTimeout(() => { late.hidden = false; }, sisa);
+  }
+  function fillHasil() {
+    const d = tData;
+    $('[data-ch-prize]').textContent = d.hadiah;
+    $('[data-ch-score]').textContent = `Skor ${String(d.skor).replace(/\B(?=(\d{3})+(?!\d))/g, '.')}` + (d.tidak_selesai ? ' (permainan tidak selesai)' : '');
+    const rows = [
+      ['Kode pesanan', d.kode],
+      ['Hari jual', `${d.untuk}, ${d.jam}`],
+      ['Terima', d.cara_terima === 'Diantar' ? `Diantar ke ${d.lokasi}` : d.lokasi],
+      ['Pembayaran', `${d.hargaTeks} ke ${d.bayar_ke.jenis}, lunas`]
+    ];
+    $('[data-ch-receipt]').innerHTML = rows.map(([k, v]) => `<div><dt>${k}</dt><dd></dd></div>`).join('');
+    $$('[data-ch-receipt] dd').forEach((dd, i) => { dd.textContent = rows[i][1]; });
+  }
+
+  function showForStatus() {
+    const d = tData;
+    if (!d) return;
+    if (d.status === 'menunggu_bayar') { fillBayar(); step('bayar'); }
+    else if (d.status === 'cek_admin') { fillTunggu(); step('tunggu'); }
+    else if (d.status === 'lunas') step('lunas');
+    else if (d.status === 'main') info('Sedang bermain', 'Kesempatan main untuk pesanan ini sudah dimulai. Selesaikan permainannya di game. Kalau halaman sempat tertutup, hasilnya dihitung skor 0 setelah 15 menit.');
+    else if (d.status === 'selesai') { fillHasil(); step('hasil'); }
+    else if (d.status === 'batal') info('Pesanan dibatalkan', `${d.alasan_batal || 'Pesanan ini dibatalkan'}. Kalau kamu sudah transfer, hubungi admin dengan kode ${d.kode}.`, 'Pesan paket baru');
+  }
+
+  // Dipanggil dari tombol Tantangan di game dan dari kotak status
+  function openTantangan() {
+    if (tData && tData.status !== 'batal') { showForStatus(); openCh(); return; }
+    if (tData && tData.status === 'batal') clearOrder();
+    if (!C.pembayaran || !C.pembayaran.length) {
+      info('Segera dibuka', 'Pembelian paket tantangan dibuka sebentar lagi. Sementara itu, main mode latihan dulu, gratis.');
+      openCh(); return;
+    }
+    const ev = openEvent(nowWIB());
+    if (!ev) { info('Pre-order sedang ditutup', `${closedText(nowWIB())} Mode latihan tetap bisa dimainkan.`); openCh(); return; }
+    fillForm(ev); step('form'); openCh();
+  }
+
+  /* ---------- status dari server ---------- */
+  function stopPoll() { clearInterval(pollTimer); pollTimer = 0; }
+  function startPoll() { stopPoll(); pollTimer = setInterval(refresh, 5000); }
+  async function refresh() {
+    if (!tOrder) return;
+    try {
+      const d = await api(`status?kode=${encodeURIComponent(tOrder.kode)}&token=${encodeURIComponent(tOrder.token)}`);
+      onStatus(d);
+      // hasil yang tadi gagal terkirim (misalnya sinyal putus) dikirim ulang
+      if ((d.status === 'main' || d.status === 'selesai') && tOrder.rekaman) {
+        const r = await api('hasil', { kode: tOrder.kode, token: tOrder.token, rekaman: tOrder.rekaman });
+        delete tOrder.rekaman; saveT(); onStatus(r);
+        toGame({ type: 'caffeine-challenge:hasil-tersimpan', hadiah: r.hadiah });
+      }
+    } catch (err) {
+      if (err.status === 404) clearOrder();
+      else if (err.status === 409 && tOrder && tOrder.rekaman) {   // rekaman ditolak server: jangan dicoba terus
+        delete tOrder.rekaman; saveT();
+        toGame({ type: 'caffeine-challenge:hasil-gagal', pesan: err.message + ' Hubungi admin kalau hasilnya tidak sesuai.' });
+      } else if (tOrder && tOrder.rekaman) setTimeout(refresh, 8000);
+    }
+  }
+  function onStatus(d) {
+    const prev = tData && tData.status;
+    tData = d;
+    renderPill(); syncGame();
+    if (d.status === 'cek_admin') { if (!pollTimer) startPoll(); } else stopPoll();
+    if (prev && prev !== d.status) {
+      if (chSheet.open) showForStatus();
+      else if (prev === 'cek_admin' && (d.status === 'lunas' || d.status === 'batal')) { showForStatus(); openCh(); }
+    }
+  }
+  document.addEventListener('visibilitychange', () => { if (!document.hidden && tOrder) refresh(); });
+
+  function renderPill() {
+    const box = $('[data-ch-status]'), d = tData;
+    if (!d) { box.hidden = true; return; }
+    const teks = {
+      menunggu_bayar: [`Pesanan ${d.kode} menunggu transfer ${d.hargaTeks}`, 'Lanjutkan'],
+      cek_admin: [`Menunggu konfirmasi admin untuk ${d.kode}`, 'Lihat'],
+      lunas: ['Pembayaran diterima. Tantanganmu sudah terbuka di game.', 'Info'],
+      main: [`Sedang bermain (${d.kode})`, 'Info'],
+      selesai: [`Hadiahmu: ${d.hadiah}`, 'Struk'],
+      batal: [`Pesanan ${d.kode} dibatalkan`, 'Lihat']
+    }[d.status] || ['', 'Lihat'];
+    box.hidden = false;
+    box.dataset.state = d.status;
+    $('[data-ch-status-text]').textContent = teks[0];
+    $('[data-ch-status-btn]').textContent = teks[1];
+  }
+  $('[data-ch-status-btn]').addEventListener('click', openTantangan);
+
+  /* ---------- tombol di pop-up ---------- */
+  function chError(sel, msg, field) {
+    const el = $(sel); el.textContent = msg; el.hidden = false;
+    if (field) field.focus();
+  }
+  chForm.addEventListener('submit', async e => {
+    e.preventDefault();
+    const f = chForm.elements;
+    $('[data-ch-error]').hidden = true;
+    const data = {
+      menu: f.menu ? f.menu.value : '', nama: f.nama.value.trim(), wa: normalWA(f.wa.value),
+      cara_terima: f.cara_terima.value, lokasi: f.lokasi.value.trim(), jam: f.jam.value,
+      catatan: f.catatan.value.trim(), bayar_ke: f.bayar_ke ? f.bayar_ke.value : '0'
+    };
+    if (!data.menu) return chError('[data-ch-error]', 'Pilih minuman dulu.');
+    if (!data.nama) return chError('[data-ch-error]', 'Tulis nama untuk pesanan ini.', f.nama);
+    if (!data.wa) return chError('[data-ch-error]', 'Tulis nomor WhatsApp yang aktif, contoh 081234567890.', f.wa);
+    if (data.cara_terima === 'Diantar' && !data.lokasi) return chError('[data-ch-error]', 'Tulis lokasi antar, misalnya gedung di kampus UMP atau nama kos.', f.lokasi);
+    const btn = $('[data-ch-submit]');
+    btn.disabled = true; btn.textContent = 'Membuat pesanan…';
+    try {
+      const r = await api('pesan', data);
+      tOrder = { kode: r.kode, token: r.token }; saveT();
+      delete r.token; tData = r;
+      renderPill(); fillBayar(); step('bayar');
+    } catch (err) {
+      chError('[data-ch-error]', err.message);
+    } finally {
+      btn.disabled = false; btn.textContent = 'Lanjut ke pembayaran';
+    }
+  });
+
+  function copyBtn(sel, getText) {
+    $(sel).addEventListener('click', async e => {
+      const b = e.currentTarget, old = b.textContent;
+      try { await navigator.clipboard.writeText(getText()); b.textContent = 'Tersalin'; } catch (err) { b.textContent = 'Salin manual'; }
+      setTimeout(() => { b.textContent = old; }, 1600);
+    });
+  }
+  copyBtn('[data-copy-amount]', () => String(tData.harga));
+  copyBtn('[data-copy-nomor]', () => tData.bayar_ke.nomor.replace(/\s/g, ''));
+
+  $('[data-ch-paid]').addEventListener('click', async e => {
+    const b = e.currentTarget;
+    b.disabled = true;
+    try { onStatus(await api('sudah-bayar', tOrder)); fillTunggu(); step('tunggu'); }
+    catch (err) { chError('[data-ch-error2]', err.message); }
+    finally { b.disabled = false; }
+  });
+  $('[data-ch-cancel]').addEventListener('click', async () => {
+    try { await api('batal', tOrder); } catch (err) { /* tetap dihapus dari HP */ }
+    clearOrder();
+    info('Pesanan dibatalkan', 'Pesanan paket tantangan ini sudah dibatalkan. Kamu bisa pesan lagi kapan saja selama pre-order dibuka.');
+  });
+  $('[data-ch-play]').addEventListener('click', () => {
+    closeCh();
+    chFrame.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'center' });
+    syncGame();
+    toGame({ type: 'caffeine-challenge:buka-tantangan' });
+  });
+  $('[data-ch-done]').addEventListener('click', () => { clearOrder(); closeCh(); });
+  $('[data-ch-info-btn]').addEventListener('click', () => {
+    if (tData && tData.status === 'batal') { clearOrder(); openTantangan(); } else closeCh();
+  });
+
+  /* ---------- pesan dari game ---------- */
+  window.addEventListener('message', async e => {
+    if (e.origin !== location.origin || e.source !== chFrame.contentWindow) return;
+    const m = e.data || {};
+    if (m.type === 'caffeine-challenge:minta-bayar') openTantangan();
+    else if (m.type === 'caffeine-challenge:minta-status') syncGame();
+    else if (m.type === 'caffeine-challenge:minta-mulai') {
+      if (!tOrder || !tData || tData.status !== 'lunas') {
+        toGame({ type: 'caffeine-challenge:mulai-gagal', pesan: 'Belum ada pembayaran yang dikonfirmasi admin.' }); return;
+      }
+      try { onStatus(await api('mulai', tOrder)); toGame({ type: 'caffeine-challenge:mulai-ok' }); }
+      catch (err) { toGame({ type: 'caffeine-challenge:mulai-gagal', pesan: err.message }); refresh(); }
+    } else if (m.type === 'caffeine-challenge:result' && m.mode === 'challenge') {
+      if (!tOrder) return;
+      try { onStatus(await api('hasil', { kode: tOrder.kode, token: tOrder.token, rekaman: m.rekaman || '' })); toGame({ type: 'caffeine-challenge:hasil-tersimpan', hadiah: tData.hadiah }); }
+      catch (err) {
+        if (err.status !== 409) { tOrder.rekaman = m.rekaman || ''; saveT(); }   // dicoba lagi otomatis
+        toGame({ type: 'caffeine-challenge:hasil-gagal', pesan: err.status === 409 ? err.message : 'Hasil belum tersimpan karena koneksi. Jangan tutup halaman ini, kami coba kirim ulang.' });
+        setTimeout(refresh, 3000);
+      }
+    } else if (m.type === 'caffeine-challenge:close') {
+      if (tData && tData.status === 'selesai') { fillHasil(); step('hasil'); openCh(); }
+    }
+  });
+  chFrame.addEventListener('load', syncGame);
+  if (tOrder) refresh();
 
   /* ================= Sosial ================= */
   function renderSocial() {

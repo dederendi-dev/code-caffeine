@@ -2,9 +2,11 @@
   PENGATURAN CODE CAFFEINE
   ------------------------
   File ini satu-satunya yang perlu diubah untuk mengganti nomor WA,
-  akun media sosial, jadwal, harga, atau menu. Simpan, lalu deploy ulang.
+  akun media sosial, jadwal, harga, rekening pembayaran, atau menu. Simpan, lalu deploy ulang.
+  File ini dibaca oleh web DAN oleh server (harga & jadwal pesanan Caffeine Challenge dicek di server).
 */
-window.CC_CONFIG = {
+(function (root) {
+var CC_CONFIG = {
   // Nomor WhatsApp tujuan pesanan. Format 62xxxxxxxxxx (tanpa +, spasi, atau 0 di depan).
   // Selama kosong, tombol pesan hanya menyalin teks pesanan.
   whatsapp: '6285604504216',
@@ -36,6 +38,19 @@ window.CC_CONFIG = {
       slot: ['15.00–16.00', '16.00–17.00', '17.00–18.00']
     }
   ],
+
+  // REKENING / E-WALLET TUJUAN PEMBAYARAN CAFFEINE CHALLENGE (transfer, lalu admin cek dan tandai lunas).
+  // Selama daftar ini kosong, pembelian tantangan belum dibuka (mode latihan tetap bisa dimainkan).
+  // Contoh: { jenis: 'DANA', nomor: '085604504216', atasNama: 'Dede Rendi Pauji' }
+  //         { jenis: 'Bank BRI', nomor: '1234 5678 9012 345', atasNama: 'Dede Rendi Pauji' }
+  // atasNama: nama pemilik akun DANA, supaya pembeli yakin transfernya benar. Kosong = tidak ditampilkan.
+  pembayaran: [
+    { jenis: 'DANA', nomor: '0856-0450-4216', atasNama: 'Yusuf Yanuar Aji W' }
+  ],
+
+  // Nomor WhatsApp admin yang dihubungi pembeli kalau pembayaran belum dikonfirmasi.
+  // Kosong = pakai nomor pesanan di atas.
+  whatsappAdmin: '',
 
   areaAntar: 'kampus UMP dan kos sekitar',
   lokasiAmbil: 'Kembaran',
@@ -82,3 +97,7 @@ window.CC_CONFIG = {
     }
   ]
 };
+
+if (typeof module === 'object' && module.exports) module.exports = CC_CONFIG;
+else root.CC_CONFIG = CC_CONFIG;
+})(this);

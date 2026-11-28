@@ -34,7 +34,7 @@
         <li><a href="#cara-pesan">Cara pesan</a></li>
         <li><a href="#jadwal">Jadwal</a></li>
         <li><a href="#member">Member</a></li>
-        <li><a href="/main/">Game</a></li>
+        <li><a href="#challenge">Game</a></li>
         <li><a href="#tentang">Tentang</a></li>
       </ul>
       <button class="btn btn-solid btn-sm" type="button" data-open-order>
@@ -73,6 +73,30 @@
       </div>
       <div class="cards" data-drinks></div>
       <div class="wrap"><p class="note">Small 12 oz, Medium 14 oz, Large 16 oz.</p></div>
+    </section>
+
+    <!-- CAFFEINE CHALLENGE: game langsung di halaman -->
+    <section class="section" id="challenge" aria-labelledby="ch-title">
+      <div class="wrap ch-split">
+        <div class="head ch-head">
+          <h2 id="ch-title">Caffeine Challenge</h2>
+          <p>Mini game buatan tim kami. Latihan gratis kapan saja. Mau berhadiah? Ambil paket tantangan: 1 cup Medium, main sekali, dan skormu menentukan bonusnya.</p>
+          <ul class="ch-tiers">
+            <li><b>Skor di bawah 1.800</b><span>Medium + voucher Rp1.000 untuk pesanan berikutnya</span></li>
+            <li><b>Skor 1.800</b><span>Medium + 1 cap tambahan di kartu stamp</span></li>
+            <li><b>Skor 3.000</b><span>Cup kamu di-upgrade ke Large</span></li>
+          </ul>
+          <p class="ch-how">Tekan <b>Tantangan</b> di game, pilih minuman, lalu transfer ke admin. Begitu admin mengonfirmasi, tantangan langsung terbuka di sini.</p>
+          <div class="ch-status glass" data-ch-status hidden>
+            <span class="ch-dot" aria-hidden="true"></span>
+            <span class="ch-status-text" data-ch-status-text></span>
+            <button type="button" class="btn btn-glass glass" data-ch-status-btn>Lihat</button>
+          </div>
+        </div>
+        <div class="ch-game">
+          <iframe src="/main/?embed=web" title="Caffeine Challenge" data-ch-frame></iframe>
+        </div>
+      </div>
     </section>
 
     <!-- ALASAN -->
@@ -155,15 +179,10 @@
 
     <!-- TENTANG -->
     <section class="section" id="tentang" aria-labelledby="about-title">
-      <div class="wrap split">
+      <div class="wrap">
         <div class="head">
           <h2 id="about-title">Dari dapur kos, untuk teman sekampus.</h2>
           <p>Code Caffeine dijalankan oleh Bytepreneur, enam mahasiswa Teknik Informatika Universitas Muhammadiyah Purwokerto. Kami meracik sendiri setiap minuman di dapur kos di Kembaran, lalu mengantarnya ke kampus.</p>
-        </div>
-        <div class="soon glass" id="challenge">
-          <h3>Caffeine Challenge</h3>
-          <p>Mini game buatan tim kami. Saat pesan, pilih <strong>Main Caffeine Challenge</strong> untuk 1 cup Medium. Minimal tetap Medium, skormu menentukan bonusnya: voucher Rp1.000, +1 cap kartu stamp, atau upgrade ke Large.</p>
-          <a class="btn btn-glass glass" href="/main/">Coba mode latihan</a>
         </div>
       </div>
     </section>
@@ -266,14 +285,6 @@
             </label>
           </div>
 
-          <div class="field" data-challenge>
-            <span>Caffeine Challenge <em>(opsional)</em></span>
-            <div class="ch-box">
-              <p class="ch-text" data-ch-text>Main sekali untuk 1 cup Medium di pesanan ini. Minimal tetap Medium, skormu menentukan bonusnya: voucher Rp1.000, +1 cap kartu stamp, atau upgrade ke Large.</p>
-              <button type="button" class="btn btn-glass glass ch-play" data-ch-play>Main Caffeine Challenge</button>
-              <small class="hint" data-ch-hint></small>
-            </div>
-          </div>
 
           <label class="field">
             <span>Tahu Code Caffeine dari mana? <em>(opsional)</em></span>
@@ -299,9 +310,6 @@
           <input type="hidden" name="jumlah_cup">
           <input type="hidden" name="total">
           <input type="hidden" name="stamp_gratis">
-          <input type="hidden" name="challenge">
-          <input type="hidden" name="challenge_skor">
-          <input type="hidden" name="challenge_rekaman">
         </fieldset>
 
         <p class="form-error" data-form-error role="alert" hidden></p>
@@ -324,22 +332,121 @@
     </div>
   </dialog>
 
-  <!-- Jendela Caffeine Challenge (game di /main/, dibuka dari form pesanan) -->
-  <dialog class="game-sheet" data-game aria-labelledby="game-title">
-    <div class="game-head">
-      <h2 id="game-title" data-game-title>Caffeine Challenge</h2>
-      <button type="button" class="btn game-close" data-game-close>Tutup</button>
+  <!-- Pop-up paket Caffeine Challenge: pesan, transfer, tunggu admin, main, struk -->
+  <dialog class="sheet ch-sheet" data-ch-sheet aria-labelledby="ch-sheet-title">
+    <div class="sheet-head">
+      <h2 id="ch-sheet-title" data-ch-title>Paket Challenge</h2>
+      <button type="button" class="icon-btn" data-ch-close aria-label="Tutup">
+        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </button>
     </div>
-    <iframe class="game-frame" data-game-frame title="Caffeine Challenge"></iframe>
+
+    <!-- 1. Isi pesanan -->
+    <form class="ch-pane" data-ch-step="form" novalidate>
+      <div class="sheet-body">
+        <p class="target" data-ch-target></p>
+        <div class="field">
+          <span id="ch-menu-label">Minuman (ukuran Medium)</span>
+          <div class="ch-menu" role="radiogroup" aria-labelledby="ch-menu-label" data-ch-menu></div>
+        </div>
+        <label class="field"><span>Nama</span><input name="nama" autocomplete="name" maxlength="60" placeholder="Nama untuk pesanan"></label>
+        <label class="field"><span>Nomor WhatsApp</span><input name="wa" type="tel" inputmode="tel" autocomplete="tel" maxlength="20" placeholder="08xxxxxxxxxx"></label>
+        <div class="field">
+          <span id="ch-terima-label">Cara terima</span>
+          <div class="seg" role="radiogroup" aria-labelledby="ch-terima-label">
+            <label><input type="radio" name="cara_terima" value="Diantar" checked><span>Diantar</span></label>
+            <label><input type="radio" name="cara_terima" value="Ambil sendiri"><span>Ambil sendiri</span></label>
+          </div>
+        </div>
+        <label class="field" data-ch-lokasi><span>Lokasi antar</span><input name="lokasi" maxlength="120" placeholder="Contoh: Gedung C kampus 1 UMP, atau nama kos"></label>
+        <label class="field"><span>Jam serah terima</span><select name="jam" data-ch-jam></select></label>
+        <div class="field" data-ch-bayar-field>
+          <span id="ch-bayar-label">Transfer ke</span>
+          <div class="ch-pay" role="radiogroup" aria-labelledby="ch-bayar-label" data-ch-bayar></div>
+        </div>
+        <label class="field"><span>Catatan <em>(opsional)</em></span><input name="catatan" maxlength="200" placeholder="Contoh: es sedikit"></label>
+        <p class="form-error" data-ch-error role="alert" hidden></p>
+      </div>
+      <div class="sheet-foot">
+        <button type="submit" class="btn btn-solid btn-wide" data-ch-submit>Lanjut ke pembayaran</button>
+        <p class="foot-note">Kesempatan main 1 kali, terbuka setelah admin mengonfirmasi transfermu.</p>
+      </div>
+    </form>
+
+    <!-- 2. Transfer -->
+    <div class="ch-pane" data-ch-step="bayar" hidden>
+      <div class="sheet-body">
+        <p class="ch-label">Transfer tepat</p>
+        <p class="ch-amount"><span data-ch-amount></span><button type="button" class="ch-copy" data-copy-amount>Salin</button></p>
+        <div class="ch-dest glass">
+          <p class="ch-dest-jenis" data-ch-jenis></p>
+          <p class="ch-dest-nomor"><span data-ch-nomor></span><button type="button" class="ch-copy" data-copy-nomor>Salin</button></p>
+          <p class="ch-dest-nama">a.n. <span data-ch-atasnama></span></p>
+        </div>
+        <p class="ch-code">Kode pesanan <b data-ch-kode></b>. Kalau bisa, tulis kode ini di catatan transfer.</p>
+        <p class="hint">Pesanan batal sendiri kalau tidak ada konfirmasi transfer dalam 1 jam.</p>
+        <p class="form-error" data-ch-error2 role="alert" hidden></p>
+      </div>
+      <div class="sheet-foot">
+        <button type="button" class="btn btn-solid btn-wide" data-ch-paid>Saya sudah transfer</button>
+        <button type="button" class="btn-link" data-ch-cancel>Batalkan pesanan</button>
+      </div>
+    </div>
+
+    <!-- 3. Menunggu admin -->
+    <div class="ch-pane" data-ch-step="tunggu" hidden>
+      <div class="sheet-body ch-center">
+        <span class="ch-spin" aria-hidden="true"></span>
+        <h3>Menunggu konfirmasi admin</h3>
+        <p>Admin sedang mengecek transfer <b data-ch-amount2></b> untuk pesanan <b data-ch-kode2></b>. Halaman ini lanjut sendiri begitu dikonfirmasi. Sambil menunggu, coba mode latihan dulu.</p>
+        <p class="ch-late" data-ch-late hidden>Sudah beberapa menit dan belum dikonfirmasi? Kabari admin lewat WhatsApp.</p>
+      </div>
+      <div class="sheet-foot">
+        <a class="btn btn-solid btn-wide" data-ch-wa target="_blank" rel="noopener">Hubungi admin via WhatsApp</a>
+        <button type="button" class="btn-link" data-ch-close>Tutup, saya tunggu</button>
+      </div>
+    </div>
+
+    <!-- 4. Lunas -->
+    <div class="ch-pane" data-ch-step="lunas" hidden>
+      <div class="sheet-body ch-center">
+        <span class="ch-ok" aria-hidden="true">✓</span>
+        <h3>Pembayaran diterima</h3>
+        <p>Tantanganmu sudah terbuka di game. Kesempatan main cuma 1 kali, dan langsung terpakai begitu kamu menekan <b>MULAI</b>.</p>
+      </div>
+      <div class="sheet-foot">
+        <button type="button" class="btn btn-solid btn-wide" data-ch-play>Main sekarang</button>
+      </div>
+    </div>
+
+    <!-- 5. Hasil / struk -->
+    <div class="ch-pane" data-ch-step="hasil" hidden>
+      <div class="sheet-body">
+        <p class="ch-label">Hadiahmu</p>
+        <p class="ch-prize" data-ch-prize></p>
+        <p class="ch-score" data-ch-score></p>
+        <dl class="ch-receipt" data-ch-receipt></dl>
+        <p class="hint">Screenshot halaman ini sebagai bukti. Pesananmu sudah tercatat di sistem kami.</p>
+      </div>
+      <div class="sheet-foot">
+        <button type="button" class="btn btn-solid btn-wide" data-ch-done>Selesai</button>
+        <a class="btn-link" data-ch-wa2 target="_blank" rel="noopener">Ada pertanyaan? Hubungi admin</a>
+      </div>
+    </div>
+
+    <!-- 6. Info (batal, belum dibuka, pre-order tutup) -->
+    <div class="ch-pane" data-ch-step="info" hidden>
+      <div class="sheet-body ch-center">
+        <h3 data-ch-info-title></h3>
+        <p data-ch-info-text></p>
+      </div>
+      <div class="sheet-foot">
+        <button type="button" class="btn btn-solid btn-wide" data-ch-info-btn>Oke</button>
+        <a class="btn-link" data-ch-wa3 target="_blank" rel="noopener">Hubungi admin</a>
+      </div>
+    </div>
   </dialog>
 
-  <!-- Catatan setiap permainan tantangan untuk kelompok (Netlify Forms). Tidak terlihat oleh pembeli. -->
-  <form name="challenge" data-netlify="true" netlify-honeypot="bot-field" hidden>
-    <input type="hidden" name="form-name" value="challenge">
-    <input name="bot-field">
-    <input name="nama"><input name="wa"><input name="skor"><input name="hasil">
-    <input name="status"><input name="rekaman"><input name="untuk_hari">
-  </form>
   <script src="/assets/js/config.js"></script>
   <script src="/assets/js/app.js"></script>
 </body>
