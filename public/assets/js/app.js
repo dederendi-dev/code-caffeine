@@ -9,7 +9,11 @@
   const DAY = 86400000;
   const rupiah = n => 'Rp' + n.toLocaleString('id-ID');
   const sizeOf = id => C.ukuran.find(u => u.id === id);
-  const drinkOf = id => C.menu.find(m => m.id === id);
+  // Menu diatur dari master admin: aktif=false disembunyikan, habis=true tampil tapi tidak bisa dipesan.
+  const MENU = C.menu.filter(m => m.aktif !== false);
+  const drinkOf = id => MENU.find(m => m.id === id);
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const ANDALAN = MENU.find(m => m.andalan) || MENU[0];
   const toMin = hhmm => { const [h, m] = hhmm.split(':').map(Number); return h * 60 + m; };
   const jam = hhmm => hhmm.replace(':', '.');
 
@@ -140,22 +144,24 @@
   }
 
   /* ================= Foto minuman ================= */
-  // Foto asli tiap menu (assets/img/menu/<id>.webp). Ukuran dipilih = foto diperbesar/diperkecil.
+  // Foto tiap menu dari pengaturan (foto, fotoBesar). Ukuran dipilih = foto diperbesar/diperkecil.
+  // Menu tanpa foto memakai ikon cangkir Code Caffeine.
   const SCALE = { S: 0.8, M: 0.9, L: 1 };
+  const NO_PHOTO = '/assets/img/logo-ikon.svg';
   function cupPhoto(drink, size, hero) {
     const u = sizeOf(size);
-    const src = `/assets/img/menu/${drink.id}${hero ? '-besar' : ''}.webp`;
+    const src = (hero && drink.fotoBesar) || drink.foto || NO_PHOTO;
     const load = hero ? 'fetchpriority="high"' : 'loading="lazy"';
-    return `<div class="cup-photo" data-cupgrp style="--s:${SCALE[size]}">
+    return `<div class="cup-photo${src === NO_PHOTO ? ' no-photo' : ''}" data-cupgrp style="--s:${SCALE[size]}">
         <span class="cup-shadow" aria-hidden="true"></span>
-        <img src="${src}" alt="${drink.nama}, ${u.nama} ${u.oz} oz" ${load} decoding="async" draggable="false">
+        <img src="${esc(src)}" alt="${esc(drink.nama)}, ${u.nama} ${u.oz} oz" ${load} decoding="async" draggable="false" onerror="this.onerror=null;this.src='${NO_PHOTO}';this.parentNode.classList.add('no-photo')">
       </div>`;
   }
 
   /* ================= Keranjang ================= */
   const KEY = 'cc-pesanan-v1';
   let cart = [];
-  try { cart = JSON.parse(localStorage.getItem(KEY) || '[]').filter(i => drinkOf(i.id) && sizeOf(i.size) && i.qty > 0); } catch (e) { cart = []; }
+  try { cart = JSON.parse(localStorage.getItem(KEY) || '[]').filter(i => drinkOf(i.id) && !drinkOf(i.id).habis && sizeOf(i.size) && i.qty > 0); } catch (e) { cart = []; }
   const save = () => { try { localStorage.setItem(KEY, JSON.stringify(cart)); } catch (e) { /* penyimpanan tidak tersedia */ } };
   const priceOf = i => drinkOf(i.id).harga[i.size];
   const cartCount = () => cart.reduce((a, i) => a + i.qty, 0);
@@ -190,18 +196,18 @@
   const priceHTML = (d, size) => `${rupiah(d.harga[size])}<small>${sizeOf(size).nama}, ${sizeOf(size).oz} oz</small>`;
 
   function renderMenu() {
-    $('[data-drinks]').innerHTML = C.menu.map(d => `
-      <article class="card${d.andalan ? ' featured' : ''}" data-drink="${d.id}">
+    $('[data-drinks]').innerHTML = MENU.map(d => `
+      <article class="card${d.andalan ? ' featured' : ''}${d.habis ? ' habis' : ''}" data-drink="${esc(d.id)}">
         <div class="card-cup">${cupPhoto(d, 'M')}</div>
-        <div class="card-title"><h3>${d.nama}</h3>${d.andalan ? '<span class="badge">Andalan</span>' : ''}</div>
-        <p class="card-desc">${d.deskripsi}</p>
+        <div class="card-title"><h3>${esc(d.nama)}</h3>${d.habis ? '<span class="badge badge-off">Habis</span>' : d.andalan ? '<span class="badge">Andalan</span>' : ''}</div>
+        <p class="card-desc">${esc(d.deskripsi)}</p>
         <fieldset class="sizes">
-          <legend>Ukuran ${d.nama}</legend>
+          <legend>Ukuran ${esc(d.nama)}</legend>
           ${C.ukuran.map(u => `<label><input type="radio" name="size-${d.id}" value="${u.id}"${u.id === 'M' ? ' checked' : ''}><span>${u.nama}</span></label>`).join('')}
         </fieldset>
         <div class="card-foot">
           <p class="price" data-price aria-live="polite">${priceHTML(d, 'M')}</p>
-          <button type="button" class="btn btn-solid" data-add>Tambah</button>
+          <button type="button" class="btn btn-solid" data-add${d.habis ? ' disabled' : ''}>${d.habis ? 'Habis' : 'Tambah'}</button>
         </div>
         <p class="in-cart" data-in-cart></p>
       </article>`).join('');
@@ -362,7 +368,11 @@
     return /^08\d{8,12}$/.test(d) ? d : '';
   }
 
-  function buildMessage(v, t, free) {
+  // Kode pesanan web: W + 5 karakter (tanpa huruf/angka yang mirip). Ikut di chat WA dan di CC Admin.
+  const ALFA = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+  const kodeBaru = () => 'W' + Array.from(crypto.getRandomValues(new Uint8Array(5)), b => ALFA[b % ALFA.length]).join('');
+
+  function buildMessage(v, t, free, kode) {
     const lines = cart.map(i => {
       const d = drinkOf(i.id), u = sizeOf(i.size);
       return `- ${i.qty}x ${d.nama} ${u.nama} (${u.oz} oz) = ${rupiah(priceOf(i) * i.qty)}`;
@@ -371,6 +381,7 @@
     return [
       'Halo Code Caffeine, saya mau pre-order.',
       '',
+      `Kode pesanan: ${kode}`,
       `Nama: ${v.nama}`,
       `No. WA: ${v.wa}`,
       `Untuk: ${tanggal(t, true)}`,
@@ -422,7 +433,8 @@
     const ev = openEvent(nowWIB());
     if (!ev) { renderCart(); return showError(closedText(nowWIB())); }
     const free = wantsStamp() ? stampItem() : null;
-    const msg = buildMessage(v, ev.day, free);
+    const kode = kodeBaru();
+    const msg = buildMessage(v, ev.day, free, kode);
 
     // Catatan pesanan untuk kelompok (Netlify Forms). Gagal mencatat tidak menghalangi pesanan.
     f.wa.value = v.wa;
@@ -436,6 +448,18 @@
         navigator.sendBeacon('/', new URLSearchParams(new FormData(form)));
       }
     } catch (err) { /* abaikan */ }
+    // Masuk ke CC Admin (semua admin dapat notifikasi). sendBeacon tetap terkirim walau halaman berpindah ke WhatsApp.
+    const rekam = JSON.stringify({
+      kode, nama: v.nama, wa: v.wa, cara_terima: v.cara_terima, lokasi: v.lokasi, jam: v.jam, bayar: v.bayar,
+      pernah_beli: v.pernah_beli, tukar_stamp: wantsStamp(), pakai_voucher: wantsVoucher(), sumber: f.sumber.value,
+      catatan: v.catatan, untuk_hari: tanggal(ev.day, true), untuk_ms: ev.day, total: netTotal(),
+      items: cart.map(i => ({ id: i.id, size: i.size, qty: i.qty })), 'bot-field': f['bot-field'] ? f['bot-field'].value : ''
+    });
+    try {
+      const ok = navigator.sendBeacon && navigator.sendBeacon('/api/order', new Blob([rekam], { type: 'text/plain;charset=UTF-8' }));
+      if (!ok) fetch('/api/order', { method: 'POST', body: rekam, keepalive: true }).catch(() => {});
+    } catch (err) { /* abaikan */ }
+    $('[data-sent-kode]').textContent = ` dengan kode ${kode}`;
 
     // Keranjang dikosongkan supaya pesanan yang sama tidak terkirim dua kali
     cart = []; save();
@@ -526,7 +550,8 @@
     const f = chForm.elements;
     $('[data-ch-target]').textContent = `Untuk hari jual ${tanggal(ev.day, true)}, diantar ${jamMs(ev.mulai)}–${jamMs(ev.selesai)}. Pre-order ditutup ${kapan(ev.tutup, nowWIB())}.`;
     const cur = f.menu ? f.menu.value : '';
-    $('[data-ch-menu]').innerHTML = C.menu.map((m, i) => `<label class="ch-opt"><input type="radio" name="menu" value="${m.id}"${(cur ? cur === m.id : i === 0) ? ' checked' : ''}><span><b>${m.nama}</b><em>${rupiah(m.harga.M)}</em></span></label>`).join('');
+    const jual = MENU.filter(m => !m.habis);
+    $('[data-ch-menu]').innerHTML = jual.map((m, i) => `<label class="ch-opt"><input type="radio" name="menu" value="${esc(m.id)}"${(jual.some(x => x.id === cur) ? cur === m.id : i === 0) ? ' checked' : ''}><span><b>${esc(m.nama)}</b><em>${rupiah(m.harga.M)}</em></span></label>`).join('');
     const rentang = `${jamMs(ev.mulai)}–${jamMs(ev.selesai)}`;
     $('[data-ch-jam]').innerHTML = ev.slot.map(x => `<option>${x}</option>`).join('') + `<option>Kapan saja, ${rentang}</option>`;
     const an = b => (b.atasNama ? `a.n. ${b.atasNama}` : b.nomor);
@@ -757,7 +782,11 @@
   }
 
   /* ================= Mulai ================= */
-  $('[data-hero-cup]').innerHTML = cupPhoto(drinkOf('dirty-latte'), 'L', true);
+  $('[data-hero-cup]').innerHTML = cupPhoto(ANDALAN, 'L', true);
+  $('[data-hero-name]').textContent = ANDALAN.nama;
+  $('[data-hero-price]').textContent = rupiah(ANDALAN.harga.M);
+  const termurah = Math.min(...MENU.map(m => m.harga.S));
+  $$('[data-min-price]').forEach(el => { el.textContent = rupiah(termurah); });
   renderMenu();
   renderStatus();
   renderWeek();

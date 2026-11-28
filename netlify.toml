@@ -32,4 +32,10 @@
     X-Robots-Tag = "noindex, nofollow"
     Cache-Control = "no-store"
 
+[[headers]]
+  for = "/master/*"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow"
+    Cache-Control = "no-store"
+
 # QR "Caffeine Challenge" di poster mengarah ke /main: halaman game ada di public/main/.

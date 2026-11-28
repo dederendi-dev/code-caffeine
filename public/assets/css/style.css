@@ -245,6 +245,9 @@ h3 { font-family: var(--f-display); font-weight: 600; letter-spacing: -.02em; }
   position: absolute; left: 50%; bottom: -3%; width: 74%; height: 8%; transform: translateX(-50%);
   border-radius: 50%; background: radial-gradient(closest-side, var(--cup-shadow), transparent);
 }
+.cup-photo.no-photo img { height: 62%; margin-bottom: 14%; opacity: .9; }
+.card.habis .card-cup { opacity: .45; filter: grayscale(.7); }
+.badge.badge-off { color: var(--ink2); border-color: var(--line-strong); }
 .card-title { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .card h3 { font-size: 24px; line-height: 1.15; }
 .badge { padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; color: var(--accent); border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent); }

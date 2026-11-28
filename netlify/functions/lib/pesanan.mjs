@@ -1,10 +1,9 @@
 // Aturan pesanan Caffeine Challenge yang dipakai API pembeli dan admin.
-import C from '../../../public/assets/js/config.js';
 import SIM from '../../../public/main/sim.js';
 import { tanggal, jamMs } from './jadwal.mjs';
 import { rupiah } from './util.mjs';
 
-export { C, SIM };
+export { SIM };
 export const KEY = kode => 'pesanan/' + kode;
 export const BATAS_BAYAR = 60 * 60 * 1000;      // pesanan tanpa konfirmasi transfer batal sendiri setelah 1 jam
 export const BATAS_MAIN = 15 * 60 * 1000;       // menekan MULAI tapi tidak mengirim hasil: dianggap skor 0

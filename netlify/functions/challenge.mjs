@@ -4,14 +4,16 @@ import { store, update } from './lib/store.mjs';
 import { json, fail, body, str, normalWA, kodeBaru, tokenBaru, samaAman, rupiah } from './lib/util.mjs';
 import { nowWIB, openEvent } from './lib/jadwal.mjs';
 import { kirimNotif } from './lib/push.mjs';
-import { C, SIM, KEY, publik, kedaluwarsa, hadiahTeks, labelHari, jamAntar } from './lib/pesanan.mjs';
+import { SIM, KEY, publik, kedaluwarsa, hadiahTeks, labelHari, jamAntar } from './lib/pesanan.mjs';
+import { getConfig, menuJual } from './lib/katalog.mjs';
 
 export const config = { path: '/api/challenge/*' };
 
 async function ambil(st, kode, token) {
   if (!/^CC[A-Z0-9]{5}$/.test(kode || '')) return { err: fail('Kode pesanan tidak dikenal.', 404) };
   const p = await st.get(KEY(kode), { type: 'json' });
-  if (!p || !samaAman(p.token, token || '')) return { err: fail('Pesanan tidak ditemukan.', 404) };
+  // pesanan yang dipindah ke tempat sampah oleh master admin dianggap tidak ada
+  if (!p || p.dihapus_at || !samaAman(p.token, token || '')) return { err: fail('Pesanan tidak ditemukan.', 404) };
   const exp = kedaluwarsa(p);
   if (exp) { const r = await update(st, KEY(kode), cur => kedaluwarsa(cur)); return { p: r.data || exp }; }
   return { p };
@@ -30,11 +32,12 @@ export default async (req) => {
   const b = await body(req);
 
   if (aksi === 'pesan') {
+    const C = await getConfig();
     if (!C.pembayaran || !C.pembayaran.length) return fail('Pembayaran tantangan belum dibuka.', 409);
-    const ev = openEvent(nowWIB());
+    const ev = openEvent(nowWIB(), C);
     if (!ev) return fail('Pre-order sedang ditutup, jadi tantangan belum bisa dibeli.', 409);
-    const m = C.menu.find(x => x.id === b.menu);
-    if (!m) return fail('Pilih minuman dulu.');
+    const m = menuJual(C).find(x => x.id === b.menu);
+    if (!m) return fail(C.menu.some(x => x.id === b.menu) ? 'Minuman ini sedang habis. Pilih minuman lain.' : 'Pilih minuman dulu.');
     const nama = str(b.nama, 60), wa = normalWA(b.wa);
     const cara = b.cara_terima === 'Ambil sendiri' ? 'Ambil sendiri' : 'Diantar';
     const lokasi = str(b.lokasi, 120);

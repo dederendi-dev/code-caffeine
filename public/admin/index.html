@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="CC Admin">
-<title>Admin · Code Caffeine</title>
+<title>CC Admin · Code Caffeine</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <style>
@@ -108,6 +108,8 @@ main { max-width: 720px; margin: 0 auto; padding: 20px 16px 96px; }
 .hadiah b { font-weight: 650; }
 .flag { display: inline-block; margin-top: 6px; padding: 2px 10px; border-radius: 999px; font-size: 12.5px; font-weight: 600; background: color-mix(in srgb, var(--off) 16%, transparent); color: var(--off); }
 .flag.ok { background: color-mix(in srgb, var(--paid) 15%, transparent); color: var(--paid); }
+.flag.wait { background: color-mix(in srgb, var(--cek) 16%, transparent); color: var(--cek); }
+.rekap { color: var(--ink); font-weight: 600; }
 .when { color: var(--ink3); font-size: 13px; margin-top: 4px; }
 .acts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
 .conf { margin-top: 10px; padding: 12px; border-radius: 12px; background: var(--soft); }
@@ -146,12 +148,12 @@ details a { color: var(--ink2); }
 
 <main data-app hidden>
   <header class="top">
-    <h1>Pesanan Challenge</h1>
+    <h1>Pesanan</h1>
     <p class="who">Masuk sebagai <b data-who></b><button type="button" data-logout>Keluar</button></p>
   </header>
 
   <div class="sum">
-    <div class="cek"><b class="num" data-n-cek>0</b><span>Perlu dicek</span></div>
+    <div class="cek"><b class="num" data-n-cek>0</b><span>Perlu ditindak</span></div>
     <div><b class="num" data-n-antar>0</b><span>Belum diantar</span></div>
     <div><b class="num" data-omzet>Rp0</b><span>Sudah lunas</span></div>
   </div>
@@ -237,29 +239,56 @@ details a { color: var(--ink2); }
   }
 
   /* ---------- data & tampilan ---------- */
-  let orders = [], admin = '', vapid = '', timer = 0, firstLoad = true, lastOk = 0;
-  let seenCek = new Set();
-  const open = { kode: '', aksi: '' };     // konfirmasi yang sedang terbuka
+  // Dua jenis pesanan: 'web' (pesanan biasa lewat form, tunai/transfer) dan 'challenge' (paket game, bayar DANA).
+  let all = [], admin = '', vapid = '', pembayaran = [], timer = 0, firstLoad = true, lastOk = 0;
+  let seenTindak = new Set();
+  const open = { key: '', aksi: '' };     // konfirmasi yang sedang terbuka
   const busy = new Set();
+  const keyOf = p => p.jenis + ':' + p.id;
+  const isWeb = p => p.jenis === 'web';
+  const st = p => p.status || 'baru';
+  const perluTindak = p => (isWeb(p) && st(p) === 'baru') || (!isWeb(p) && p.status === 'cek_admin');
+  const belumAntar = p => !p.diantar && (isWeb(p) ? st(p) === 'diproses' : ['lunas', 'main', 'selesai'].includes(p.status));
+  const sudahBayar = p => isWeb(p) ? p.lunas && st(p) !== 'batal' : ['lunas', 'main', 'selesai'].includes(p.status);
+  const nominal = p => isWeb(p) ? p.total : p.harga;
+  const hari = p => (isWeb(p) ? p.untuk_hari : p.untuk) || 'Tanpa tanggal';
 
   const GROUPS = [
-    { id: 'cek', title: 'Perlu dicek', c: 'var(--cek)', hint: 'Pembeli bilang sudah transfer. Cek DANA, lalu tandai lunas.', match: p => p.status === 'cek_admin', sort: 'lama' },
-    { id: 'tunggu', title: 'Menunggu transfer', c: 'var(--wait)', hint: 'Batal otomatis kalau 1 jam tidak ada konfirmasi.', match: p => p.status === 'menunggu_bayar' },
-    { id: 'lunas', title: 'Lunas, belum main', c: 'var(--paid)', match: p => p.status === 'lunas' && !p.diantar },
-    { id: 'main', title: 'Sedang main', c: 'var(--play)', match: p => p.status === 'main' && !p.diantar },
-    { id: 'antar', title: 'Siap diantar', c: 'var(--done)', match: p => p.status === 'selesai' && !p.diantar, copy: true },
-    { id: 'diantar', title: 'Sudah diantar', c: 'var(--sent)', match: p => p.diantar && p.status !== 'batal' },
-    { id: 'batal', title: 'Batal', c: 'var(--off)', match: p => p.status === 'batal' }
+    { id: 'baru', title: 'Pesanan baru', c: 'var(--cek)', hint: 'Balas pembeli di WhatsApp (tombol WA pembeli), lalu tekan Terima pesanan.', match: p => isWeb(p) && st(p) === 'baru', sort: 'lama', wajib: true },
+    { id: 'cek', title: 'Cek transfer Challenge', c: 'var(--cek)', hint: 'Pembeli bilang sudah transfer. Cek DANA, lalu tandai lunas.', match: p => !isWeb(p) && p.status === 'cek_admin', sort: 'lama' },
+    { id: 'antar', title: 'Siap dibuat & diantar', c: 'var(--done)', match: p => !p.diantar && ((isWeb(p) && st(p) === 'diproses') || (!isWeb(p) && p.status === 'selesai')), copy: true, rekap: true },
+    { id: 'lunas', title: 'Challenge lunas, belum main', c: 'var(--paid)', hint: 'Minumannya tetap dibuat Medium; ukuran akhirnya menunggu hasil game.', match: p => !isWeb(p) && p.status === 'lunas' && !p.diantar },
+    { id: 'main', title: 'Challenge sedang main', c: 'var(--play)', match: p => !isWeb(p) && p.status === 'main' && !p.diantar },
+    { id: 'tunggu', title: 'Challenge menunggu transfer', c: 'var(--wait)', hint: 'Batal otomatis kalau 1 jam tidak ada konfirmasi.', match: p => !isWeb(p) && p.status === 'menunggu_bayar' },
+    { id: 'diantar', title: 'Sudah diantar', c: 'var(--sent)', match: p => p.diantar && st(p) !== 'batal' },
+    { id: 'batal', title: 'Batal', c: 'var(--off)', match: p => st(p) === 'batal' }
   ];
 
-  const ACTIONS = {
+  const A_CH = {
     lunas: { label: 'Tandai lunas', cls: '', tanya: p => `Sudah cek DANA dan ada uang masuk ${rupiah(p.harga)} dari ${p.nama}? Tantangan langsung terbuka di HP pembeli.`, ya: 'Ya, sudah masuk', ok: 'ditandai lunas' },
     batal: { label: 'Batalkan', cls: 'warn', tanya: p => `Batalkan pesanan ${p.kode}? Pembeli akan melihat alasannya.`, ya: 'Ya, batalkan', alasan: true, ok: 'dibatalkan' },
-    belum_lunas: { label: 'Kembalikan ke belum lunas', cls: 'ghost', tanya: () => 'Kembalikan ke "perlu dicek"? Tantangan di HP pembeli terkunci lagi.', ya: 'Ya, kembalikan', ok: 'dikembalikan ke perlu dicek' },
+    belum_lunas: { label: 'Kembalikan ke belum lunas', cls: 'ghost', tanya: () => 'Kembalikan ke "cek transfer"? Tantangan di HP pembeli terkunci lagi.', ya: 'Ya, kembalikan', ok: 'dikembalikan ke cek transfer' },
     diantar: { label: 'Tandai diantar', cls: '', tanya: p => `${p.nama} sudah menerima minumannya?`, ya: 'Ya, sudah diantar', ok: 'ditandai diantar' },
     belum_diantar: { label: 'Belum diantar', cls: 'ghost', ok: 'dikembalikan ke belum diantar' }
   };
+  const A_WEB = {
+    terima: { label: 'Terima pesanan', cls: '', ok: 'diterima' },
+    lunas: { label: 'Tandai lunas', cls: '', tanya: p => p.bayar === 'Tunai' ? `Uang tunai ${rupiah(p.total)} dari ${p.nama} sudah diterima?` : `Sudah cek dan ada transfer masuk ${rupiah(p.total)} dari ${p.nama}?`, ya: 'Ya, lunas', ok: 'ditandai lunas' },
+    belum_lunas: { label: 'Belum lunas', cls: 'ghost', tanya: () => 'Tandai pesanan ini belum lunas lagi?', ya: 'Ya, belum lunas', ok: 'ditandai belum lunas' },
+    diantar: { label: 'Tandai diantar', cls: '', tanya: p => `${p.nama} sudah menerima pesanannya?${p.lunas ? '' : ' Pembayarannya masih tercatat belum lunas.'}`, ya: 'Ya, sudah diantar', ok: 'ditandai diantar' },
+    belum_diantar: { label: 'Belum diantar', cls: 'ghost', ok: 'dikembalikan ke belum diantar' },
+    batal: { label: 'Batalkan', cls: 'warn', tanya: p => `Batalkan pesanan ${p.kode} atas nama ${p.nama}?`, ya: 'Ya, batalkan', alasan: true, ok: 'dibatalkan' },
+    aktifkan: { label: 'Aktifkan lagi', cls: 'ghost', ok: 'diaktifkan lagi' }
+  };
+  const actsOf = p => isWeb(p) ? A_WEB : A_CH;
   function actionsFor(p) {
+    if (isWeb(p)) {
+      const s = st(p);
+      if (s === 'baru') return ['terima', 'batal'];
+      if (s === 'batal') return ['aktifkan'];
+      if (p.diantar) return [p.lunas ? null : 'lunas', 'belum_diantar'].filter(Boolean);
+      return [p.lunas ? null : 'lunas', 'diantar', p.lunas ? 'belum_lunas' : null, 'batal'].filter(Boolean);
+    }
     if (p.status === 'cek_admin' || p.status === 'menunggu_bayar') return ['lunas', 'batal'];
     if (p.status === 'lunas') return p.diantar ? ['belum_diantar'] : ['diantar', 'belum_lunas', 'batal'];
     if (p.status === 'main' || p.status === 'selesai') return p.diantar ? ['belum_diantar'] : ['diantar'];
@@ -277,9 +306,20 @@ details a { color: var(--ink2); }
   }
   const riwayatJam = iso => fmtJam.format(new Date(iso));
 
+  function infoBayar() {
+    const b = pembayaran[0];
+    return b ? `${b.jenis} ${b.nomor}${b.atasNama ? ' a.n. ' + b.atasNama : ''}` : '';
+  }
   function waBuyer(p) {
     let t;
-    if (p.status === 'lunas') t = `Halo ${p.nama}, pembayaran paket Caffeine Challenge ${p.kode} sudah kami terima. Tantanganmu sudah terbuka di web Code Caffeine, buka lagi halamannya lalu tekan TANTANGAN. Selamat main!`;
+    if (isWeb(p)) {
+      const terima = p.cara_terima === 'Diantar' ? `diantar ke ${p.lokasi}` : p.lokasi.replace(/^Ambil/, 'ambil');
+      const bayar = st(p) === 'batal' ? '' : p.lunas ? ' Pembayaran sudah kami terima.'
+        : p.bayar === 'Transfer' ? ` Silakan transfer ${rupiah(p.total)}${infoBayar() ? ' ke ' + infoBayar() : ''}, lalu kirim buktinya di chat ini ya.`
+        : ' Bayarnya tunai saat serah terima ya.';
+      t = st(p) === 'batal' ? `Halo ${p.nama}, ini admin Code Caffeine soal pesanan ${p.kode}.`
+        : `Halo ${p.nama}, pesanan Code Caffeine ${p.kode} sudah kami terima: ${p.pesanan}. Total ${rupiah(p.total)}, ${terima}, ${p.untuk_hari}${p.jam ? ' jam ' + p.jam : ''}.${bayar} Terima kasih!`;
+    } else if (p.status === 'lunas') t = `Halo ${p.nama}, pembayaran paket Caffeine Challenge ${p.kode} sudah kami terima. Tantanganmu sudah terbuka di web Code Caffeine, buka lagi halamannya lalu tekan TANTANGAN. Selamat main!`;
     else if (p.status === 'cek_admin' || p.status === 'menunggu_bayar') t = `Halo ${p.nama}, ini admin Code Caffeine soal pesanan Caffeine Challenge ${p.kode} (${rupiah(p.harga)}).`;
     else if (p.status === 'selesai') t = `Halo ${p.nama}, ini admin Code Caffeine. Pesanan ${p.kode}: ${p.hadiah}. Diantar ${p.untuk}, ${p.jam}.`;
     else t = `Halo ${p.nama}, ini admin Code Caffeine soal pesanan ${p.kode}.`;
@@ -287,30 +327,39 @@ details a { color: var(--ink2); }
   }
 
   function card(p, g) {
-    const bayar = p.status === 'cek_admin' ? `bilang sudah transfer ${lalu(p.sudah_bayar_at)}`
+    const k = keyOf(p), A = actsOf(p);
+    let when;
+    if (isWeb(p)) when = st(p) === 'baru' ? `masuk ${lalu(p.dibuat)}` : p.diterima_oleh ? `diterima ${p.diterima_oleh} ${lalu(p.diterima_at)}` : `masuk ${lalu(p.dibuat)}`;
+    else when = p.status === 'cek_admin' ? `bilang sudah transfer ${lalu(p.sudah_bayar_at)}`
       : p.status === 'menunggu_bayar' ? `dipesan ${lalu(p.dibuat)}, belum transfer`
       : p.lunas_at ? `lunas ${lalu(p.lunas_at)}${p.lunas_oleh ? ' oleh ' + p.lunas_oleh : ''}` : `dipesan ${lalu(p.dibuat)}`;
     const flags = [];
+    if (isWeb(p) && st(p) !== 'batal') flags.push(p.lunas ? `<span class="flag ok">${esc(p.bayar || 'Bayar')} · lunas${p.lunas_oleh ? ' (' + esc(p.lunas_oleh) + ')' : ''}</span>` : `<span class="flag wait">${esc(p.bayar || 'Bayar')} · belum lunas</span>`);
+    if (isWeb(p) && p.stamp_gratis) flags.push(`<span class="flag wait">Tukar stamp: ${esc(p.stamp_gratis)} gratis, cek kartunya</span>`);
+    if (isWeb(p) && p.pakai_voucher) flags.push('<span class="flag wait">Pakai voucher Rp1.000, cek nomornya</span>');
     if (p.curiga) flags.push(`<span class="flag" title="${esc(p.curiga)}">Perlu dicek: hasil terkirim terlalu cepat</span>`);
     if (p.tidak_selesai) flags.push('<span class="flag">Tidak menyelesaikan permainan (skor 0)</span>');
-    if (p.status === 'batal' && p.alasan_batal) flags.push(`<span class="flag">${esc(p.alasan_batal)}</span>`);
+    if (st(p) === 'batal' && p.alasan_batal) flags.push(`<span class="flag">${esc(p.alasan_batal)}</span>`);
     if (p.diantar) flags.push(`<span class="flag ok">Diantar${p.diantar_oleh ? ' oleh ' + esc(p.diantar_oleh) : ''}</span>`);
-    const hadiah = p.hadiah ? `<p class="hadiah">Hadiah: <b>${esc(p.hadiah)}</b>${p.skor != null ? ` <span class="kode num">· skor ${Number(p.skor).toLocaleString('id-ID')}</span>` : ''}</p>` : '';
+    const isi = isWeb(p)
+      ? `<p class="meta"><b>${esc(p.pesanan)}</b></p>`
+      : `<p class="meta"><b>${esc(p.menuNama)} Medium</b> · paket Challenge</p>${p.hadiah ? `<p class="hadiah">Hadiah: <b>${esc(p.hadiah)}</b>${p.skor != null ? ` <span class="kode num">· skor ${Number(p.skor).toLocaleString('id-ID')}</span>` : ''}</p>` : ''}`;
+    const terima = p.cara_terima === 'Diantar' ? 'Diantar ke ' + p.lokasi : p.lokasi;
     const acts = actionsFor(p);
-    const conf = open.kode === p.kode && ACTIONS[open.aksi] && ACTIONS[open.aksi].tanya ? ACTIONS[open.aksi] : null;
-    const isBusy = busy.has(p.kode);
-    const tombol = conf ? '' : `<div class="acts">${acts.map(a => `<button class="btn ${ACTIONS[a].cls}" type="button" data-act="${a}" data-kode="${p.kode}"${isBusy ? ' disabled' : ''}>${ACTIONS[a].label}</button>`).join('')}<a class="btn ghost" href="${waBuyer(p)}" target="_blank" rel="noopener">WA pembeli</a></div>`;
-    const konfirmasi = conf ? `<div class="conf"><p>${esc(conf.tanya(p))}</p>${conf.alasan ? '<input type="text" maxlength="120" placeholder="Alasan (opsional), misalnya transfer tidak masuk" aria-label="Alasan pembatalan" data-alasan>' : ''}<div class="acts"><button class="btn ${open.aksi === 'batal' ? 'warn' : ''}" type="button" data-yes="${open.aksi}" data-kode="${p.kode}"${isBusy ? ' disabled' : ''}>${isBusy ? 'Menyimpan…' : conf.ya}</button><button class="btn ghost" type="button" data-no>Tidak jadi</button></div></div>` : '';
+    const conf = open.key === k && A[open.aksi] && A[open.aksi].tanya ? A[open.aksi] : null;
+    const isBusy = busy.has(k);
+    const tombol = conf ? '' : `<div class="acts">${acts.map(a => `<button class="btn ${A[a].cls}" type="button" data-act="${a}" data-key="${esc(k)}"${isBusy ? ' disabled' : ''}>${A[a].label}</button>`).join('')}<a class="btn ghost" href="${waBuyer(p)}" target="_blank" rel="noopener">WA pembeli</a></div>`;
+    const konfirmasi = conf ? `<div class="conf"><p>${esc(conf.tanya(p))}</p>${conf.alasan ? '<input type="text" maxlength="120" placeholder="Alasan (opsional), misalnya pembeli membatalkan" aria-label="Alasan pembatalan" data-alasan>' : ''}<div class="acts"><button class="btn ${open.aksi === 'batal' ? 'warn' : ''}" type="button" data-yes="${open.aksi}" data-key="${esc(k)}"${isBusy ? ' disabled' : ''}>${isBusy ? 'Menyimpan…' : conf.ya}</button><button class="btn ghost" type="button" data-no>Tidak jadi</button></div></div>` : '';
     const riwayat = (p.riwayat || []).map(r => `<li>${esc(riwayatJam(r.t))}: ${esc(r.ev)}${r.oleh ? ' (' + esc(r.oleh) + ')' : ''}</li>`).join('');
-    const cek = p.rekaman != null && p.status === 'selesai' && !p.tidak_selesai ? `<p><a href="/main/#cek=${esc(p.rekaman)}" target="_blank" rel="noopener">Putar ulang hitungan skor</a></p>` : '';
-    return `<article class="ord${p._baru ? ' baru' : ''}" style="--c:${g.c}" data-ord="${p.kode}">
-      <div class="r1"><h3>${esc(p.nama)}</h3><span class="harga num">${esc(rupiah(p.harga))}</span></div>
-      <p class="kode num">${esc(p.kode)} · ${esc(p.wa)}</p>
-      <p class="meta"><b>${esc(p.menuNama)} Medium</b> · ${esc(p.cara_terima === 'Diantar' ? 'Diantar ke ' + p.lokasi : p.lokasi)} · ${esc(p.jam)}</p>
+    const cek = !isWeb(p) && p.rekaman != null && p.status === 'selesai' && !p.tidak_selesai ? `<p><a href="/main/#cek=${esc(p.rekaman)}" target="_blank" rel="noopener">Putar ulang hitungan skor</a></p>` : '';
+    return `<article class="ord${p._baru ? ' baru' : ''}" style="--c:${g.c}" data-ord="${esc(k)}">
+      <div class="r1"><h3>${esc(p.nama)}</h3><span class="harga num">${esc(rupiah(nominal(p)))}</span></div>
+      <p class="kode num">${esc(p.kode)} · ${isWeb(p) ? 'Pesanan web' : 'Paket Challenge'} · ${esc(p.wa)}</p>
+      ${isi}
+      <p class="meta">${esc(terima)} · ${esc(p.jam)} · ${esc(hari(p))}</p>
       ${p.catatan ? `<p class="meta">Catatan: ${esc(p.catatan)}</p>` : ''}
-      ${hadiah}
       ${flags.join(' ')}
-      <p class="when">${esc(bayar)} · ke ${esc(p.bayar_ke && p.bayar_ke.jenis)} ${esc(p.bayar_ke && p.bayar_ke.nomor)}</p>
+      <p class="when">${esc(when)}${!isWeb(p) ? ` · ke ${esc(p.bayar_ke && p.bayar_ke.jenis)} ${esc(p.bayar_ke && p.bayar_ke.nomor)}` : ''}</p>
       ${tombol}${konfirmasi}
       <details><summary>Riwayat</summary><ul>${riwayat}</ul>${cek}</details>
     </article>`;
@@ -318,44 +367,60 @@ details a { color: var(--ink2); }
 
   function filtered() {
     const q = $('[data-q]').value.trim().toLowerCase();
-    const hari = $('[data-hari]').value;
+    const h = $('[data-hari]').value;
     const digits = q.replace(/\D/g, '');
-    return orders.filter(p => {
-      if (hari && String(p.untuk_ms) !== hari) return false;
+    return all.filter(p => {
+      if (h && hari(p) !== h) return false;
       if (!q) return true;
-      return p.nama.toLowerCase().includes(q) || p.kode.toLowerCase().includes(q) || (digits.length >= 3 && p.wa.includes(digits));
+      return String(p.nama).toLowerCase().includes(q) || String(p.kode).toLowerCase().includes(q) || (digits.length >= 3 && String(p.wa).includes(digits));
     });
   }
 
   function renderHari() {
     const sel = $('[data-hari]'), cur = sel.value;
-    const days = [...new Map(orders.map(p => [String(p.untuk_ms), p.untuk])).entries()].sort((a, b) => b[0] - a[0]);
-    sel.innerHTML = '<option value="">Semua hari</option>' + days.map(([ms, label]) => `<option value="${esc(ms)}">${esc(label)}</option>`).join('');
-    if (days.some(d => d[0] === cur)) sel.value = cur;
+    const days = [...new Set(all.map(hari))];
+    sel.innerHTML = '<option value="">Semua hari</option>' + days.map(d => `<option value="${esc(d)}">${esc(d)}</option>`).join('');
+    if (days.includes(cur)) sel.value = cur;
     sel.hidden = days.length < 2;
   }
 
+  // Rekap cup yang perlu dibuat dari kelompok "Siap dibuat & diantar"
+  function rekap(items) {
+    const n = new Map();
+    const add = (k, q) => n.set(k, (n.get(k) || 0) + q);
+    for (const p of items) {
+      if (!isWeb(p)) { add(`${p.menuNama} ${p.tier === 'large' ? 'Large' : 'Medium'}`, 1); continue; }
+      if (p.items && p.items.length) p.items.forEach(i => add(`${i.nama} ${{ S: 'Small', M: 'Medium', L: 'Large' }[i.ukuran]}`, i.qty));
+      else String(p.pesanan || '').split(';').forEach(x => { const m = x.trim().match(/^(\d+)x (.+)$/); if (m) add(m[2], Number(m[1])); });
+    }
+    const tot = [...n.values()].reduce((a, b) => a + b, 0);
+    return tot ? `Total ${tot} cup: ` + [...n.entries()].sort((a, b) => b[1] - a[1]).map(([k, q]) => `${q}x ${k}`).join(', ') : '';
+  }
+
   function render() {
-    // jangan ganggu admin yang sedang mengetik alasan
     const typing = document.activeElement && document.activeElement.matches('[data-alasan]');
     const alasan = typing ? document.activeElement.value : '';
     const list = filtered();
-    $('[data-n-cek]').textContent = list.filter(p => p.status === 'cek_admin').length;
-    $('[data-n-antar]').textContent = list.filter(p => ['lunas', 'main', 'selesai'].includes(p.status) && !p.diantar).length;
-    $('[data-omzet]').textContent = rupiah(list.filter(p => ['lunas', 'main', 'selesai'].includes(p.status)).reduce((s, p) => s + p.harga, 0));
+    $('[data-n-cek]').textContent = list.filter(perluTindak).length;
+    $('[data-n-antar]').textContent = list.filter(belumAntar).length;
+    $('[data-omzet]').textContent = rupiah(list.filter(sudahBayar).reduce((s, p) => s + nominal(p), 0));
     const html = GROUPS.map(g => {
       let items = list.filter(g.match);
-      if (!items.length && g.id !== 'cek') return '';
-      if (g.sort === 'lama') items = items.slice().sort((a, b) => Date.parse(a.sudah_bayar_at || a.dibuat) - Date.parse(b.sudah_bayar_at || b.dibuat));
+      if (!items.length && !g.wajib) return '';
+      items = items.slice().sort((a, b) => g.sort === 'lama'
+        ? Date.parse(a.sudah_bayar_at || a.dibuat) - Date.parse(b.sudah_bayar_at || b.dibuat)
+        : Date.parse(b.dibuat) - Date.parse(a.dibuat));
+      const r = g.rekap && items.length ? rekap(items) : '';
       return `<section class="grp" style="--c:${g.c}">
         <div class="grp-h"><h2><i></i>${g.title} <small class="num">${items.length}</small></h2>${g.copy && items.length ? '<button class="btn ghost" type="button" data-copy>Salin daftar antar</button>' : ''}</div>
+        ${r ? `<p class="empty rekap">${esc(r)}</p>` : ''}
         ${g.hint && items.length ? `<p class="empty">${g.hint}</p>` : ''}
-        ${items.length ? items.map(p => card(p, g)).join('') : '<p class="empty">Tidak ada transfer yang perlu dicek.</p>'}
+        ${items.length ? items.map(p => card(p, g)).join('') : '<p class="empty">Tidak ada pesanan baru. Pesanan dari web akan muncul di sini.</p>'}
       </section>`;
     }).join('');
-    $('[data-list]').innerHTML = html || '<p class="empty">Belum ada pesanan paket Challenge.</p>';
-    const n = orders.filter(p => p.status === 'cek_admin').length;
-    document.title = (n ? `(${n}) ` : '') + 'Admin · Code Caffeine';
+    $('[data-list]').innerHTML = html;
+    const n = all.filter(perluTindak).length;
+    document.title = (n ? `(${n}) ` : '') + 'CC Admin · Code Caffeine';
     if (typing) { const inp = $('[data-alasan]'); if (inp) { inp.value = alasan; inp.focus(); } }
   }
 
@@ -373,11 +438,15 @@ details a { color: var(--ink2); }
     if (!key) { showGate(); return; }
     try {
       const d = await api('pesanan');
-      admin = d.admin; vapid = d.vapid || '';
-      const cekNow = d.pesanan.filter(p => p.status === 'cek_admin').map(p => p.kode);
-      const baru = firstLoad ? [] : cekNow.filter(k => !seenCek.has(k));
-      seenCek = new Set(cekNow);
-      orders = d.pesanan.map(p => ({ ...p, _baru: baru.includes(p.kode) }));
+      admin = d.admin; vapid = d.vapid || ''; pembayaran = d.pembayaran || [];
+      const list = [
+        ...(d.web || []).map(p => ({ ...p, jenis: 'web' })),
+        ...d.pesanan.map(p => ({ ...p, jenis: 'challenge', id: p.kode }))
+      ];
+      const tindak = list.filter(perluTindak).map(keyOf);
+      const baru = firstLoad ? [] : tindak.filter(k => !seenTindak.has(k));
+      seenTindak = new Set(tindak);
+      all = list.map(p => ({ ...p, _baru: baru.includes(keyOf(p)) }));
       lastOk = Date.now();
       if (gate.hidden === false || app.hidden) {
         gate.hidden = true; app.hidden = false;
@@ -385,9 +454,9 @@ details a { color: var(--ink2); }
         addManifest(); setupNotif();
       }
       renderHari(); render(); renderUpd();
-      if (baru.length) { toast(baru.length > 1 ? `${baru.length} transfer baru perlu dicek` : 'Ada transfer baru perlu dicek'); if (navigator.vibrate) navigator.vibrate(180); }
+      if (baru.length) { toast(baru.length > 1 ? `${baru.length} pesanan baru perlu ditindak` : 'Ada pesanan baru perlu ditindak'); if (navigator.vibrate) navigator.vibrate(180); }
       firstLoad = false;
-      orders.forEach(p => { p._baru = false; });
+      all.forEach(p => { p._baru = false; });
     } catch (err) {
       if (err.status === 401) {
         try { localStorage.removeItem(K_KEY); } catch (e) { /* abaikan */ }
@@ -401,46 +470,50 @@ details a { color: var(--ink2); }
   }
 
   /* ---------- tombol di daftar ---------- */
+  const byKey = k => all.find(p => keyOf(p) === k);
   $('[data-list]').addEventListener('click', async e => {
     const b = e.target.closest('button');
     if (!b) return;
     if (b.matches('[data-copy]')) return copyAntar(b);
-    if (b.matches('[data-no]')) { open.kode = ''; open.aksi = ''; render(); return; }
-    const kode = b.dataset.kode;
+    if (b.matches('[data-no]')) { open.key = ''; open.aksi = ''; render(); return; }
+    const k = b.dataset.key, p = byKey(k);
+    if (!p) return;
     if (b.dataset.act) {
-      const a = ACTIONS[b.dataset.act];
-      if (a.tanya) { open.kode = kode; open.aksi = b.dataset.act; render(); const y = $(`[data-yes][data-kode="${kode}"]`); if (y) y.focus(); return; }
-      return run(kode, b.dataset.act);
+      const a = actsOf(p)[b.dataset.act];
+      if (a.tanya) { open.key = k; open.aksi = b.dataset.act; render(); const y = document.querySelector(`[data-yes][data-key="${CSS.escape(k)}"]`); if (y) y.focus(); return; }
+      return run(p, b.dataset.act);
     }
     if (b.dataset.yes) {
-      const inp = $(`[data-ord="${kode}"] [data-alasan]`);
-      return run(kode, b.dataset.yes, inp ? inp.value.trim() : '');
+      const inp = document.querySelector(`[data-ord="${CSS.escape(k)}"] [data-alasan]`);
+      return run(p, b.dataset.yes, inp ? inp.value.trim() : '');
     }
   });
 
-  async function run(kode, aksi, alasan) {
-    if (busy.has(kode)) return;
-    busy.add(kode); render();
+  async function run(p, aksi, alasan) {
+    const k = keyOf(p);
+    if (busy.has(k)) return;
+    busy.add(k); render();
     try {
-      const p = await api('aksi', { kode, aksi, alasan });
-      orders = orders.map(o => o.kode === kode ? { ...p } : o);
-      seenCek = new Set(orders.filter(o => o.status === 'cek_admin').map(o => o.kode));
-      open.kode = ''; open.aksi = '';
-      toast(`${kode} ${ACTIONS[aksi].ok}`);
+      const r = await api('aksi', isWeb(p) ? { jenis: 'web', id: p.id, aksi, alasan } : { kode: p.kode, aksi, alasan });
+      const next = isWeb(p) ? { ...r, jenis: 'web' } : { ...r, jenis: 'challenge', id: r.kode };
+      all = all.map(o => keyOf(o) === k ? next : o);
+      seenTindak = new Set(all.filter(perluTindak).map(keyOf));
+      open.key = ''; open.aksi = '';
+      toast(`${p.kode} ${actsOf(p)[aksi].ok}`);
     } catch (err) {
       toast(err.message);
-      open.kode = ''; open.aksi = '';
+      open.key = ''; open.aksi = '';
       load();
     } finally {
-      busy.delete(kode); render();
+      busy.delete(k); render();
     }
   }
 
-  async function copyAntar(b) {
+  async function copyAntar() {
     const items = filtered().filter(GROUPS.find(g => g.id === 'antar').match);
-    const hari = [...new Set(items.map(p => p.untuk))].join(', ');
-    const text = [`Daftar antar Caffeine Challenge · ${hari}`, ...items.map((p, i) =>
-      `${i + 1}. ${p.nama} (${p.wa}) · ${p.hadiah} · ${p.cara_terima === 'Diantar' ? 'Antar ke ' + p.lokasi : p.lokasi} · ${p.jam} · ${p.kode}`)].join('\n');
+    const hariList = [...new Set(items.map(hari))].join(', ');
+    const text = [`Daftar antar Code Caffeine · ${hariList}`, rekap(items), '', ...items.map((p, i) =>
+      `${i + 1}. ${p.nama} (${p.wa}) · ${isWeb(p) ? p.pesanan : p.hadiah} · ${p.cara_terima === 'Diantar' ? 'Antar ke ' + p.lokasi : p.lokasi} · ${p.jam} · ${isWeb(p) ? (p.lunas ? 'lunas' : p.bayar + ' belum lunas, tagih ' + rupiah(p.total)) : 'lunas'} · ${p.kode}`)].join('\n');
     try { await navigator.clipboard.writeText(text); toast('Daftar antar tersalin'); }
     catch (err) { toast('Tidak bisa menyalin otomatis di browser ini'); }
   }
@@ -490,8 +563,8 @@ details a { color: var(--ink2); }
     if (sub && Notification.permission === 'granted') {
       // kirim ulang supaya server pasti punya langganan HP ini
       api('langganan', { subscription: sub.toJSON() }).catch(() => {});
-      notifUI('<b>Notifikasi aktif di HP ini.</b> Kamu dikabari saat ada pembeli yang sudah transfer dan saat hasil tantangan masuk.', false, true);
-    } else notifUI('<b>Nyalakan notifikasi</b> supaya kamu dikabari saat ada pembeli yang sudah transfer.', true, false);
+      notifUI('<b>Notifikasi aktif di HP ini.</b> Kamu dikabari setiap ada pesanan baru, transfer yang perlu dicek, dan hasil tantangan.', false, true);
+    } else notifUI('<b>Nyalakan notifikasi</b> supaya kamu dikabari setiap ada pesanan baru.', true, false);
   }
 
   $('[data-notif-on]').addEventListener('click', async e => {
@@ -535,7 +608,7 @@ details a { color: var(--ink2); }
   /* ---------- jalan ---------- */
   function startTimer() { clearInterval(timer); timer = setInterval(() => { if (!document.hidden && key) load(); }, 8000); }
   document.addEventListener('visibilitychange', () => { if (!document.hidden && key) load(); });
-  setInterval(() => { if (lastOk && !document.hidden && !open.kode) render(); }, 60000);  // perbarui "x menit lalu"
+  setInterval(() => { if (lastOk && !document.hidden && !open.key) render(); }, 60000);  // perbarui "x menit lalu"
   if (key) { load(true); startTimer(); } else showGate();
   // link admin lain dibuka di tab yang sama (hanya bagian #k= yang berubah)
   addEventListener('hashchange', () => {

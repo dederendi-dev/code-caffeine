@@ -1,8 +1,9 @@
 /*
   PENGATURAN CODE CAFFEINE
   ------------------------
-  File ini satu-satunya yang perlu diubah untuk mengganti nomor WA,
-  akun media sosial, jadwal, harga, rekening pembayaran, atau menu. Simpan, lalu deploy ulang.
+  Ini pengaturan DASAR. Sehari-hari, menu, harga, foto, jadwal, pembayaran, dan pengumuman diubah
+  dari halaman master admin (/master/); perubahan dari sana disimpan di server dan menimpa file ini.
+  Tombol "Kembalikan ke bawaan" di master admin kembali ke isi file ini.
   File ini dibaca oleh web DAN oleh server (harga & jadwal pesanan Caffeine Challenge dicek di server).
 */
 (function (root) {
@@ -62,10 +63,13 @@ var CC_CONFIG = {
   ],
 
   // Harga S/M/L sesuai Excel keuangan kelompok.
-  // Foto tiap menu: assets/img/menu/<id>.webp (latar transparan, tinggi 720 px).
+  // foto: gambar di kartu menu (latar transparan, tinggi 760 px). fotoBesar: versi besar untuk bagian atas web.
+  // aktif: false = disembunyikan. habis: true = tampil tapi tidak bisa dipesan.
   menu: [
     {
       id: 'dirty-latte',
+      foto: '/assets/img/menu/dirty-latte.webp',
+      fotoBesar: '/assets/img/menu/dirty-latte-besar.webp',
       nama: 'Dirty Latte',
       andalan: true,
       deskripsi: 'Susu dingin dengan kopi yang dituang di atasnya. Diminum berlapis atau diaduk dulu, sama-sama enak.',
@@ -73,24 +77,28 @@ var CC_CONFIG = {
     },
     {
       id: 'dalgona',
+      foto: '/assets/img/menu/dalgona.webp',
       nama: 'Dalgona Coffee',
       deskripsi: 'Kopi kocok yang lembut di atas susu dingin.',
       harga: { S: 10000, M: 12000, L: 14000 }
     },
     {
       id: 'cimory-matcha',
+      foto: '/assets/img/menu/cimory-matcha.webp',
       nama: 'Cimory Matcha Latte',
       deskripsi: 'Matcha susu Cimory yang creamy dan dingin.',
       harga: { S: 13000, M: 15000, L: 17000 }
     },
     {
       id: 'milo',
+      foto: '/assets/img/menu/milo.webp',
       nama: 'Ice Coffee Milo',
       deskripsi: 'Milo cokelat ketemu kopi, manis dan dingin.',
       harga: { S: 13000, M: 15000, L: 17000 }
     },
     {
       id: 'americano',
+      foto: '/assets/img/menu/americano.webp',
       nama: 'Americano',
       deskripsi: 'Kopi hitam dingin yang ringan. Pilihan paling hemat.',
       harga: { S: 7000, M: 8000, L: 9000 }

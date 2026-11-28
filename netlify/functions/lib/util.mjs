@@ -23,3 +23,15 @@ export const samaAman = (a, b) => {
   return crypto.timingSafeEqual(x, y);
 };
 export const rupiah = n => 'Rp' + Number(n).toLocaleString('id-ID');
+
+// Cari pemilik kunci di env berformat "Nama:kunci,Nama2:kunci2" (ADMIN_KEYS, MASTER_KEYS). Kunci minimal 16 karakter.
+export function pemilikKunci(envName, kunci) {
+  if (!kunci) return null;
+  for (const pair of String(process.env[envName] || '').split(',')) {
+    const i = pair.lastIndexOf(':');
+    if (i < 1) continue;
+    const nama = pair.slice(0, i).trim(), k = pair.slice(i + 1).trim();
+    if (k.length >= 16 && samaAman(k, kunci)) return nama;
+  }
+  return null;
+}

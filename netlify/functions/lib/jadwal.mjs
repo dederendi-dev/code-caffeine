@@ -1,5 +1,5 @@
 // Jadwal pre-order (salinan logika events/openEvent di public/assets/js/app.js). Semua waktu WIB.
-import C from '../../../public/assets/js/config.js';
+// C = pengaturan toko dari lib/katalog.mjs (getConfig).
 
 const DAY = 86400000;
 const HARI = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
@@ -15,7 +15,7 @@ const parseWIB = str => {
 export const nowWIB = (ms = Date.now()) => new Date(ms + 7 * 3600000);
 export const tanggal = ms => { const d = new Date(ms); return `${HARI[d.getUTCDay()]}, ${d.getUTCDate()} ${BULAN[d.getUTCMonth()]} ${d.getUTCFullYear()}`; };
 
-export function events(now) {
+export function events(now, C) {
   const today = startOfDay(now);
   const list = [];
   for (let i = -1; i < 15; i++) {
@@ -44,5 +44,5 @@ export function events(now) {
   return list.filter(e => e.selesai > now.getTime() - DAY).sort((a, b) => a.day - b.day);
 }
 
-export const openEvent = now => events(now).find(e => now.getTime() >= e.buka && now.getTime() < e.tutup) || null;
+export const openEvent = (now, C) => events(now, C).find(e => now.getTime() >= e.buka && now.getTime() < e.tutup) || null;
 export const jamMs = ms => { const d = new Date(ms); return `${String(d.getUTCHours()).padStart(2, '0')}.${String(d.getUTCMinutes()).padStart(2, '0')}`; };

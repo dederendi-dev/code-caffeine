@@ -1,21 +1,14 @@
 // API admin: /api/admin/<aksi>. Masuk dengan link rahasia per anggota (env ADMIN_KEYS = "Nama:kunci,Nama2:kunci2").
 import { store, update } from './lib/store.mjs';
-import { json, fail, body, samaAman, str } from './lib/util.mjs';
+import { json, fail, body, str, pemilikKunci } from './lib/util.mjs';
 import { simpanLangganan, kirimNotif } from './lib/push.mjs';
 import { KEY, kedaluwarsa, hadiahTeks } from './lib/pesanan.mjs';
+import { imporForms, semuaWeb, aksiWeb } from './lib/web.mjs';
+import { getConfig } from './lib/katalog.mjs';
 
 export const config = { path: '/api/admin/*' };
 
-function siapa(kunci) {
-  if (!kunci) return null;
-  for (const pair of String(process.env.ADMIN_KEYS || '').split(',')) {
-    const i = pair.lastIndexOf(':');
-    if (i < 1) continue;
-    const nama = pair.slice(0, i).trim(), k = pair.slice(i + 1).trim();
-    if (k.length >= 16 && samaAman(k, kunci)) return nama;
-  }
-  return null;
-}
+const siapa = kunci => pemilikKunci('ADMIN_KEYS', kunci);
 
 const ALUR = {
   lunas: { dari: ['menunggu_bayar', 'cek_admin'], ke: 'lunas', ev: 'ditandai lunas' },
@@ -56,19 +49,34 @@ export default async (req) => {
       let p = await st.get(b.key, { type: 'json' });
       if (p && kedaluwarsa(p)) p = (await update(st, b.key, cur => kedaluwarsa(cur))).data || p;
       return p;
-    }))).filter(Boolean).map(p => { const { token, ...rest } = p; return { ...rest, hadiah: hadiahTeks(p) }; });
+    }))).filter(p => p && !p.dihapus_at).map(p => { const { token, ...rest } = p; return { ...rest, hadiah: hadiahTeks(p) }; });
     all.sort((a, b) => Date.parse(b.dibuat) - Date.parse(a.dibuat));
-    return json({ admin, pesanan: all, vapid: process.env.VAPID_PUBLIC_KEY || '' });
+    const sw = store('web');
+    await imporForms(sw);
+    const web = (await semuaWeb(sw)).filter(p => !p.dihapus_at).sort((a, b) => Date.parse(b.dibuat) - Date.parse(a.dibuat));
+    const C = await getConfig();
+    return json({ admin, pesanan: all, web, pembayaran: C.pembayaran, vapid: process.env.VAPID_PUBLIC_KEY || '' });
   }
 
   if (req.method !== 'POST') return fail('Metode tidak didukung.', 405);
   const b = await body(req);
   const t = new Date().toISOString();
 
+  if (aksi === 'aksi' && b.jenis === 'web') {
+    if (!/^[A-Za-z0-9_-]{4,48}$/.test(b.id || '')) return fail('Pesanan tidak dikenal.');
+    const sw = store('web');
+    const r = await update(sw, 'web/' + b.id, cur => cur.dihapus_at ? { error: 'Pesanan ini sudah dihapus oleh master admin.' }
+      : aksiWeb(cur, b.aksi, admin, str(b.alasan, 120)));
+    if (r.notFound) return fail('Pesanan tidak ditemukan.', 404);
+    if (r.error) return fail(r.error, r.code || 409);
+    return json(r.data);
+  }
+
   if (aksi === 'aksi') {
     const a = ALUR[b.aksi];
     if (!a || !/^CC[A-Z0-9]{5}$/.test(b.kode || '')) return fail('Aksi tidak dikenal.');
     const r = await update(st, KEY(b.kode), cur => {
+      if (cur.dihapus_at) return { error: 'Pesanan ini sudah dihapus oleh master admin.' };
       if (!a.dari.includes(cur.status)) return { error: `Pesanan berstatus "${cur.status}", aksi ini tidak bisa dilakukan.` };
       const next = { ...cur, riwayat: [...cur.riwayat, { t, ev: a.ev, oleh: admin }] };
       if (a.ke) next.status = a.ke;
