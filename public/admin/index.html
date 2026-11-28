@@ -123,6 +123,28 @@ main { max-width: 680px; margin: 0 auto; padding: 18px 14px 60px; }
 .riw p + p { margin-top: 2px; }
 .riw a { color: var(--ink2); }
 
+.chip.pj { --c: var(--c-proses); }
+.ring .akhir { grid-column: 1 / -1; font-size: 12.5px; color: var(--ink3); margin-top: 2px; }
+.pjinfo { margin: 2px 0 12px; padding: 9px 12px; border-radius: 12px; font-size: 13.5px; background: color-mix(in srgb, var(--c-proses) 12%, transparent); color: var(--ink2); }
+.pjinfo.aku { background: color-mix(in srgb, var(--c-selesai) 14%, transparent); color: var(--ink); font-weight: 600; }
+.pjinfo b { color: var(--ink); }
+.steps { list-style: none; margin: 0 0 12px; padding: 0; }
+.steps li { position: relative; display: grid; grid-template-columns: 22px 1fr; gap: 10px; padding-bottom: 12px; }
+.steps li:not(:last-child)::before { content: ""; position: absolute; left: 10px; top: 22px; bottom: 0; width: 2px; background: var(--line2); }
+.steps li.done:not(:last-child)::before { background: color-mix(in srgb, var(--c-selesai) 55%, transparent); }
+.steps .dot { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; font-weight: 800; border: 2px solid var(--line2); background: var(--bg); color: var(--bg); }
+.steps li.done .dot { background: var(--c-selesai); border-color: var(--c-selesai); }
+.steps li.now .dot { border-color: var(--c-baru); box-shadow: 0 0 0 4px color-mix(in srgb, var(--c-baru) 22%, transparent); }
+.steps .st-t { font-size: 14.5px; font-weight: 600; line-height: 22px; color: var(--ink3); }
+.steps li.done .st-t, .steps li.now .st-t { color: var(--ink); }
+.steps .st-k { font-size: 12.5px; color: var(--ink3); }
+.steps li.done .st-k { color: var(--c-selesai); font-weight: 600; }
+.step-act { margin-top: 8px; }
+.acts.kecil { margin: 0 0 12px; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+.riw-h { font-weight: 700; color: var(--ink2); margin-bottom: 4px; }
+.riw b { color: var(--ink2); }
+.det dl { margin-top: 4px; }
 .foot { margin-top: 28px; padding-top: 14px; border-top: 1px solid var(--line); color: var(--ink3); font-size: 13px; display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; }
 .foot button { background: none; border: 0; padding: 0; color: var(--ink2); text-decoration: underline; text-underline-offset: 3px; font-size: 13px; }
 
@@ -180,12 +202,14 @@ main { max-width: 680px; margin: 0 auto; padding: 18px 14px 60px; }
   <footer class="foot">
     <span>Masuk sebagai <b data-who></b></span>
     <span data-notif-foot hidden>Notifikasi aktif · <button type="button" data-notif-test>Tes notifikasi</button></span>
+    <button type="button" data-panduan>Panduan</button>
     <button type="button" data-logout>Keluar</button>
   </footer>
 </main>
 
 <div class="toast" role="status" aria-live="polite" data-toast hidden></div>
 
+<script src="/assets/js/tur.js"></script>
 <script>
 (function () {
   'use strict';
@@ -241,7 +265,8 @@ main { max-width: 680px; margin: 0 auto; padding: 18px 14px 60px; }
 
   /* ---------- status pesanan ---------- */
   // Tiga kelompok: belum diproses (oranye), diproses (biru), selesai (hijau). Batal disembunyikan di bawah.
-  let all = [], admin = '', vapid = '', pembayaran = [], timer = 0, firstLoad = true, lastOk = 0, sig = '';
+  // Setiap pesanan punya satu penanggung jawab (pj): admin yang menekan Terima pesanan.
+  let all = [], admin = '', vapid = '', pembayaran = [], timer = 0, firstLoad = true, lastOk = 0, sig = '', pushAktif = false;
   let seenTindak = new Set();
   const expanded = new Set();             // baris yang sedang dibuka (tetap terbuka walau data diperbarui)
   const open = { key: '', aksi: '' };     // konfirmasi yang sedang terbuka
@@ -250,16 +275,18 @@ main { max-width: 680px; margin: 0 auto; padding: 18px 14px 60px; }
   const keyOf = p => p.jenis + ':' + p.id;
   const isWeb = p => p.jenis === 'web';
   const st = p => p.status || 'baru';
+  const pjOf = p => p.pj || (isWeb(p) ? p.diterima_oleh : '') || '';
+  const lunasOf = p => isWeb(p) ? !!p.lunas : ['lunas', 'main', 'selesai'].includes(p.status);
   const hari = p => (isWeb(p) ? p.untuk_hari : p.untuk) || 'Tanpa tanggal';
   const nominal = p => isWeb(p) ? p.total : p.harga;
+  const diantarKata = p => p.cara_terima === 'Diantar' ? 'Sedang diantar' : 'Siap diambil';
   const kelompok = p => {
     if (st(p) === 'batal') return 'batal';
     if (p.diantar) return 'selesai';
-    if (isWeb(p)) return st(p) === 'baru' ? 'baru' : 'proses';
-    return ['menunggu_bayar', 'cek_admin'].includes(p.status) ? 'baru' : 'proses';
+    return pjOf(p) ? 'proses' : 'baru';
   };
-  const perluTindak = p => (isWeb(p) && st(p) === 'baru') || (!isWeb(p) && p.status === 'cek_admin');
-  const sudahBayar = p => isWeb(p) ? p.lunas && st(p) !== 'batal' : ['lunas', 'main', 'selesai'].includes(p.status);
+  const perluTindak = p => kelompok(p) === 'baru' && !(!isWeb(p) && p.status === 'menunggu_bayar');
+  const sudahBayar = p => lunasOf(p) && st(p) !== 'batal';
   const GRUP = [
     { id: 'baru', title: 'Belum diproses', urut: 'lama' },
     { id: 'proses', title: 'Diproses', urut: 'lama', salin: true },
@@ -267,119 +294,137 @@ main { max-width: 680px; margin: 0 auto; padding: 18px 14px 60px; }
     { id: 'batal', title: 'Batal', urut: 'baru' }
   ];
 
-  function chips(p) {
-    const c = [];
-    if (!isWeb(p)) c.push('<span class="chip tag">Challenge</span>');
-    const g = kelompok(p);
-    if (isWeb(p)) {
-      if (g === 'baru') c.push('<span class="chip">Baru</span>');
-      if (g === 'proses' || g === 'selesai') c.push(p.lunas ? '<span class="chip ok">Lunas</span>' : `<span class="chip utang">Belum bayar · ${esc(p.bayar || '')}</span>`);
-    } else {
-      const t = { menunggu_bayar: 'Menunggu transfer', cek_admin: 'Cek transfer', lunas: 'Lunas · belum main', main: 'Sedang main', selesai: p.tier === 'large' ? 'Hasil: Large' : 'Hasil: Medium' }[p.status];
-      if (t && g !== 'selesai') c.push(`<span class="chip${p.status === 'cek_admin' ? '' : ''}">${t}</span>`);
-      if (p.curiga) c.push('<span class="chip bahaya">Skor perlu dicek</span>');
-    }
-    if (g === 'selesai') c.push('<span class="chip">Diantar</span>');
-    if (g === 'batal') c.push('<span class="chip">Batal</span>');
-    return c.join('');
-  }
-
-  /* ---------- tombol aksi ---------- */
-  const A_CH = {
-    lunas: { label: 'Tandai lunas', cls: '', tanya: p => `Sudah cek DANA dan ada uang masuk ${rupiah(p.harga)} dari ${p.nama}? Tantangan langsung terbuka di HP pembeli.`, ya: 'Ya, sudah masuk', ok: 'ditandai lunas' },
-    batal: { label: 'Batalkan', cls: 'warn', tanya: p => `Batalkan pesanan ${p.kode}? Pembeli akan melihat alasannya.`, ya: 'Ya, batalkan', alasan: true, ok: 'dibatalkan' },
-    belum_lunas: { label: 'Kembalikan ke belum lunas', cls: 'ghost', tanya: () => 'Kembalikan ke "cek transfer"? Tantangan di HP pembeli terkunci lagi.', ya: 'Ya, kembalikan', ok: 'dikembalikan ke cek transfer' },
-    diantar: { label: 'Tandai diantar', cls: '', tanya: p => `${p.nama} sudah menerima minumannya?`, ya: 'Ya, sudah diantar', ok: 'ditandai diantar' },
-    belum_diantar: { label: 'Belum diantar', cls: 'ghost', ok: 'dikembalikan ke diproses' }
-  };
-  const A_WEB = {
-    terima: { label: 'Terima pesanan', cls: '', ok: 'diterima' },
-    lunas: { label: 'Tandai lunas', cls: '', tanya: p => p.bayar === 'Tunai' ? `Uang tunai ${rupiah(p.total)} dari ${p.nama} sudah diterima?` : `Sudah cek dan ada transfer masuk ${rupiah(p.total)} dari ${p.nama}?`, ya: 'Ya, lunas', ok: 'ditandai lunas' },
-    belum_lunas: { label: 'Belum lunas', cls: 'ghost', tanya: () => 'Tandai pesanan ini belum lunas lagi?', ya: 'Ya, belum lunas', ok: 'ditandai belum lunas' },
-    diantar: { label: 'Tandai diantar', cls: '', tanya: p => `${p.nama} sudah menerima pesanannya?${p.lunas ? '' : ' Pembayarannya masih tercatat belum lunas.'}`, ya: 'Ya, sudah diantar', ok: 'ditandai diantar' },
-    belum_diantar: { label: 'Belum diantar', cls: 'ghost', ok: 'dikembalikan ke diproses' },
-    batal: { label: 'Batalkan', cls: 'warn', tanya: p => `Batalkan pesanan ${p.kode} atas nama ${p.nama}?`, ya: 'Ya, batalkan', alasan: true, ok: 'dibatalkan' },
-    aktifkan: { label: 'Aktifkan lagi', cls: 'ghost', ok: 'diaktifkan lagi' }
-  };
-  const actsOf = p => isWeb(p) ? A_WEB : A_CH;
-  function actionsFor(p) {
-    if (isWeb(p)) {
-      const s = st(p);
-      if (s === 'baru') return ['terima', 'batal'];
-      if (s === 'batal') return ['aktifkan'];
-      if (p.diantar) return [p.lunas ? null : 'lunas', 'belum_diantar'].filter(Boolean);
-      return [p.lunas ? null : 'lunas', 'diantar', p.lunas ? 'belum_lunas' : null, 'batal'].filter(Boolean);
-    }
-    if (p.status === 'cek_admin' || p.status === 'menunggu_bayar') return ['lunas', 'batal'];
-    if (p.status === 'lunas') return p.diantar ? ['belum_diantar'] : ['diantar', 'belum_lunas', 'batal'];
-    if (p.status === 'main' || p.status === 'selesai') return p.diantar ? ['belum_diantar'] : ['diantar'];
-    return [];
-  }
-  function petunjuk(p) {
-    if (isWeb(p) && st(p) === 'baru') return 'Balas pembeli lewat tombol WA pembeli, lalu tekan Terima pesanan.';
-    if (!isWeb(p) && p.status === 'cek_admin') return 'Pembeli bilang sudah transfer. Cek DANA dulu, baru tandai lunas.';
-    if (!isWeb(p) && p.status === 'menunggu_bayar') return 'Pembeli belum menekan "sudah transfer". Batal otomatis setelah 1 jam.';
-    if (!isWeb(p) && p.status === 'lunas' && !p.diantar) return 'Buat Medium dulu; ukuran akhirnya menunggu hasil game.';
-    return '';
-  }
-
   const fmtJam = new Intl.DateTimeFormat('id-ID', { timeZone: 'Asia/Jakarta', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
   const jamSaja = new Intl.DateTimeFormat('id-ID', { timeZone: 'Asia/Jakarta', hour: '2-digit', minute: '2-digit' });
   const waktu = iso => iso ? fmtJam.format(new Date(iso)) : '';
+  const jam = iso => iso ? jamSaja.format(new Date(iso)) : '';
+
+  function chips(p) {
+    const c = [], g = kelompok(p), pj = pjOf(p);
+    if (!isWeb(p)) c.push('<span class="chip tag">Challenge</span>');
+    if (g === 'batal') return c.concat('<span class="chip">Batal</span>').join('');
+    if (!isWeb(p) && p.status === 'menunggu_bayar') c.push('<span class="chip">Menunggu transfer</span>');
+    else if (!isWeb(p) && p.status === 'cek_admin') c.push('<span class="chip">Cek transfer</span>');
+    else if (g === 'baru') c.push('<span class="chip">Belum diterima</span>');
+    if (pj && g === 'proses') c.push(`<span class="chip pj">${p.antar_at ? diantarKata(p) : 'Ditangani'} · ${esc(pj)}</span>`);
+    if (g === 'selesai') c.push(`<span class="chip">${p.cara_terima === 'Diantar' ? 'Diantar' : 'Diambil'}${p.diantar_oleh ? ' · ' + esc(p.diantar_oleh) : ''}</span>`);
+    if (isWeb(p) || lunasOf(p)) c.push(lunasOf(p) ? '<span class="chip ok">Lunas</span>' : `<span class="chip utang">Belum bayar · ${esc(p.bayar || '')}</span>`);
+    if (!isWeb(p) && p.status === 'main') c.push('<span class="chip">Sedang main</span>');
+    if (!isWeb(p) && p.status === 'selesai' && g !== 'selesai') c.push(`<span class="chip">Hasil: ${p.tier === 'large' ? 'Large' : 'Medium'}</span>`);
+    if (p.curiga) c.push('<span class="chip bahaya">Skor perlu dicek</span>');
+    return c.join('');
+  }
+  // Aktivitas terakhir admin, tampil di baris ringkas supaya kelihatan siapa yang terakhir memegang
+  function terakhir(p) {
+    const r = (p.riwayat || []).filter(x => x.oleh).slice(-1)[0];
+    return r ? `${r.ev.replace(/, membuka WA pembeli$/, '')} · ${r.oleh} · ${jam(r.t)}` : '';
+  }
+
+  /* ---------- pesan WA ke pembeli ---------- */
   function infoBayar() { const b = pembayaran[0]; return b ? `${b.jenis} ${b.nomor}${b.atasNama ? ' a.n. ' + b.atasNama : ''}` : ''; }
-  function waBuyer(p) {
-    let t;
+  function waText(p, jenis) {
+    const halo = `Halo ${p.nama}, saya ${admin} dari Code Caffeine.`;
+    const terima = p.cara_terima === 'Diantar' ? `diantar ke ${p.lokasi}` : String(p.lokasi || '').replace(/^Ambil/, 'ambil');
+    const isi = isWeb(p) ? p.pesanan : `${p.menuNama} (paket Caffeine Challenge)`;
+    const tagih = lunasOf(p) ? 'Pembayaran sudah kami terima.'
+      : p.bayar === 'Transfer' ? `Silakan transfer ${rupiah(nominal(p))}${infoBayar() ? ' ke ' + infoBayar() : ''}, lalu kirim buktinya di chat ini ya.`
+      : `Bayarnya tunai ${rupiah(nominal(p))} saat serah terima ya.`;
+    if (jenis === 'terima') return [halo, `Pesananmu (${p.kode}) sudah kami terima ✅`, `${isi}`, `Total ${rupiah(nominal(p))}, ${terima}, ${hari(p)}${p.jam ? ' jam ' + p.jam : ''}.`,
+      !isWeb(p) ? 'Tantangannya sudah terbuka di web Code Caffeine, tinggal tekan TANTANGAN lalu MULAI.' : tagih, `Saya yang mengurus pesananmu sampai diantar. Terima kasih!`].join('\n');
+    if (jenis === 'antar') return p.cara_terima === 'Diantar'
+      ? [halo, `Pesananmu (${p.kode}) sedang diantar ke ${p.lokasi} 🛵 Mohon ditunggu ya.`, lunasOf(p) ? '' : `Mohon siapkan ${rupiah(nominal(p))}${p.bayar === 'Transfer' ? ' atau kirim bukti transfernya' : ''}.`].filter(Boolean).join('\n')
+      : [halo, `Pesananmu (${p.kode}) sudah siap diambil di ${String(p.lokasi).replace(/^Ambil sendiri di /, '')} ✅`, lunasOf(p) ? '' : `Mohon siapkan ${rupiah(nominal(p))}.`].filter(Boolean).join('\n');
+    return `${halo} Soal pesanan ${p.kode} (${isi}).`;
+  }
+  const waLink = (p, jenis) => `https://wa.me/${waIntl(p.wa)}?text=${encodeURIComponent(waText(p, jenis))}`;
+
+  /* ---------- tombol aksi ---------- */
+  // tanya: teks konfirmasi (null = langsung jalan). wa: jenis pesan WA yang dibuka setelah berhasil.
+  const AKSI = {
+    terima: { label: 'Terima & WA pembeli', wa: 'terima', ok: 'Pesanan diterima. Kamu penanggung jawabnya.' },
+    lunas: { label: 'Tandai lunas', tanya: p => isWeb(p) && p.bayar === 'Tunai' ? `Uang tunai ${rupiah(nominal(p))} dari ${p.nama} sudah diterima?` : `Sudah cek DANA dan ada transfer masuk ${rupiah(nominal(p))} dari ${p.nama}?${isWeb(p) ? '' : ' Tantangan langsung terbuka di HP pembeli.'}`, ya: 'Ya, sudah masuk', ok: 'Ditandai lunas.' },
+    antar: { label: p => p.cara_terima === 'Diantar' ? 'Antar sekarang & WA' : 'Siap diambil & WA', wa: 'antar', ok: 'Pembeli dikabari.' },
+    diantar: { label: p => p.cara_terima === 'Diantar' ? 'Tandai sudah diterima pembeli' : 'Tandai sudah diambil', tanya: p => `${p.nama} sudah menerima pesanannya?${lunasOf(p) ? '' : ' Pembayarannya masih tercatat belum lunas.'}`, ya: 'Ya, selesai', ok: 'Pesanan selesai.' },
+    belum_lunas: { label: 'Batalkan tanda lunas', kecil: true, tanya: p => isWeb(p) ? 'Tandai pesanan ini belum lunas lagi?' : 'Kembalikan ke cek transfer? Tantangan di HP pembeli terkunci lagi.', ya: 'Ya, belum lunas', ok: 'Ditandai belum lunas.' },
+    belum_diantar: { label: 'Batalkan tanda selesai', kecil: true, tanya: () => 'Kembalikan pesanan ini ke diproses?', ya: 'Ya, kembalikan', ok: 'Dikembalikan ke diproses.' },
+    batal: { label: 'Batalkan pesanan', kecil: true, warn: true, tanya: p => `Batalkan pesanan ${p.kode} atas nama ${p.nama}?`, ya: 'Ya, batalkan', alasan: true, ok: 'Pesanan dibatalkan.' },
+    aktifkan: { label: 'Aktifkan lagi', kecil: true, ok: 'Pesanan aktif lagi.' },
+    ambil_alih: { label: 'Ambil alih', kecil: true, tanya: p => `Ambil alih pesanan ${p.nama} dari ${pjOf(p)}? ${pjOf(p)} dan admin lain dikabari, lalu kamu yang menghubungi dan mengantar.`, ya: 'Ya, ambil alih', ok: 'Sekarang kamu penanggung jawabnya.' }
+  };
+  const labelOf = (a, p) => typeof AKSI[a].label === 'function' ? AKSI[a].label(p) : AKSI[a].label;
+
+  // Langkah-langkah pesanan. Yang sudah dilakukan dicentang lengkap dengan nama admin dan jamnya.
+  function langkah(p) {
+    const pj = pjOf(p), aku = pj === admin, bebas = !pj;
+    const L = [];
     if (isWeb(p)) {
-      const terima = p.cara_terima === 'Diantar' ? `diantar ke ${p.lokasi}` : String(p.lokasi).replace(/^Ambil/, 'ambil');
-      const bayar = p.lunas ? ' Pembayaran sudah kami terima.'
-        : p.bayar === 'Transfer' ? ` Silakan transfer ${rupiah(p.total)}${infoBayar() ? ' ke ' + infoBayar() : ''}, lalu kirim buktinya di chat ini ya.`
-        : ' Bayarnya tunai saat serah terima ya.';
-      t = st(p) === 'batal' ? `Halo ${p.nama}, ini admin Code Caffeine soal pesanan ${p.kode}.`
-        : `Halo ${p.nama}, pesanan Code Caffeine ${p.kode} sudah kami terima: ${p.pesanan}. Total ${rupiah(p.total)}, ${terima}, ${p.untuk_hari}${p.jam ? ' jam ' + p.jam : ''}.${bayar} Terima kasih!`;
-    } else if (p.status === 'lunas') t = `Halo ${p.nama}, pembayaran paket Caffeine Challenge ${p.kode} sudah kami terima. Tantanganmu sudah terbuka di web Code Caffeine, buka lagi halamannya lalu tekan TANTANGAN. Selamat main!`;
-    else if (p.status === 'selesai') t = `Halo ${p.nama}, ini admin Code Caffeine. Pesanan ${p.kode}: ${p.hadiah}. Diantar ${p.untuk}, ${p.jam}.`;
-    else t = `Halo ${p.nama}, ini admin Code Caffeine soal pesanan ${p.kode} (${rupiah(nominal(p))}).`;
-    return `https://wa.me/${waIntl(p.wa)}?text=${encodeURIComponent(t)}`;
+      L.push({ t: 'Masuk dari web', done: true, ket: jam(p.dibuat) });
+    } else {
+      L.push({ t: 'Dipesan pembeli', done: true, ket: jam(p.dibuat) });
+      L.push({ t: 'Pembeli bilang sudah transfer', done: !!p.sudah_bayar_at, ket: jam(p.sudah_bayar_at), pembeli: !p.sudah_bayar_at });
+      L.push({ t: 'Lunas (DANA dicek)', done: lunasOf(p), ket: lunasOf(p) ? `${p.lunas_oleh || ''} · ${jam(p.lunas_at)}` : '', aksi: !lunasOf(p) && ['menunggu_bayar', 'cek_admin'].includes(p.status) ? 'lunas' : null });
+    }
+    L.push({ t: 'Diterima & pembeli di-WA', done: !!pj, ket: pj ? `${pj} · ${jam(p.pj_at || p.diterima_at)}` : '', aksi: bebas && (isWeb(p) || lunasOf(p)) ? 'terima' : null });
+    if (isWeb(p)) L.push({ t: `Lunas (${p.bayar || 'bayar'})`, done: lunasOf(p), ket: lunasOf(p) ? `${p.lunas_oleh || ''} · ${jam(p.lunas_at)}` : '', aksi: !lunasOf(p) ? 'lunas' : null, sampingan: true });
+    else L.push({ t: p.status === 'selesai' ? `Main game: ${p.hadiah}` : p.status === 'main' ? 'Pembeli sedang main game' : 'Pembeli main game', done: p.status === 'selesai', ket: jam(p.selesai_at), pembeli: p.status !== 'selesai' });
+    L.push({ t: p.cara_terima === 'Diantar' ? 'Sedang diantar & pembeli di-WA' : 'Siap diambil & pembeli di-WA', done: !!p.antar_at || !!p.diantar, ket: p.antar_at ? `${p.antar_oleh || ''} · ${jam(p.antar_at)}` : '', aksi: pj && aku && !p.antar_at && !p.diantar ? 'antar' : null, kunci: pj && !aku && !p.antar_at });
+    L.push({ t: p.cara_terima === 'Diantar' ? 'Sudah diterima pembeli' : 'Sudah diambil pembeli', done: !!p.diantar, ket: p.diantar ? `${p.diantar_oleh || ''} · ${jam(p.diantar_at)}` : '', aksi: pj && aku && !p.diantar ? 'diantar' : null, kunci: pj && !aku && !p.diantar });
+    return L;
+  }
+  function koreksi(p) {
+    const pj = pjOf(p), aku = pj === admin, a = [];
+    if (st(p) === 'batal') return isWeb(p) ? ['aktifkan'] : [];
+    if (pj && !aku && !p.diantar) a.push('ambil_alih');
+    if (lunasOf(p) && (isWeb(p) || p.status === 'lunas')) a.push('belum_lunas');
+    if (p.diantar && aku) a.push('belum_diantar');
+    if (!p.diantar && (!pj || aku) && (isWeb(p) || ['menunggu_bayar', 'cek_admin', 'lunas'].includes(p.status))) a.push('batal');
+    return a;
   }
 
   /* ---------- tampilan ---------- */
   function detailHTML(p) {
-    const k = keyOf(p), A = actsOf(p);
+    const k = keyOf(p), pj = pjOf(p), aku = pj === admin, isBusy = busy.has(k);
+    const conf = open.key === k && AKSI[open.aksi] && AKSI[open.aksi].tanya ? AKSI[open.aksi] : null;
+    const tombol = a => `<button class="btn${AKSI[a].kecil ? ' ghost sm' : ''}${AKSI[a].warn ? ' warn' : ''}" type="button" data-act="${a}" data-key="${esc(k)}"${isBusy ? ' disabled' : ''}>${esc(labelOf(a, p))}</button>`;
+    const steps = langkah(p).map(s => {
+      const cls = s.done ? 'done' : (s.aksi ? 'now' : '');
+      const aksi = !s.done && s.aksi && !conf ? `<div class="step-act">${tombol(s.aksi)}</div>` : '';
+      const ket = s.done ? s.ket : s.pembeli ? 'menunggu pembeli' : s.kunci ? `hanya ${pj}` : '';
+      return `<li class="${cls}"><span class="dot" aria-hidden="true">${s.done ? '✓' : ''}</span><div><p class="st-t">${esc(s.t)}${s.done ? '<span class="sr"> (sudah)</span>' : ''}</p>${ket ? `<p class="st-k">${esc(ket)}</p>` : ''}${aksi}</div></li>`;
+    }).join('');
     const rows = [
-      ['Kode', p.kode],
-      ['WhatsApp', p.wa],
+      ['Kode', p.kode], ['WhatsApp', p.wa],
       isWeb(p) ? ['Pesanan', p.pesanan] : ['Paket', `${p.menuNama} Medium`],
-      !isWeb(p) && p.hadiah ? ['Hadiah', `${p.hadiah}${p.skor != null ? ` (skor ${Number(p.skor).toLocaleString('id-ID')})` : ''}`] : null,
       ['Terima', p.cara_terima === 'Diantar' ? 'Diantar ke ' + p.lokasi : p.lokasi],
       ['Jam', `${p.jam || '-'} · ${hari(p)}`],
-      ['Bayar', isWeb(p) ? `${rupiah(p.total)} ${p.bayar || ''} · ${p.lunas ? 'lunas' + (p.lunas_oleh ? ' (' + p.lunas_oleh + ')' : '') : 'belum lunas'}`
-        : `${rupiah(p.harga)} ke ${p.bayar_ke ? p.bayar_ke.jenis : 'DANA'}${['lunas', 'main', 'selesai'].includes(p.status) ? ' · lunas' + (p.lunas_oleh ? ' (' + p.lunas_oleh + ')' : '') : ''}`],
+      ['Bayar', `${rupiah(nominal(p))} ${isWeb(p) ? p.bayar || '' : 'DANA'}`],
       isWeb(p) && p.stamp_gratis ? ['Stamp', `Tukar kartu: ${p.stamp_gratis} gratis. Cek kartunya.`] : null,
       isWeb(p) && p.pakai_voucher ? ['Voucher', 'Pakai voucher Rp1.000. Cek nomornya.'] : null,
       p.catatan ? ['Catatan', p.catatan] : null,
       p.curiga ? ['Perlu dicek', p.curiga] : null,
-      p.tidak_selesai ? ['Game', 'Tidak diselesaikan, skor 0'] : null,
-      st(p) === 'batal' && p.alasan_batal ? ['Alasan batal', p.alasan_batal] : null,
-      p.diantar ? ['Diantar', `${p.diantar_oleh || ''} ${waktu(p.diantar_at)}`.trim()] : null
+      st(p) === 'batal' && p.alasan_batal ? ['Alasan batal', `${p.alasan_batal}${p.batal_oleh ? ' (' + p.batal_oleh + ')' : ''}`] : null
     ].filter(Boolean);
-    const conf = open.key === k && A[open.aksi] && A[open.aksi].tanya ? A[open.aksi] : null;
-    const isBusy = busy.has(k), hint = petunjuk(p);
-    const tombol = conf ? '' : `<div class="acts">${actionsFor(p).map(a => `<button class="btn ${A[a].cls}" type="button" data-act="${a}" data-key="${esc(k)}"${isBusy ? ' disabled' : ''}>${A[a].label}</button>`).join('')}<a class="btn ghost" href="${waBuyer(p)}" target="_blank" rel="noopener">WA pembeli</a></div>`;
-    const konfirmasi = conf ? `<div class="conf"><p>${esc(conf.tanya(p))}</p>${conf.alasan ? '<input type="text" maxlength="120" placeholder="Alasan (opsional)" aria-label="Alasan pembatalan" data-alasan>' : ''}<div class="acts"><button class="btn ${open.aksi === 'batal' ? 'warn' : ''}" type="button" data-yes="${open.aksi}" data-key="${esc(k)}"${isBusy ? ' disabled' : ''}>${isBusy ? 'Menyimpan…' : conf.ya}</button><button class="btn ghost" type="button" data-no>Tidak jadi</button></div></div>` : '';
-    const riw = (p.riwayat || []).map(r => `<p>${esc(waktu(r.t))} · ${esc(r.ev)}${r.oleh ? ' · ' + esc(r.oleh) : ''}</p>`).join('');
+    const pjInfo = pj && st(p) !== 'batal' ? `<p class="pjinfo${aku ? ' aku' : ''}">${aku ? 'Kamu penanggung jawab pesanan ini.' : `Ditangani <b>${esc(pj)}</b> sejak ${esc(jam(p.pj_at || p.diterima_at))}. Hanya ${esc(pj)} yang menghubungi dan mengantar.`}${p.wa_oleh ? ` WA terakhir dibuka ${esc(p.wa_oleh)} ${esc(jam(p.wa_at))}.` : ''}</p>` : '';
+    const waBtn = aku && st(p) !== 'batal' ? `<a class="btn ghost sm" href="${waLink(p, 'umum')}" target="_blank" rel="noopener" data-wa="${esc(k)}">WA pembeli</a>` : '';
+    const kor = koreksi(p);
+    const konfirmasi = conf ? `<div class="conf"><p>${esc(conf.tanya(p))}</p>${conf.alasan ? '<input type="text" maxlength="120" placeholder="Alasan (opsional)" aria-label="Alasan pembatalan" data-alasan>' : ''}<div class="acts"><button class="btn${open.aksi === 'batal' ? ' warn' : ''}" type="button" data-yes="${open.aksi}" data-key="${esc(k)}"${isBusy ? ' disabled' : ''}>${isBusy ? 'Menyimpan…' : conf.ya}</button><button class="btn ghost" type="button" data-no>Tidak jadi</button></div></div>` : '';
+    const riw = (p.riwayat || []).map(r => `<p>${esc(waktu(r.t))} · ${esc(r.ev)}${r.oleh ? ' · <b>' + esc(r.oleh) + '</b>' : ''}</p>`).join('');
     const cek = !isWeb(p) && p.rekaman != null && p.status === 'selesai' && !p.tidak_selesai ? `<p><a href="/main/#cek=${esc(p.rekaman)}" target="_blank" rel="noopener">Putar ulang hitungan skor</a></p>` : '';
-    return `<dl>${rows.map(([a, b]) => `<dt>${esc(a)}</dt><dd>${esc(b)}</dd>`).join('')}</dl>
-      ${hint ? `<p class="hint">${esc(hint)}</p>` : ''}${tombol}${konfirmasi}
-      <div class="riw">${riw}${cek}</div>`;
+    return `${pjInfo}<ol class="steps">${steps}</ol>${konfirmasi}
+      ${(waBtn || kor.length) && !conf ? `<div class="acts kecil">${waBtn}${kor.map(tombol).join('')}</div>` : ''}
+      <dl>${rows.map(([a, b]) => `<dt>${esc(a)}</dt><dd>${esc(b)}</dd>`).join('')}</dl>
+      <div class="riw"><p class="riw-h">Riwayat</p>${riw}${cek}</div>`;
   }
   function rowHTML(p) {
     const k = keyOf(p), buka = expanded.has(k);
     const isi = isWeb(p) ? p.pesanan : `${p.menuNama} Medium${p.hadiah && p.tier === 'large' ? ' → Large' : ''}`;
+    const akhir = terakhir(p);
     return `<article class="ord${buka ? ' buka' : ''}${p._baru ? ' baru' : ''}" data-ord="${esc(k)}">
       <button class="ring" type="button" data-toggle="${esc(k)}" aria-expanded="${buka}">
         <span class="nm">${esc(p.nama)}</span><span class="tot num">${esc(rupiah(nominal(p)))}</span>
         <span class="isi">${esc(isi)}</span><span class="chev" aria-hidden="true">▾</span>
         <span class="chips">${chips(p)}</span>
+        ${akhir ? `<span class="akhir">${esc(akhir)}</span>` : ''}
       </button>
       <div class="det"${buka ? '' : ' hidden'}>${buka ? detailHTML(p) : ''}</div>
     </article>`;
@@ -434,17 +479,17 @@ main { max-width: 680px; margin: 0 auto; padding: 18px 14px 60px; }
     if (typing) { const inp = $('[data-alasan]'); if (inp) { inp.value = alasan; inp.focus(); } }
   }
   function renderUpd() {
-    $('[data-upd]').textContent = lastOk ? `Diperbarui ${jamSaja.format(new Date(lastOk))} WIB` : '';
+    $('[data-upd]').textContent = lastOk ? `Diperbarui ${jamSaja.format(new Date(lastOk))} WIB${pushAktif ? ' · langsung berubah saat ada aktivitas' : ''}` : '';
   }
 
   let toastT = 0;
-  function toast(msg) { const t = $('[data-toast]'); t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => { t.hidden = true; }, 2600); }
+  function toast(msg, lama) { const t = $('[data-toast]'); t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => { t.hidden = true; }, lama || 2800); }
 
   /* ---------- muat data ---------- */
-  let loading = null;
+  let loading = null, lagi = false;
   function load(manual) {
     if (!key) { showGate(); return Promise.resolve(); }
-    if (loading) return loading;
+    if (loading) { lagi = true; return loading; }      // ada perubahan saat sedang memuat: muat sekali lagi setelahnya
     loading = (async () => {
       try {
         const d = await api('pesanan');
@@ -468,7 +513,7 @@ main { max-width: 680px; margin: 0 auto; padding: 18px 14px 60px; }
           all.forEach(p => { p._baru = false; });
         }
         if (baru.length) { toast(baru.length > 1 ? `${baru.length} pesanan baru masuk` : 'Ada pesanan baru masuk'); if (navigator.vibrate) navigator.vibrate(180); }
-        firstLoad = false;
+        if (firstLoad) { firstLoad = false; setTimeout(turAdmin, 900); }
       } catch (err) {
         if (err.status === 401) {
           try { localStorage.removeItem(K_KEY); } catch (e) { /* abaikan */ }
@@ -478,7 +523,10 @@ main { max-width: 680px; margin: 0 auto; padding: 18px 14px 60px; }
           $('[data-upd]').textContent = `${err.message} Data terakhir ${lastOk ? jamSaja.format(new Date(lastOk)) + ' WIB' : 'belum ada'}.`;
           if (manual) toast(err.message);
         }
-      } finally { loading = null; }
+      } finally {
+        loading = null;
+        if (lagi) { lagi = false; load(); }
+      }
     })();
     return loading;
   }
@@ -508,6 +556,8 @@ main { max-width: 680px; margin: 0 auto; padding: 18px 14px 60px; }
     if (expanded.has(k)) { $('.det', art).innerHTML = detailHTML(p); }
   }
   $('[data-list]').addEventListener('click', e => {
+    const wa = e.target.closest('a[data-wa]');
+    if (wa) { catatWA(wa.dataset.wa); return; }                // link tetap terbuka; pencatatannya di belakang layar
     const b = e.target.closest('button');
     if (!b) return;
     if (b.dataset.toggle) return toggle(b.dataset.toggle);
@@ -517,7 +567,7 @@ main { max-width: 680px; margin: 0 auto; padding: 18px 14px 60px; }
     const k = b.dataset.key, p = byKey(k);
     if (!p) return;
     if (b.dataset.act) {
-      const a = actsOf(p)[b.dataset.act];
+      const a = AKSI[b.dataset.act];
       if (a.tanya) { open.key = k; open.aksi = b.dataset.act; redrawRow(k); const y = document.querySelector(`[data-yes][data-key="${CSS.escape(k)}"]`); if (y) y.focus(); return; }
       return run(p, b.dataset.act);
     }
@@ -527,8 +577,14 @@ main { max-width: 680px; margin: 0 auto; padding: 18px 14px 60px; }
     }
   });
 
+  function catatWA(k) {
+    const p = byKey(k); if (!p) return;
+    fetch('/api/admin/aksi', { method: 'POST', keepalive: true, headers: { 'x-admin-key': key, 'content-type': 'application/json' },
+      body: JSON.stringify(isWeb(p) ? { jenis: 'web', id: p.id, aksi: 'wa' } : { kode: p.kode, aksi: 'wa' }) }).then(() => load()).catch(() => {});
+  }
+
   async function run(p, aksi, alasan) {
-    const k = keyOf(p);
+    const k = keyOf(p), A = AKSI[aksi];
     if (busy.has(k)) return;
     busy.add(k); redrawRow(k);
     try {
@@ -538,24 +594,43 @@ main { max-width: 680px; margin: 0 auto; padding: 18px 14px 60px; }
       seenTindak = new Set(all.filter(perluTindak).map(keyOf));
       open.key = ''; open.aksi = '';
       busy.delete(k);
+      expanded.add(k);
       render();
-      toast(`${p.nama}: ${actsOf(p)[aksi].ok}`);
+      if (A.wa) {
+        // Server sudah memastikan kamu penanggung jawabnya, baru WA pembeli dibuka
+        const w = window.open(waLink(next, A.wa), '_blank');
+        toast(w ? `${A.ok} WhatsApp dibuka.` : `${A.ok} Tekan "WA pembeli" untuk membuka chat.`, 3600);
+      } else toast(A.ok);
       load();
     } catch (err) {
       busy.delete(k); open.key = ''; open.aksi = '';
-      toast(err.message); redrawRow(k); load(true);
+      toast(err.message, 5000); redrawRow(k); load(true);
     }
   }
 
   async function copyAntar() {
     const items = filtered().filter(p => kelompok(p) === 'proses');
     const text = [`Daftar antar Code Caffeine · ${[...new Set(items.map(hari))].join(', ')}`, rekap(items), '', ...items.map((p, i) =>
-      `${i + 1}. ${p.nama} (${p.wa}) · ${isWeb(p) ? p.pesanan : p.menuNama + ' ' + (p.tier === 'large' ? 'Large' : 'Medium') + ' (Challenge)'} · ${p.cara_terima === 'Diantar' ? 'Antar ke ' + p.lokasi : p.lokasi} · ${p.jam} · ${sudahBayar(p) ? 'lunas' : 'tagih ' + rupiah(nominal(p)) + ' ' + (p.bayar || '')} · ${p.kode}`)].join('\n');
+      `${i + 1}. ${p.nama} (${p.wa}) · ${isWeb(p) ? p.pesanan : p.menuNama + ' ' + (p.tier === 'large' ? 'Large' : 'Medium') + ' (Challenge)'} · ${p.cara_terima === 'Diantar' ? 'Antar ke ' + p.lokasi : p.lokasi} · ${p.jam} · ${sudahBayar(p) ? 'lunas' : 'tagih ' + rupiah(nominal(p)) + ' ' + (p.bayar || '')} · PJ ${pjOf(p)} · ${p.kode}`)].join('\n');
     try { await navigator.clipboard.writeText(text); toast('Daftar antar tersalin'); }
     catch (err) { toast('Tidak bisa menyalin otomatis di browser ini'); }
   }
   $('[data-q]').addEventListener('input', render);
   $('[data-hari]').addEventListener('change', render);
+
+  /* ---------- panduan ---------- */
+  function turAdmin(paksa) {
+    if (!window.CCTur || (!paksa && window.CCTur.sudah('admin-v1'))) return;
+    window.CCTur.mulai([
+      { el: '.counts', judul: 'Tiga warna status', teks: 'Oranye = belum diproses, biru = sedang diproses, hijau = selesai. Ketuk angkanya untuk lompat ke daftarnya.' },
+      { el: () => $('.ord .ring') || $('.grp'), judul: 'Ketuk nama pembeli', teks: 'Rincian dan langkah-langkah pesanan muncul. Langkah yang sudah dilakukan dicentang, lengkap dengan nama admin dan jamnya.' },
+      { el: null, judul: 'Satu pesanan, satu penanggung jawab', teks: 'Yang menekan "Terima & WA pembeli" langsung terhubung ke WhatsApp pembeli dan jadi penanggung jawab. Hanya dia yang mengabari pembeli, mengantar, dan menandai selesai. Kalau berhalangan, admin lain bisa "Ambil alih".' },
+      { el: null, judul: 'Semua tercatat', teks: 'Setiap tombol yang ditekan masuk riwayat dan langsung dikabarkan ke HP admin lain lewat notifikasi. Kalau dua orang menekan bersamaan, hanya satu yang berhasil dan yang lain diberi tahu siapa yang lebih dulu.' },
+      { el: '[data-refresh]', judul: 'Selalu terbaru', teks: 'Daftar langsung berubah begitu ada aktivitas. Tekan Perbarui kalau ragu.' },
+      { el: () => (!$('[data-notif]').hidden ? $('[data-notif]') : $('[data-notif-foot]').hidden ? null : $('[data-notif-foot]')), judul: 'Notifikasi wajib aktif', teks: 'Tanpa notifikasi, kamu tidak tahu ada pesanan baru atau aktivitas admin lain. Pastikan tertulis "Notifikasi aktif" di bagian bawah.', tombol: 'Mulai kerja' }
+    ], { kunci: 'admin-v1' });
+  }
+  $('[data-panduan]').addEventListener('click', () => turAdmin(true));
 
   /* ---------- pasang di layar utama + notifikasi ---------- */
   function addManifest() {
@@ -594,7 +669,7 @@ main { max-width: 680px; margin: 0 auto; padding: 18px 14px 60px; }
     const sub = await reg.pushManager.getSubscription();
     if (sub && Notification.permission === 'granted') {
       api('langganan', { subscription: sub.toJSON() }).catch(() => {});
-      notifUI('', false, true);
+      notifUI('', false, true); pushAktif = true; renderUpd(); startTimer();
     } else notifUI('<b>Nyalakan notifikasi</b> supaya kamu dikabari setiap ada pesanan baru.', true, false);
   }
   $('[data-notif-on]').addEventListener('click', async e => {
@@ -605,7 +680,8 @@ main { max-width: 680px; margin: 0 auto; padding: 18px 14px 60px; }
       reg = reg || await navigator.serviceWorker.ready;
       const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64(vapid) });
       await api('langganan', { subscription: sub.toJSON() });
-      notifUI('', false, true); toast('Notifikasi aktif. Coba tekan Tes notifikasi di bawah.');
+      notifUI('', false, true); pushAktif = true; renderUpd(); startTimer();
+      toast('Notifikasi aktif. Coba tekan Tes notifikasi di bawah.');
     } catch (err) {
       notifUI('Gagal mengaktifkan notifikasi: ' + esc(err.message || 'coba lagi') + '.', true, false);
     } finally { b.disabled = false; }
@@ -629,10 +705,11 @@ main { max-width: 680px; margin: 0 auto; padding: 18px 14px 60px; }
   addEventListener('appinstalled', () => { $('[data-install]').hidden = true; toast('CC Admin terpasang. Buka dari layar utama HP-mu.'); });
 
   /* ---------- selalu segar ---------- */
-  // Tiap 8 detik saat halaman terlihat. Saat aplikasi dibuka lagi (dari notifikasi, pindah aplikasi, layar
+  // Berkala saat halaman terlihat (lihat startTimer). Saat aplikasi dibuka lagi (dari notifikasi, pindah aplikasi, layar
   // menyala) langsung dimuat ulang. Di iPhone, timer berhenti saat aplikasi di latar belakang, jadi jeda
   // panjang antar-detak juga dianggap "baru dibuka lagi".
-  function startTimer() { clearInterval(timer); timer = setInterval(() => { if (!document.hidden && key) load(); }, 8000); }
+  // Dengan notifikasi aktif, perubahan datang lewat notifikasi (seketika); pemeriksaan berkala hanya cadangan.
+  function startTimer() { clearInterval(timer); timer = setInterval(() => { if (!document.hidden && key) load(); }, pushAktif ? 30000 : 10000); }
   const segarkan = () => { if (!document.hidden && key) load(true); };
   document.addEventListener('visibilitychange', segarkan);
   addEventListener('focus', segarkan);

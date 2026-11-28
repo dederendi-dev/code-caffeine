@@ -502,3 +502,6 @@ h3 { font-family: var(--f-display); font-weight: 600; letter-spacing: -.02em; }
   .ch-spin { animation-duration: 3s; }
   .ch-status[data-state="cek_admin"] .ch-dot { animation: none; }
 }
+
+/* ---------- Ajakan panduan interaktif ---------- */
+.tur-ajak { margin-top: 22px; display: flex; justify-content: center; }

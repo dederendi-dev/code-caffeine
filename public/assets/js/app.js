@@ -770,6 +770,25 @@
   chFrame.addEventListener('load', syncGame);
   if (tOrder) refresh();
 
+  /* ================= Panduan interaktif cara pesan ================= */
+  // Muncul sekali di kunjungan pertama, dan kapan saja lewat tombol "Cara pesan".
+  function turPesan() {
+    if (!window.CCTur) return;
+    const kartu = () => $('[data-drink]:not(.habis)');
+    window.CCTur.mulai([
+      { el: '.hero .status', judul: 'Cek jadwal pre-order', teks: 'Di sini tertulis pre-order sedang buka atau tutup, untuk hari apa, dan sampai jam berapa.' },
+      { el: () => kartu() && $('.sizes', kartu()), judul: 'Pilih ukuran', teks: 'Small 12 oz, Medium 14 oz, atau Large 16 oz. Harganya ikut berubah.' },
+      { el: () => kartu() && $('[data-add]', kartu()), judul: 'Tekan Tambah', teks: 'Minumannya masuk keranjang. Bisa tambah beberapa minuman sekaligus.' },
+      { el: () => (!$('[data-cartbar]').hidden ? $('[data-cartbar]') : null), judul: 'Buka pesanan', teks: 'Setelah menambah minuman, tombol pesanan muncul di bawah layar. Tekan untuk mengisi nama, nomor WhatsApp, dan alamat antar.' },
+      { el: null, judul: 'Kirim ke WhatsApp', teks: 'Tekan Kirim ke WhatsApp, lalu tekan kirim di chat-nya. Pesananmu langsung tercatat di tim kami dengan kode pesanan, dan admin membalas untuk konfirmasi.' },
+      { el: '#challenge .ch-game', judul: 'Mau berhadiah?', teks: 'Main Caffeine Challenge di sini. Latihan gratis; paket tantangan 1 cup Medium dengan bonus sesuai skormu.', tombol: 'Siap pesan' }
+    ], { kunci: 'pesan-v1' });
+  }
+  $$('[data-tur-mulai]').forEach(b => b.addEventListener('click', e => { e.preventDefault(); turPesan(); }));
+  if (window.CCTur && !window.CCTur.sudah('pesan-v1') && !location.hash) {
+    setTimeout(() => { if (!document.querySelector('dialog[open]')) turPesan(); }, 1600);
+  }
+
   /* ================= Sosial ================= */
   function renderSocial() {
     const items = [];

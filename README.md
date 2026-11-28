@@ -46,7 +46,15 @@ dan paket Challenge (Cek transfer → Tandai lunas → main → Siap diantar). A
 - Masuk dengan link pribadi per anggota: `https://codecaffeine-ump.netlify.app/admin/#k=<kunci>`. Tanpa password.
   Kunci disimpan di env Netlify `ADMIN_KEYS` dengan format `Nama:kunci,Nama2:kunci2` (kunci minimal 16 karakter).
   Mengganti atau menghapus kunci seseorang langsung mematikan link lamanya (setelah deploy ulang).
-- Setiap aksi mencatat nama admin di riwayat. Tombol "Salin daftar antar" untuk pengantar.
+- Tiga kelompok berwarna: Belum diproses (oranye), Diproses (biru), Selesai (hijau). Ketuk nama untuk detail.
+- **Satu pesanan, satu penanggung jawab:** "Terima & WA pembeli" membuka WhatsApp pembeli dan menjadikan admin itu
+  penanggung jawab. Hanya dia yang bisa membuka WA pembeli, menandai sedang diantar (membuka WA lagi), dan selesai.
+  Admin lain bisa "Ambil alih". Lunas boleh ditandai siapa saja. Aturannya di `netlify/functions/lib/alur.mjs`
+  dan dicek atomik di server, jadi dua admin yang menekan bersamaan tidak bisa sama-sama berhasil.
+- Setiap aksi (termasuk membuka WA) masuk riwayat dengan nama dan jam, dan dikirim sebagai notifikasi ke HP admin lain.
+  Halaman yang terbuka langsung memuat ulang saat notifikasi datang. Tombol "Salin daftar antar" untuk pengantar.
+- Panduan interaktif (`public/assets/js/tur.js`) muncul sekali di web utama (cara pesan) dan di CC Admin;
+  bisa dibuka lagi lewat tombol "Cara pesan" / "Panduan".
 - Notifikasi HP (Web Push) saat pembeli menekan "sudah transfer" dan saat hasil masuk. Env: `VAPID_PUBLIC_KEY`,
   `VAPID_PRIVATE_KEY` (buat dengan `npx web-push generate-vapid-keys`). Di iPhone, halaman admin harus
   ditambahkan ke Layar Utama dulu, lalu notifikasi diaktifkan dari ikon itu.

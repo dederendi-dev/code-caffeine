@@ -1,22 +1,15 @@
 // API admin: /api/admin/<aksi>. Masuk dengan link rahasia per anggota (env ADMIN_KEYS = "Nama:kunci,Nama2:kunci2").
 import { store, update } from './lib/store.mjs';
-import { json, fail, body, str, pemilikKunci } from './lib/util.mjs';
+import { json, fail, body, str, pemilikKunci, rupiah } from './lib/util.mjs';
 import { simpanLangganan, kirimNotif } from './lib/push.mjs';
 import { KEY, kedaluwarsa, hadiahTeks } from './lib/pesanan.mjs';
-import { imporForms, semuaWeb, aksiWeb } from './lib/web.mjs';
+import { imporForms, semuaWeb } from './lib/web.mjs';
+import { terapkan, LABEL } from './lib/alur.mjs';
 import { getConfig } from './lib/katalog.mjs';
 
 export const config = { path: '/api/admin/*' };
 
 const siapa = kunci => pemilikKunci('ADMIN_KEYS', kunci);
-
-const ALUR = {
-  lunas: { dari: ['menunggu_bayar', 'cek_admin'], ke: 'lunas', ev: 'ditandai lunas' },
-  belum_lunas: { dari: ['lunas'], ke: 'cek_admin', ev: 'lunas dibatalkan (belum main)' },
-  batal: { dari: ['menunggu_bayar', 'cek_admin', 'lunas'], ke: 'batal', ev: 'dibatalkan admin' },
-  diantar: { dari: ['lunas', 'main', 'selesai'], ev: 'sudah diantar' },
-  belum_diantar: { dari: ['lunas', 'main', 'selesai'], ev: 'batal tandai diantar' }
-};
 
 export default async (req) => {
   const url = new URL(req.url);
@@ -28,7 +21,7 @@ export default async (req) => {
     if (!siapa(k)) return fail('Link admin tidak valid.', 401);
     return new Response(JSON.stringify({
       id: '/admin/', name: 'Admin Code Caffeine', short_name: 'CC Admin', lang: 'id',
-      description: 'Cek transfer dan kelola pesanan paket Caffeine Challenge.',
+      description: 'Kelola semua pesanan Code Caffeine bersama tim.',
       start_url: '/admin/?k=' + encodeURIComponent(k), scope: '/admin/',
       display: 'standalone', orientation: 'portrait', background_color: '#16100c', theme_color: '#16100c',
       icons: [
@@ -62,35 +55,32 @@ export default async (req) => {
   const b = await body(req);
   const t = new Date().toISOString();
 
-  if (aksi === 'aksi' && b.jenis === 'web') {
-    if (!/^[A-Za-z0-9_-]{4,48}$/.test(b.id || '')) return fail('Pesanan tidak dikenal.');
-    const sw = store('web');
-    const r = await update(sw, 'web/' + b.id, cur => cur.dihapus_at ? { error: 'Pesanan ini sudah dihapus oleh master admin.' }
-      : aksiWeb(cur, b.aksi, admin, str(b.alasan, 120)));
-    if (r.notFound) return fail('Pesanan tidak ditemukan.', 404);
-    if (r.error) return fail(r.error, r.code || 409);
-    return json(r.data);
-  }
-
+  // Semua aksi admin (dua jenis pesanan) lewat satu aturan di lib/alur.mjs. Admin lain langsung dikabari.
   if (aksi === 'aksi') {
-    const a = ALUR[b.aksi];
-    if (!a || !/^CC[A-Z0-9]{5}$/.test(b.kode || '')) return fail('Aksi tidak dikenal.');
-    const r = await update(st, KEY(b.kode), cur => {
-      if (cur.dihapus_at) return { error: 'Pesanan ini sudah dihapus oleh master admin.' };
-      if (!a.dari.includes(cur.status)) return { error: `Pesanan berstatus "${cur.status}", aksi ini tidak bisa dilakukan.` };
-      const next = { ...cur, riwayat: [...cur.riwayat, { t, ev: a.ev, oleh: admin }] };
-      if (a.ke) next.status = a.ke;
-      if (b.aksi === 'lunas') { next.lunas_at = t; next.lunas_oleh = admin; }
-      if (b.aksi === 'belum_lunas') { delete next.lunas_at; delete next.lunas_oleh; }
-      if (b.aksi === 'batal') next.alasan_batal = str(b.alasan, 120) || 'Dibatalkan admin';
-      if (b.aksi === 'diantar') { next.diantar = true; next.diantar_oleh = admin; next.diantar_at = t; }
-      if (b.aksi === 'belum_diantar') { next.diantar = false; delete next.diantar_oleh; delete next.diantar_at; }
-      return next;
-    });
+    const web = b.jenis === 'web';
+    const id = String(web ? b.id : (b.kode || b.id) || '');
+    if (web ? !/^[A-Za-z0-9_-]{4,48}$/.test(id) : !/^CC[A-Z0-9]{5}$/.test(id)) return fail('Pesanan tidak dikenal.');
+    if (!LABEL[b.aksi]) return fail('Aksi tidak dikenal.');
+    const s = web ? store('web') : st, k = web ? 'web/' + id : KEY(id);
+    const r = await update(s, k, cur => terapkan(cur, web ? 'web' : 'challenge', b.aksi, admin, str(b.alasan, 120)));
     if (r.notFound) return fail('Pesanan tidak ditemukan.', 404);
     if (r.error) return fail(r.error, r.code || 409);
-    const { token, ...rest } = r.data;
-    return json({ ...rest, hadiah: hadiahTeks(r.data) });
+    const p = r.data;
+    if (!r.unchanged) {
+      const harga = rupiah(web ? p.total : p.harga);
+      const judul = {
+        terima: `${p.nama} diterima ${admin}`, lunas: `${p.nama} lunas (${harga})`, antar: `${p.nama} ${p.cara_terima === 'Diantar' ? 'sedang diantar' : 'siap diambil'}`,
+        diantar: `${p.nama} selesai`, batal: `${p.nama} dibatalkan`, ambil_alih: `${p.nama} diambil alih ${admin}`, wa: `${p.nama} sedang di-WA ${admin}`
+      }[b.aksi] || `${p.nama} ${LABEL[b.aksi]}`;
+      const isi = {
+        terima: `${admin} yang menghubungi dan mengantar pesanan ini.`, ambil_alih: `Sebelumnya ditangani ${p.pj_sebelumnya}. Sekarang ${admin} yang menghubungi dan mengantar.`,
+        batal: `Oleh ${admin}${p.alasan_batal ? ': ' + p.alasan_batal : ''}.`
+      }[b.aksi] || `Oleh ${admin}.`;
+      await kirimNotif({ title: judul, body: `${isi} ${p.kode}`, tag: p.kode, kecuali: admin });
+    }
+    if (web) return json(p);
+    const { token, ...rest } = p;
+    return json({ ...rest, hadiah: hadiahTeks(p) });
   }
 
   if (aksi === 'langganan') {
